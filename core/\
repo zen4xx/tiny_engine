@@ -1,9 +1,0 @@
-#include "core.h"
-
-Tiny_engine::Tiny_engine(){
-    glfwInit();
-}
-Tiny_engine::Tiny_engine(){
-    glfwTerminate();
-}
-

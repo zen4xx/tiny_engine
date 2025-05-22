@@ -19,6 +19,7 @@ find_package(glfw3 REQUIRED)
 add_executable(${PROJECT_NAME} main.cpp
     window/window.cpp
     core/core.cpp
+    renderer/renderer.cpp
 )
 
 
