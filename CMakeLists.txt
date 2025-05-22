@@ -16,21 +16,30 @@ option(GLFW_BUILD_EXAMPLES "Build examples" OFF)
 
 find_package(glfw3 REQUIRED)
 
-add_executable(${PROJECT_NAME} main.cpp
-    window/window.cpp
-    core/core.cpp
-    renderer/renderer.cpp
-)
+set(SOURCE_FILES main.cpp)
 
+file(GLOB CORE "core/*.cpp")
+file(GLOB WINDOW "window/*.cpp")
+file(GLOB RENDERER "renderer/*.cpp")
+file(GLOB SCENE "scene/*.cpp")
+file(GLOB ERR_HANDLER "error_handler/error_handler.cpp")
 
-include_directories(${PROJECT_SOURCE_DIR}/external/glm)  # Для GLM
+#add_executable(${PROJECT_NAME} main.cpp
+#    window/window.cpp
+#    core/core.cpp
+#    renderer/renderer.cpp
+#)
+
+set(SOURCE_FILES ${SOURCE_FILES} ${CORE} ${WINDOW} ${RENDERER} ${SCENE} ${ERR_HANDLER}) 
+
+add_executable(${PROJECT_NAME} ${SOURCE_FILES})
+
+include_directories(${PROJECT_SOURCE_DIR}/external/glm)  # for GLM
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${PROJECT_SOURCE_DIR}/core
     ${PROJECT_SOURCE_DIR}/window
-    ${PROJECT_SOURCE_DIR}/physic
-    ${PROJECT_SOURCE_DIR}/audio
-    ${PROJECT_SOURCE_DIR}/UI
-
+    ${PROJECT_SOURCE_DIR}/renderer
+    ${PROJECT_SOURCE_DIR}/scene
 )
 
 target_link_libraries(${PROJECT_NAME}

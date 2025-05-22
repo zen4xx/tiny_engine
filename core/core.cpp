@@ -1,6 +1,7 @@
 #include "core.h"
 
-Tiny_engine::Tiny_engine(){
+Tiny_engine::Tiny_engine(const char* applictaion_name) 
+            :m_renderer(std::make_unique<Renderer>(applictaion_name)){
     glfwInit();
 }
 
