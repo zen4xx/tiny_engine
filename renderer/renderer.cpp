@@ -49,17 +49,32 @@ Renderer::~Renderer(){
     vkDestroyInstance(m_instance, nullptr);
 }
 
-bool Renderer::checkValidationLayerSupport(){
+bool Renderer::checkValidationLayerSupport() {
     uint32_t layerCount;
     vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
 
     std::vector<VkLayerProperties> availableLayers(layerCount);
     vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
-    return false;
+    for (const char* layerName : validationLayers) {
+        bool layerFound = false;
+
+        for (const auto& layerProps : availableLayers) {
+            if (strcmp(layerName, layerProps.layerName) == 0) {
+                layerFound = true;
+                break;
+            }
+        }
+
+        if (!layerFound) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
-std::vector<const char*> getRequiredExtensions() {
+std::vector<const char*> Renderer::getRequiredExtensions() {
     uint32_t glfwExtensionCount = 0;
     const char** glfwExtensions;
     glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);

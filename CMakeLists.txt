@@ -19,10 +19,19 @@ find_package(glfw3 REQUIRED)
 set(SOURCE_FILES main.cpp)
 
 file(GLOB CORE "core/*.cpp")
+list(APPEND SOURCE_FILES ${CORE})
+
 file(GLOB WINDOW "window/*.cpp")
+list(APPEND SOURCE_FILES ${WINDOW})
+
 file(GLOB RENDERER "renderer/*.cpp")
+list(APPEND SOURCE_FILES ${RENDERER})
+
 file(GLOB SCENE "scene/*.cpp")
+list(APPEND SOURCE_FILES ${SCENE})
+
 file(GLOB ERR_HANDLER "error_handler/error_handler.cpp")
+list(APPEND SOURCE_FILES ${ERR_HANDLER})
 
 #add_executable(${PROJECT_NAME} main.cpp
 #    window/window.cpp

@@ -4,6 +4,7 @@
 #include "../scene/scene.h"
 #include "../error_handler/error_handler.h"
 #include <vector>
+#include <cstring>
 
 //including vulkan
 #define GLFW_INCLUDE_VULKAN
@@ -24,6 +25,10 @@ class Renderer{
 
         VkInstance m_instance;
         VkResult m_result;
+
+        const std::vector<const char*> validationLayers = {
+            "VK_LAYER_KHRONOS_validation"
+        };
 };
 
 #endif
