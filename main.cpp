@@ -1,5 +1,4 @@
 #include "core/core.h"
-#define ENGINE_DEBUG
 
 int main(){
     auto engine = Tiny_engine("app");
