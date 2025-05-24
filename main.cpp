@@ -1,11 +1,10 @@
 #include "core/core.h"
 
 int main(){
-    auto engine = Tiny_engine("app");
-    auto window = engine.CreateWindow(800, 600, "window");
+    auto engine = Tiny_engine("app", 800, 600, "test");
 
-    while(!glfwWindowShouldClose(window.GetWindow())){
-        glfwPollEvents();
+    while(engine.isWindowOpen()){
+        engine.update();
     }
 
     return 0;

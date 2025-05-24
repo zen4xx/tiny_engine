@@ -7,10 +7,10 @@
 
 class Window{
     public:
-        Window(int width, int height, const char* name, GLFWmonitor* monitor=nullptr, GLFWwindow* share=nullptr);
+        Window(int width, int height, const char* name, GLFWmonitor* monitor, GLFWwindow* share);
         ~Window();
     public:
-        GLFWwindow* GetWindow();
+        inline GLFWwindow* GetWindow() { return m_window; }
     private:
         GLFWwindow* m_window = nullptr;
 };

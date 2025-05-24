@@ -1,14 +1,11 @@
 #include "core.h"
 
-Tiny_engine::Tiny_engine(const char* applictaion_name) 
-            :m_renderer(std::make_unique<Renderer>(applictaion_name)){
-    glfwInit();
+//glfwInit is called in the window constructor (the Window constructor is called before all others) and is terminated in the Tiny_engine destructor
+Tiny_engine::Tiny_engine(const char* applictaion_name, int width, int height, const char* title, GLFWmonitor* monitor, GLFWwindow* window)
+            :m_window(std::make_unique<Window>(width, height, title, monitor, window)),
+            m_renderer(std::make_unique<Renderer>(applictaion_name)){
 }
 
 Tiny_engine::~Tiny_engine(){
     glfwTerminate();
-}
-
-Window Tiny_engine::CreateWindow(int width, int height, const char* name){
-    return Window(width, height, name);
 }
