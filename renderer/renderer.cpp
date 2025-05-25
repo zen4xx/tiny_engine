@@ -27,8 +27,7 @@ Renderer::Renderer(const char* app_name){
 
     createInstance(app_name, &m_instance, validationLayers, isDebug);
     if(isDebug)
-        //validation layers and debug output
-        setupDebugMessenger(m_instance, &m_debugMessenger, debugCallback);
+        setupDebugMessenger(m_instance, &m_debugMessenger, debugCallback);//validation layers and debug output
     pickPhysicalDevice(&m_instance, &m_physical_device, isDebug);
     createLogicalDevice(&m_graphics_queue, &m_device, &m_physical_device, validationLayers, isDebug);
 }
