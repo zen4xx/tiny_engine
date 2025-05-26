@@ -94,11 +94,14 @@ std::vector<const char*> getRequiredExtensions(bool isDebug) {
     }
 
     #ifdef _WIN32
-    extensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+    extensions.push_back("VK_KHR_win32_surface");
     #elif __linux__
-    extensions.push_back("VK_KHR_xcb_surface"); 
+    if(std::getenv("WAYLAND_DISPLAY") != nullptr)
+        extensions.push_back("VK_KHR_wayland_surface");
+    else
+        extensions.push_back("VK_KHR_xcb_surface"); 
     #elif __APPLE__
-    extensions.push_back(VK_MVK_MACOS_SURFACE_EXTENSION_NAME);
+    extensions.push_back("VK_MVK_macos_surface");
     #endif
 
 
@@ -191,7 +194,7 @@ void pickPhysicalDevice(VkInstance* instance, VkPhysicalDevice* physical_device,
     if(isDebug){
         VkPhysicalDeviceProperties deviceProperties;
         vkGetPhysicalDeviceProperties(*physical_device, &deviceProperties);
-        std::cout << "picked GPU: " << deviceProperties.deviceName << std::endl;
+        std::cout << "[DEBUG] picked GPU: " << deviceProperties.deviceName << std::endl;
     }
 }
 
