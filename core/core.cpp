@@ -4,6 +4,7 @@
 Tiny_engine::Tiny_engine(const char* applictaion_name, int width, int height, const char* title, GLFWmonitor* monitor, GLFWwindow* window)
             :m_window(std::make_unique<Window>(width, height, title, monitor, window)),
             m_renderer(std::make_unique<Renderer>(applictaion_name)){
+    m_renderer.get()->setWindow(m_window.get()->GetWindow());
 }
 
 Tiny_engine::~Tiny_engine(){

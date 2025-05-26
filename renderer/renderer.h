@@ -9,6 +9,7 @@ class Renderer{
         ~Renderer();
     public:
         bool RenderScene();
+        void setWindow(GLFWwindow* window);
     private:
         bool checkValidationLayerSupport();
     private:
@@ -17,11 +18,12 @@ class Renderer{
         VkInstance m_instance;
 
         VkPhysicalDevice m_physical_device = VK_NULL_HANDLE;
-        VkDevice m_device;
+        VkDevice m_device = VK_NULL_HANDLE;
 
         VkSurfaceKHR m_surface;
 
         VkQueue m_graphics_queue;
+        VkQueue m_present_queue;
 
         VkDebugUtilsMessengerEXT m_debugMessenger;
 

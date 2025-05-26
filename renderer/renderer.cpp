@@ -25,15 +25,14 @@ Renderer::Renderer(const char* app_name){
             err("Validation layers is requested, but not avaibled");
     }
 
-    createInstance(app_name, &m_instance, validationLayers, isDebug);
+    createInstance(app_name, &m_instance, debugCallback, validationLayers, isDebug);
     if(isDebug)
         setupDebugMessenger(m_instance, &m_debugMessenger, debugCallback);//validation layers and debug output
-    pickPhysicalDevice(&m_instance, &m_physical_device, isDebug);
-    createLogicalDevice(&m_graphics_queue, &m_device, &m_physical_device, validationLayers, isDebug);
 }
 
 Renderer::~Renderer(){
     vkDestroyDevice(m_device, nullptr);
+    vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
     if (m_debugMessenger) {
         auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_instance, "vkDestroyDebugUtilsMessengerEXT");
         if (func != nullptr) {
@@ -65,4 +64,13 @@ bool Renderer::checkValidationLayerSupport() {
     }
 
     return true;
+}
+
+void Renderer::setWindow(GLFWwindow* window){
+
+    if(glfwCreateWindowSurface(m_instance, window, nullptr, &m_surface) != VK_SUCCESS)
+        err("Failed to create a surface");
+
+    pickPhysicalDevice(&m_instance, &m_physical_device, m_surface, isDebug);
+    createLogicalDevice(&m_graphics_queue, &m_present_queue, &m_device, &m_physical_device, validationLayers, m_surface, isDebug);
 }
