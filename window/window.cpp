@@ -8,7 +8,7 @@ Window::Window(int width, int height, const char* name, GLFWmonitor* monitor, GL
     m_window = glfwCreateWindow(width, height, name, monitor, share);
     
     if(!m_window){
-        err("cannot create a window");
+        err("cannot create a window", 1);
     }
 }
 

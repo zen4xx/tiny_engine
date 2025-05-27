@@ -49,7 +49,7 @@ void createInstance(const char* appName, VkInstance* instance ,PFN_vkDebugUtilsM
 
     VkResult res = vkCreateInstance(&create_info, nullptr, instance);
     if (res != VK_SUCCESS)
-        err("Failed to create instance");
+        err("Failed to create instance", res);
 }
 
 /*VALIDATION LAYERS*/
@@ -71,14 +71,14 @@ void setupDebugMessenger(VkInstance instance, VkDebugUtilsMessengerEXT* outMesse
 
     auto func = (PFN_vkCreateDebugUtilsMessengerEXT)
     vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-
+    
     if (func != nullptr) {
         if (func(instance, &createInfo, nullptr, outMessenger) != VK_SUCCESS) {
-            err("Failed to set up debug messenger!");
+            err("Failed to set up debug messenger!", 1);
         }
     } 
     else {
-        err("Could not load vkCreateDebugUtilsMessengerEXT");
+        err("Could not load vkCreateDebugUtilsMessengerEXT", 1);
     }
 }
 
@@ -172,7 +172,7 @@ void pickPhysicalDevice(VkInstance* instance, VkPhysicalDevice* physical_device,
     vkEnumeratePhysicalDevices(*instance, &deviceCount, nullptr);
 
     if(deviceCount == 0){
-        err("Failed to find GPUs with Vulkan support");
+        err("Failed to find GPUs with Vulkan support", 1);
     }
 
     std::vector<VkPhysicalDevice> devices(deviceCount);
@@ -189,7 +189,7 @@ void pickPhysicalDevice(VkInstance* instance, VkPhysicalDevice* physical_device,
     if(candidates.rbegin()->first > 0){
         *physical_device = candidates.rbegin()->second;
     }
-    else err("Failed to find suitable GPU");
+    else err("Failed to find suitable GPU", 1);
 
     if(isDebug){
         VkPhysicalDeviceProperties deviceProperties;
@@ -235,7 +235,7 @@ void createLogicalDevice(VkQueue* graphicsQueue, VkQueue* presentQueue, VkDevice
         createInfo.enabledLayerCount = 0;
 
     if(vkCreateDevice(*physical_device, &createInfo, nullptr, device) != VK_SUCCESS)
-        err("Failed to create logical device");
+        err("Failed to create logical device", 1);
 
         vkGetDeviceQueue(*device, indices.graphicsFamily.value(), 0, graphicsQueue);
         vkGetDeviceQueue(*device, indices.presentFamily.value(), 0, presentQueue);

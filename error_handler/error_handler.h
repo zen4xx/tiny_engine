@@ -3,7 +3,8 @@
 
 #include <stdexcept>
 #include <fstream>
+#include <iostream>
 
-void err(const char* msg);
+void err(const char* msg, int err_code);
 
 #endif
