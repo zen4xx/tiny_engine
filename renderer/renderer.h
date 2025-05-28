@@ -16,15 +16,18 @@ class Renderer{
         bool isDebug = false;
 
         VkInstance m_instance;
+        VkSwapchainKHR m_swapchain;
 
+        
         VkPhysicalDevice m_physical_device = VK_NULL_HANDLE;
         VkDevice m_device = VK_NULL_HANDLE;
-
+        
         VkSurfaceKHR m_surface;
-
+        GLFWwindow* m_window;
+        
         VkQueue m_graphics_queue;
         VkQueue m_present_queue;
-
+        
         VkDebugUtilsMessengerEXT m_debugMessenger;
 
         const std::vector<const char*> validationLayers = {

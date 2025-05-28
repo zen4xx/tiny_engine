@@ -31,6 +31,7 @@ Renderer::Renderer(const char* app_name){
 }
 
 Renderer::~Renderer(){
+    vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
     vkDestroyDevice(m_device, nullptr);
     vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
     if (m_debugMessenger) {
@@ -67,10 +68,11 @@ bool Renderer::checkValidationLayerSupport() {
 }
 
 void Renderer::setWindow(GLFWwindow* window){
-
-    if(glfwCreateWindowSurface(m_instance, window, nullptr, &m_surface) != VK_SUCCESS)
+    m_window = window;
+    if(glfwCreateWindowSurface(m_instance, m_window, nullptr, &m_surface) != VK_SUCCESS)
         err("Failed to create a surface", 1);
 
     pickPhysicalDevice(&m_instance, &m_physical_device, m_surface, isDebug);
     createLogicalDevice(&m_graphics_queue, &m_present_queue, &m_device, &m_physical_device, validationLayers, m_surface, isDebug);
+    createSwapChain(m_device, m_physical_device, m_window, m_surface, &m_swapchain);
 }
