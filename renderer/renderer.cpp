@@ -31,15 +31,21 @@ Renderer::Renderer(const char* app_name){
 }
 
 Renderer::~Renderer(){
-    vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
+    for(auto imageView : m_swap_chain_image_views){
+        vkDestroyImageView(m_device, imageView, nullptr);
+    }
+
+    vkDestroySwapchainKHR(m_device, m_swap_chain, nullptr);
     vkDestroyDevice(m_device, nullptr);
     vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
+
     if (m_debugMessenger) {
         auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_instance, "vkDestroyDebugUtilsMessengerEXT");
         if (func != nullptr) {
             func(m_instance, m_debugMessenger, nullptr);
         }
     }
+
     vkDestroyInstance(m_instance, nullptr);
 }
 
@@ -74,5 +80,6 @@ void Renderer::setWindow(GLFWwindow* window){
 
     pickPhysicalDevice(&m_instance, &m_physical_device, m_surface, isDebug);
     createLogicalDevice(&m_graphics_queue, &m_present_queue, &m_device, &m_physical_device, validationLayers, m_surface, isDebug);
-    createSwapChain(m_device, m_physical_device, m_window, m_surface, &m_swapchain);
+    createSwapChain(m_device, m_physical_device, m_window, m_surface, &m_swap_chain, &m_swap_chain_images, &m_swap_chain_image_format, &m_swap_chain_extent);
+    createImageViews(m_swap_chain_image_views, m_swap_chain_images, m_device);
 }

@@ -16,8 +16,6 @@ class Renderer{
         bool isDebug = false;
 
         VkInstance m_instance;
-        VkSwapchainKHR m_swapchain;
-
         
         VkPhysicalDevice m_physical_device = VK_NULL_HANDLE;
         VkDevice m_device = VK_NULL_HANDLE;
@@ -29,7 +27,13 @@ class Renderer{
         VkQueue m_present_queue;
         
         VkDebugUtilsMessengerEXT m_debugMessenger;
+        
+        VkSwapchainKHR m_swap_chain;
+        std::vector<VkImage> m_swap_chain_images;
+        VkFormat m_swap_chain_image_format;
+        VkExtent2D m_swap_chain_extent;
 
+        std::vector<VkImageView> m_swap_chain_image_views;
         const std::vector<const char*> validationLayers = {
             "VK_LAYER_KHRONOS_validation"
         };
