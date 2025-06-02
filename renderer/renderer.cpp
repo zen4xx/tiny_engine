@@ -31,6 +31,9 @@ Renderer::Renderer(const char* app_name){
 }
 
 Renderer::~Renderer(){
+    vkDestroyPipelineLayout(m_device, m_pipeline_layout, nullptr);
+    vkDestroyRenderPass(m_device, m_render_pass, nullptr);
+
     for(auto imageView : m_swap_chain_image_views){
         vkDestroyImageView(m_device, imageView, nullptr);
     }
@@ -39,8 +42,8 @@ Renderer::~Renderer(){
     vkDestroyShaderModule(m_device, m_frag_shader_module, nullptr);
     vkDestroyShaderModule(m_device, m_vert_shader_module, nullptr);
 
-    vkDestroyDevice(m_device, nullptr);
     vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
+    vkDestroyDevice(m_device, nullptr);
 
     if (m_debugMessenger) {
         auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_instance, "vkDestroyDebugUtilsMessengerEXT");
@@ -84,5 +87,6 @@ void Renderer::setWindow(GLFWwindow* window){
     createLogicalDevice(&m_graphics_queue, &m_present_queue, &m_device, &m_physical_device, validationLayers, m_surface, isDebug);
     createSwapChain(m_device, m_physical_device, m_window, m_surface, &m_swap_chain, &m_swap_chain_images, &m_swap_chain_image_format, &m_swap_chain_extent);
     createImageViews(m_swap_chain_image_views, m_swap_chain_images, m_device);
-    createGraphicsPipeline("renderer/shaders/vert.spv", "renderer/shaders/frag.spv", &m_vert_shader_module, &m_frag_shader_module, m_device);
+    createRenderPass(&m_render_pass, &m_pipeline_layout, m_swap_chain_image_format, m_device);
+    createGraphicsPipeline("renderer/shaders/vert.spv", "renderer/shaders/frag.spv", &m_vert_shader_module, &m_frag_shader_module, m_dynamic_states, &m_viewport, &m_scissor, m_swap_chain_extent, &m_pipeline_layout, m_device);
 }

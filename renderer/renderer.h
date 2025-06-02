@@ -31,6 +31,12 @@ class Renderer{
 
         VkDebugUtilsMessengerEXT m_debugMessenger;
         
+        VkRenderPass m_render_pass;
+        VkPipelineLayout m_pipeline_layout;
+
+        VkViewport m_viewport;
+        VkRect2D m_scissor;
+
         VkSwapchainKHR m_swap_chain;
         std::vector<VkImage> m_swap_chain_images;
         VkFormat m_swap_chain_image_format;
@@ -39,6 +45,10 @@ class Renderer{
         std::vector<VkImageView> m_swap_chain_image_views;
         const std::vector<const char*> validationLayers = {
             "VK_LAYER_KHRONOS_validation"
+        };
+        std::vector<VkDynamicState> m_dynamic_states = {
+            VK_DYNAMIC_STATE_VIEWPORT,
+            VK_DYNAMIC_STATE_SCISSOR
         };
 };
 
