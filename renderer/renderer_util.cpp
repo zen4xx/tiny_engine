@@ -357,7 +357,7 @@ void createLogicalDevice(VkQueue* graphicsQueue, VkQueue* presentQueue, VkDevice
 }
 
 /*CREATION OF SWAPCHAIN*/
-void createSwapChain(VkDevice device, VkPhysicalDevice physical_device, GLFWwindow* window, VkSurfaceKHR surface, VkSwapchainKHR* swap_chain, std::vector<VkImage>* swap_chain_images, VkFormat* format, VkExtent2D* swap_chain_extent){
+void createSwapChain(VkDevice device, VkPhysicalDevice physical_device, GLFWwindow* window, VkSurfaceKHR surface, VkSwapchainKHR* swap_chain, std::vector<VkImage>& swap_chain_images, VkFormat* format, VkExtent2D* swap_chain_extent){
     SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physical_device, surface);
 
     VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
@@ -407,24 +407,32 @@ void createSwapChain(VkDevice device, VkPhysicalDevice physical_device, GLFWwind
     if(res != VK_SUCCESS){
         err("Failed to create swapchain", res);
     }
-}
-void createImageViews(std::vector<VkImageView> swap_chain_image_views, std::vector<VkImage> swap_chain_images, VkDevice device){
-    swap_chain_image_views.resize(swap_chain_images.size());
 
+    vkGetSwapchainImagesKHR(device, *swap_chain, &imageCount, nullptr);
+    swap_chain_images.resize(imageCount);
+    vkGetSwapchainImagesKHR(device, *swap_chain, &imageCount, swap_chain_images.data());
+
+    *format = surfaceFormat.format;
+    *swap_chain_extent = extent;
+}
     
+void createImageViews(std::vector<VkImageView>& swap_chain_image_views, std::vector<VkImage>& swap_chain_images, VkFormat format, VkDevice device){
+    swap_chain_image_views.resize(swap_chain_images.size());
+    if(swap_chain_image_views.empty())
+        err("Swapchain images is empty", 0);
     for(size_t i = 0; i < swap_chain_images.size(); ++i){
 
-        VkImageViewCreateInfo createInfo;
+        VkImageViewCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        
         createInfo.image = swap_chain_images[i];
+        createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        createInfo.format = format;
         createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
         createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
         createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
         createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-    
         createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        createInfo.subresourceRange.baseMipLevel = 0; 
+        createInfo.subresourceRange.baseMipLevel = 0;
         createInfo.subresourceRange.levelCount = 1;
         createInfo.subresourceRange.baseArrayLayer = 0;
         createInfo.subresourceRange.layerCount = 1;
@@ -620,12 +628,22 @@ void createRenderPass(VkRenderPass* render_pass, VkPipelineLayout* pipeline_layo
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &colorAttachmentRef;
 
+    VkSubpassDependency dependency{};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.srcAccessMask = 0;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
     VkRenderPassCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     createInfo.attachmentCount = 1;
     createInfo.pAttachments = &colorAttachment;
     createInfo.subpassCount = 1;
     createInfo.pSubpasses = &subpass;
+    createInfo.dependencyCount = 1;
+    createInfo.pDependencies = &dependency;
 
     VkResult res = vkCreateRenderPass(device, &createInfo, nullptr, render_pass);
     if(res != VK_SUCCESS)
@@ -633,7 +651,7 @@ void createRenderPass(VkRenderPass* render_pass, VkPipelineLayout* pipeline_layo
     
 }
 
-void createFramebuffers(std::vector<VkFramebuffer> framebuffers, std::vector<VkImageView> swap_chain_image_views, VkRenderPass render_pass, VkExtent2D extent, VkDevice device){
+void createFramebuffers(std::vector<VkFramebuffer>& framebuffers, std::vector<VkImageView>& swap_chain_image_views, VkRenderPass render_pass, VkExtent2D extent, VkDevice device){
      framebuffers.resize(swap_chain_image_views.size());
      VkResult res;
      for(size_t i = 0; i < swap_chain_image_views.size(); ++i){
@@ -669,19 +687,23 @@ void createCommandPool(VkCommandPool* command_pool, VkSurfaceKHR surface, VkPhys
         err("Failed to create command pool", res);
 }
 
-void createCommandBuffer(VkCommandBuffer* command_buffer, VkCommandPool command_pool, VkDevice device){
+void createCommandBuffers(std::vector<VkCommandBuffer>& command_buffers, VkCommandPool command_pool, const int MAX_FRAMES_IN_FLIGHT, VkDevice device)
+{
+    command_buffers.resize(MAX_FRAMES_IN_FLIGHT);
+
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.commandPool = command_pool;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandBufferCount = 1;
+    allocInfo.commandBufferCount = static_cast<uint32_t>(command_buffers.size());
 
-    VkResult res = vkAllocateCommandBuffers(device, &allocInfo, command_buffer);
-    if(res != VK_SUCCESS)
-        err("Failed to allocate command buffer", res);
+    VkResult res = vkAllocateCommandBuffers(device, &allocInfo, command_buffers.data());
+    if (res != VK_SUCCESS) {
+        err("Failed to allocate command buffers", res);
+    }
 }
 
-void recordCommandBuffer(VkCommandBuffer command_buffer, uint32_t image_index, VkExtent2D extent, VkRenderPass render_pass, std::vector<VkFramebuffer> framebuffers, VkPipeline graphics_pipeline){
+void recordCommandBuffer(VkCommandBuffer command_buffer, uint32_t image_index, VkExtent2D extent, VkRenderPass render_pass, std::vector<VkFramebuffer>& framebuffers, VkPipeline graphics_pipeline){
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = 0;
@@ -726,4 +748,26 @@ void recordCommandBuffer(VkCommandBuffer command_buffer, uint32_t image_index, V
     res = vkEndCommandBuffer(command_buffer);
     if(res != VK_SUCCESS)
         err("Failed to record command buffer", res);
+}
+
+void createSyncObjects(std::vector<VkSemaphore>& imageAvailableSemaphores, std::vector<VkSemaphore>& renderFinishedSemaphores, std::vector<VkFence>& inFlightFences, const int MAX_FRAMES_IN_FLIGHT, VkDevice device) {
+    imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+    renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+    inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+
+    VkSemaphoreCreateInfo semaphoreInfo{};
+    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+    VkFenceCreateInfo fenceInfo{};
+    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
+            vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
+            vkCreateFence(device, &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS) {
+
+            err("Failed to create synchronization objects for a frame", 0);
+        }
+    }
 }

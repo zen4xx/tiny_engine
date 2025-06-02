@@ -8,7 +8,7 @@ class Renderer{
         Renderer(const char* app_name);
         ~Renderer();
     public:
-        bool RenderScene();
+        void drawScene();
         void setWindow(GLFWwindow* window);
     private:
         bool checkValidationLayerSupport();
@@ -40,12 +40,24 @@ class Renderer{
         VkPipeline m_graphics_pipeline;
 
         VkCommandPool m_command_pool;
-        VkCommandBuffer m_command_buffer;
-
+        
+        
         VkSwapchainKHR m_swap_chain;
         std::vector<VkImage> m_swap_chain_images;
         VkFormat m_swap_chain_image_format;
         VkExtent2D m_swap_chain_extent;
+        
+        uint32_t current_frame = 0;
+
+        //constants
+        const int MAX_FRAMES_IN_FLIGHT = 2;
+        
+        //vectors
+        std::vector<VkCommandBuffer> m_command_buffers;
+
+        std::vector<VkSemaphore> m_image_available_semaphores;
+        std::vector<VkSemaphore> m_render_finished_semaphores;
+        std::vector<VkFence> m_in_flight_fences;
 
         std::vector<VkImageView> m_swap_chain_image_views;
         std::vector<VkFramebuffer> m_swap_chain_frame_buffers;
