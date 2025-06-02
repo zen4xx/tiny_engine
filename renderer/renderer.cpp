@@ -31,6 +31,7 @@ Renderer::Renderer(const char* app_name){
 }
 
 Renderer::~Renderer(){
+    vkDestroyCommandPool(m_device, m_command_pool, nullptr);
     for(auto framebuffer : m_swap_chain_frame_buffers)
         vkDestroyFramebuffer(m_device, framebuffer, nullptr);
     
@@ -82,6 +83,7 @@ bool Renderer::checkValidationLayerSupport() {
     return true;
 }
 
+/*ALSO INITIATE*/
 void Renderer::setWindow(GLFWwindow* window){
     m_window = window;
     if(glfwCreateWindowSurface(m_instance, m_window, nullptr, &m_surface) != VK_SUCCESS)
@@ -94,4 +96,6 @@ void Renderer::setWindow(GLFWwindow* window){
     createRenderPass(&m_render_pass, &m_pipeline_layout, m_swap_chain_image_format, m_device);
     createGraphicsPipeline("renderer/shaders/vert.spv", "renderer/shaders/frag.spv", &m_vert_shader_module, &m_frag_shader_module, m_dynamic_states, &m_viewport, &m_scissor, m_swap_chain_extent, &m_render_pass, &m_pipeline_layout, &m_graphics_pipeline, m_device);
     createFramebuffers(m_swap_chain_frame_buffers, m_swap_chain_image_views, m_render_pass, m_swap_chain_extent, m_device);
+    createCommandPool(&m_command_pool, m_surface, m_physical_device, m_device);
+    createCommandBuffer(&m_command_buffer, m_command_pool, m_device);
 }

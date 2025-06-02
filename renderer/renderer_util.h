@@ -41,4 +41,6 @@ void createImageViews(std::vector<VkImageView> swap_chain_image_views, std::vect
 void createGraphicsPipeline(const std::string vertex_shader_path, const std::string frag_shader_path, VkShaderModule* vert_shader_module, VkShaderModule* frag_shader_module, std::vector<VkDynamicState> dynamic_states, VkViewport* viewport, VkRect2D* scissor, VkExtent2D extent, VkRenderPass* render_pass, VkPipelineLayout* pipeline_layout, VkPipeline* pipeline, VkDevice device);
 void createRenderPass(VkRenderPass* render_pass, VkPipelineLayout* pipeline_layout, VkFormat swap_chain_image_format, VkDevice device);
 void createFramebuffers(std::vector<VkFramebuffer> framebuffers, std::vector<VkImageView> swap_chain_image_views, VkRenderPass render_pass, VkExtent2D extent, VkDevice device);
+void createCommandPool(VkCommandPool* command_pool, VkSurfaceKHR surface, VkPhysicalDevice physical_device, VkDevice device);
+void createCommandBuffer(VkCommandBuffer* command_buffer, VkCommandPool command_pool, VkDevice device);
 static std::vector<char> readFile(const std::string& filename);

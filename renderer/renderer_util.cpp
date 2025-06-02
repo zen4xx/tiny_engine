@@ -655,3 +655,75 @@ void createFramebuffers(std::vector<VkFramebuffer> framebuffers, std::vector<VkI
         }
      }
 }
+
+void createCommandPool(VkCommandPool* command_pool, VkSurfaceKHR surface, VkPhysicalDevice physical_device, VkDevice device){
+    QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physical_device, surface);
+
+    VkCommandPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
+
+    VkResult res = vkCreateCommandPool(device, &poolInfo, nullptr, command_pool);
+    if(res != VK_SUCCESS)
+        err("Failed to create command pool", res);
+}
+
+void createCommandBuffer(VkCommandBuffer* command_buffer, VkCommandPool command_pool, VkDevice device){
+    VkCommandBufferAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.commandPool = command_pool;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandBufferCount = 1;
+
+    VkResult res = vkAllocateCommandBuffers(device, &allocInfo, command_buffer);
+    if(res != VK_SUCCESS)
+        err("Failed to allocate command buffer", res);
+}
+
+void recordCommandBuffer(VkCommandBuffer command_buffer, uint32_t image_index, VkExtent2D extent, VkRenderPass render_pass, std::vector<VkFramebuffer> framebuffers, VkPipeline graphics_pipeline){
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = 0;
+    beginInfo.pInheritanceInfo = nullptr;
+
+    VkResult res = vkBeginCommandBuffer(command_buffer, &beginInfo);
+    if(res != VK_SUCCESS)
+        err("Failed to begin recording command buffer", res);
+
+    VkRenderPassBeginInfo renderPassInfo{};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassInfo.renderPass = render_pass;
+    renderPassInfo.framebuffer = framebuffers[image_index];
+    renderPassInfo.renderArea.offset = {0, 0};
+    renderPassInfo.renderArea.extent = extent;
+
+    VkClearValue clearColor = {{{0.f, 0.f, 0.f, 1.f}}};
+    renderPassInfo.clearValueCount = 1;
+    renderPassInfo.pClearValues = &clearColor;
+
+    vkCmdBeginRenderPass(command_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline);
+
+    VkViewport viewport{};
+    viewport.x = 0.f;
+    viewport.y = 0.f;
+    viewport.width = static_cast<float>(extent.width);
+    viewport.height = static_cast<float>(extent.height);
+    viewport.minDepth = 0.f;
+    viewport.maxDepth = 1.f;
+    vkCmdSetViewport(command_buffer, 0, 1, &viewport);
+
+    VkRect2D scissor{};
+    scissor.offset = {0, 0};
+    scissor.extent = extent;
+    vkCmdSetScissor(command_buffer, 0, 1, &scissor);
+
+    vkCmdDraw(command_buffer, 3, 1, 0, 0); // even though i dont have a vertex buffer i have only 3 vertices lol
+
+    vkCmdEndRenderPass(command_buffer);
+
+    res = vkEndCommandBuffer(command_buffer);
+    if(res != VK_SUCCESS)
+        err("Failed to record command buffer", res);
+}

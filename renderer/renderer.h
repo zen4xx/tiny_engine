@@ -39,6 +39,9 @@ class Renderer{
 
         VkPipeline m_graphics_pipeline;
 
+        VkCommandPool m_command_pool;
+        VkCommandBuffer m_command_buffer;
+
         VkSwapchainKHR m_swap_chain;
         std::vector<VkImage> m_swap_chain_images;
         VkFormat m_swap_chain_image_format;
