@@ -31,13 +31,16 @@ Renderer::Renderer(const char* app_name){
 }
 
 Renderer::~Renderer(){
+    for(auto framebuffer : m_swap_chain_frame_buffers)
+        vkDestroyFramebuffer(m_device, framebuffer, nullptr);
+    
     vkDestroyPipeline(m_device, m_graphics_pipeline, nullptr);
     vkDestroyPipelineLayout(m_device, m_pipeline_layout, nullptr);
     vkDestroyRenderPass(m_device, m_render_pass, nullptr);
 
-    for(auto imageView : m_swap_chain_image_views){
+    for(auto imageView : m_swap_chain_image_views)
         vkDestroyImageView(m_device, imageView, nullptr);
-    }
+    
     vkDestroySwapchainKHR(m_device, m_swap_chain, nullptr);
 
     vkDestroyShaderModule(m_device, m_frag_shader_module, nullptr);
@@ -90,4 +93,5 @@ void Renderer::setWindow(GLFWwindow* window){
     createImageViews(m_swap_chain_image_views, m_swap_chain_images, m_device);
     createRenderPass(&m_render_pass, &m_pipeline_layout, m_swap_chain_image_format, m_device);
     createGraphicsPipeline("renderer/shaders/vert.spv", "renderer/shaders/frag.spv", &m_vert_shader_module, &m_frag_shader_module, m_dynamic_states, &m_viewport, &m_scissor, m_swap_chain_extent, &m_render_pass, &m_pipeline_layout, &m_graphics_pipeline, m_device);
+    createFramebuffers(m_swap_chain_frame_buffers, m_swap_chain_image_views, m_render_pass, m_swap_chain_extent, m_device);
 }

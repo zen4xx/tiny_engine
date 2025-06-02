@@ -632,3 +632,26 @@ void createRenderPass(VkRenderPass* render_pass, VkPipelineLayout* pipeline_layo
         err("Failed to create render pass", res);
     
 }
+
+void createFramebuffers(std::vector<VkFramebuffer> framebuffers, std::vector<VkImageView> swap_chain_image_views, VkRenderPass render_pass, VkExtent2D extent, VkDevice device){
+     framebuffers.resize(swap_chain_image_views.size());
+     VkResult res;
+     for(size_t i = 0; i < swap_chain_image_views.size(); ++i){
+        VkImageView attachment[] = {
+            swap_chain_image_views[i]
+        };
+        VkFramebufferCreateInfo framebufferInfo{};
+        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        framebufferInfo.renderPass = render_pass;
+        framebufferInfo.attachmentCount = 1;
+        framebufferInfo.pAttachments = attachment;
+        framebufferInfo.width = extent.width;
+        framebufferInfo.height = extent.height;
+        framebufferInfo.layers = 1;
+
+        res = vkCreateFramebuffer(device, &framebufferInfo, nullptr, &framebuffers[i]);
+        if(res != VK_SUCCESS){
+            err("Failed to create framebuffers", res);
+        }
+     }
+}

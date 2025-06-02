@@ -45,6 +45,7 @@ class Renderer{
         VkExtent2D m_swap_chain_extent;
 
         std::vector<VkImageView> m_swap_chain_image_views;
+        std::vector<VkFramebuffer> m_swap_chain_frame_buffers;
         const std::vector<const char*> validationLayers = {
             "VK_LAYER_KHRONOS_validation"
         };
