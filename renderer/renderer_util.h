@@ -4,6 +4,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <vector>
+#include <fstream>
 #include <cstring>
 #include <cstdlib>
 #include <limits> 
@@ -37,3 +38,5 @@ void pickPhysicalDevice(VkInstance* instance, VkPhysicalDevice* physical_device,
 void createLogicalDevice(VkQueue* graphicsQueue, VkQueue* presentQueue, VkDevice* device, VkPhysicalDevice* physical_device, const std::vector<const char*>& validationLayers, VkSurfaceKHR surface, bool isDebug);
 void createSwapChain(VkDevice device, VkPhysicalDevice physical_device, GLFWwindow* window, VkSurfaceKHR surface, VkSwapchainKHR* swap_chain, std::vector<VkImage>* swap_chain_images, VkFormat* format, VkExtent2D* swap_chain_extent);
 void createImageViews(std::vector<VkImageView> swap_chain_image_views, std::vector<VkImage> swap_chain_images, VkDevice device);
+void createGraphicsPipeline(const std::string vertex_shader_path, const std::string frag_shader_path, VkShaderModule* vert_shader_module, VkShaderModule* frag_shader_module, VkDevice device);
+static std::vector<char> readFile(const std::string& filename);

@@ -436,3 +436,51 @@ void createImageViews(std::vector<VkImageView> swap_chain_image_views, std::vect
     }
 
 }   
+
+void createShaderModule(const std::vector<char>& code, VkShaderModule* shader_module, VkDevice device){
+    VkShaderModuleCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    createInfo.codeSize = code.size();
+    createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
+
+    VkResult res = vkCreateShaderModule(device, &createInfo, nullptr, shader_module);
+    if(res != VK_SUCCESS)
+        err("Failed to create shader module", res);
+}
+
+void createGraphicsPipeline(const std::string vertex_shader_path, const std::string frag_shader_path, VkShaderModule* vert_shader_module, VkShaderModule* frag_shader_module, VkDevice device){
+    auto vertShaderCode = readFile(vertex_shader_path);
+    auto fragShaderCode = readFile(frag_shader_path);
+
+    createShaderModule(vertShaderCode, vert_shader_module, device);
+    createShaderModule(fragShaderCode, frag_shader_module, device);
+
+    VkPipelineShaderStageCreateInfo vertShaderStageCreateInfo{};
+    vertShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    vertShaderStageCreateInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+    vertShaderStageCreateInfo.module = *vert_shader_module;
+    vertShaderStageCreateInfo.pName = "main";
+
+    VkPipelineShaderStageCreateInfo fragShaderStageCreateInfo{};
+    fragShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    fragShaderStageCreateInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    fragShaderStageCreateInfo.module = *vert_shader_module;
+    fragShaderStageCreateInfo.pName = "main";
+
+    VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageCreateInfo, fragShaderStageCreateInfo};
+}
+static std::vector<char> readFile(const std::string& filename){
+    std::ifstream file(filename, std::ios::ate | std::ios::binary);
+
+    if(!file.is_open())
+        err((std::string("Failed to open file: ") + filename).c_str(), 0);
+    
+    size_t fileSize = (size_t)file.tellg();
+    std::vector<char> buffer(fileSize);
+
+    file.seekg(0);
+    file.read(buffer.data(), fileSize);
+    file.close();
+
+    return buffer;
+}

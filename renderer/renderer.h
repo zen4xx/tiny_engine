@@ -25,7 +25,10 @@ class Renderer{
         
         VkQueue m_graphics_queue;
         VkQueue m_present_queue;
-        
+
+        VkShaderModule m_vert_shader_module;
+        VkShaderModule m_frag_shader_module;       
+
         VkDebugUtilsMessengerEXT m_debugMessenger;
         
         VkSwapchainKHR m_swap_chain;
