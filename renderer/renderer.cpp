@@ -31,6 +31,7 @@ Renderer::Renderer(const char* app_name){
 }
 
 Renderer::~Renderer(){
+    vkDestroyPipeline(m_device, m_graphics_pipeline, nullptr);
     vkDestroyPipelineLayout(m_device, m_pipeline_layout, nullptr);
     vkDestroyRenderPass(m_device, m_render_pass, nullptr);
 
@@ -88,5 +89,5 @@ void Renderer::setWindow(GLFWwindow* window){
     createSwapChain(m_device, m_physical_device, m_window, m_surface, &m_swap_chain, &m_swap_chain_images, &m_swap_chain_image_format, &m_swap_chain_extent);
     createImageViews(m_swap_chain_image_views, m_swap_chain_images, m_device);
     createRenderPass(&m_render_pass, &m_pipeline_layout, m_swap_chain_image_format, m_device);
-    createGraphicsPipeline("renderer/shaders/vert.spv", "renderer/shaders/frag.spv", &m_vert_shader_module, &m_frag_shader_module, m_dynamic_states, &m_viewport, &m_scissor, m_swap_chain_extent, &m_pipeline_layout, m_device);
+    createGraphicsPipeline("renderer/shaders/vert.spv", "renderer/shaders/frag.spv", &m_vert_shader_module, &m_frag_shader_module, m_dynamic_states, &m_viewport, &m_scissor, m_swap_chain_extent, &m_render_pass, &m_pipeline_layout, &m_graphics_pipeline, m_device);
 }

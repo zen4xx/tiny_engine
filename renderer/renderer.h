@@ -37,6 +37,8 @@ class Renderer{
         VkViewport m_viewport;
         VkRect2D m_scissor;
 
+        VkPipeline m_graphics_pipeline;
+
         VkSwapchainKHR m_swap_chain;
         std::vector<VkImage> m_swap_chain_images;
         VkFormat m_swap_chain_image_format;

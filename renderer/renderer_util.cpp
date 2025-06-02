@@ -448,7 +448,7 @@ void createShaderModule(const std::vector<char>& code, VkShaderModule* shader_mo
         err("Failed to create shader module", res);
 }
 
-void createGraphicsPipeline(const std::string vertex_shader_path, const std::string frag_shader_path, VkShaderModule* vert_shader_module, VkShaderModule* frag_shader_module, std::vector<VkDynamicState> dynamic_states, VkViewport* viewport, VkRect2D* scissor, VkExtent2D extent, VkPipelineLayout* pipeline_layout, VkDevice device){
+void createGraphicsPipeline(const std::string vertex_shader_path, const std::string frag_shader_path, VkShaderModule* vert_shader_module, VkShaderModule* frag_shader_module, std::vector<VkDynamicState> dynamic_states, VkViewport* viewport, VkRect2D* scissor, VkExtent2D extent, VkRenderPass* render_pass, VkPipelineLayout* pipeline_layout, VkPipeline* pipeline, VkDevice device){
     auto vertShaderCode = readFile(vertex_shader_path);
     auto fragShaderCode = readFile(frag_shader_path);
 
@@ -464,7 +464,7 @@ void createGraphicsPipeline(const std::string vertex_shader_path, const std::str
     VkPipelineShaderStageCreateInfo fragShaderStageCreateInfo{};
     fragShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     fragShaderStageCreateInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    fragShaderStageCreateInfo.module = *vert_shader_module;
+    fragShaderStageCreateInfo.module = *frag_shader_module;
     fragShaderStageCreateInfo.pName = "main";
 
     VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageCreateInfo, fragShaderStageCreateInfo};
@@ -560,6 +560,28 @@ void createGraphicsPipeline(const std::string vertex_shader_path, const std::str
     VkResult res = vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, pipeline_layout);
     if(res != VK_SUCCESS)
         err("Failed to create pipeline layout", res);
+
+    VkGraphicsPipelineCreateInfo pipelineInfo{};
+    pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    pipelineInfo.stageCount = 2;
+    pipelineInfo.pStages = shaderStages;
+    pipelineInfo.pVertexInputState = &vertexInputInfo;
+    pipelineInfo.pInputAssemblyState = &inputAssembly;
+    pipelineInfo.pViewportState = &viewportState;
+    pipelineInfo.pRasterizationState = &rasterizer;
+    pipelineInfo.pMultisampleState = &multisampling;
+    pipelineInfo.pDepthStencilState = nullptr; 
+    pipelineInfo.pColorBlendState = &colorBlending;
+    pipelineInfo.pDynamicState = &dynamicState;
+    pipelineInfo.layout = *pipeline_layout;
+    pipelineInfo.renderPass = *render_pass;
+    pipelineInfo.subpass = 0;
+    pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+    pipelineInfo.basePipelineIndex = -1;
+
+    res = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, pipeline);
+    if(res != VK_SUCCESS)
+        err("Failed to create graphics pipeline", res);
 }
 static std::vector<char> readFile(const std::string& filename){
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
