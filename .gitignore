@@ -4,5 +4,6 @@ Makefile
 /CMakeFiles
 /.vscode
 /build
+/_deps
 log
 Tiny_engine

@@ -14,7 +14,23 @@ option(GLFW_BUILD_DOCS "Build documentation" OFF)
 option(GLFW_BUILD_TESTS "Build tests" OFF)
 option(GLFW_BUILD_EXAMPLES "Build examples" OFF)
 
-find_package(glfw3 REQUIRED)
+include(FetchContent)
+
+#GLFW
+FetchContent_Declare(
+    glfw
+    GIT_REPOSITORY https://github.com/glfw/glfw.git
+    GIT_TAG 3.3.9
+)
+message("fetching glfw")
+FetchContent_MakeAvailable(glfw)
+message("fetching glm")
+FetchContent_Declare(
+    glm
+    GIT_REPOSITORY https://github.com/g-truc/glm.git
+    GIT_TAG 1.0.1
+)
+FetchContent_MakeAvailable(glm)
 
 set(SOURCE_FILES main.cpp)
 
