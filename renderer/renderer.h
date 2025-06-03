@@ -41,7 +41,9 @@ class Renderer{
 
         VkCommandPool m_command_pool;
         
-        
+        VkBuffer m_vertex_buffer;
+        VkDeviceMemory m_vertex_buffer_memory;
+
         VkSwapchainKHR m_swap_chain;
         std::vector<VkImage> m_swap_chain_images;
         VkFormat m_swap_chain_image_format;
@@ -52,6 +54,12 @@ class Renderer{
         int MAX_FRAMES_IN_FLIGHT;
         
         //vectors
+        std::vector<Vertex> m_vertices = {
+            {{0.0f, -0.5f}, {1.0f, 1.0f, 1.0f}},
+            {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+            {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+        };
+
         std::vector<VkCommandBuffer> m_command_buffers;
 
         std::vector<VkSemaphore> m_image_available_semaphores;

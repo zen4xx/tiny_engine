@@ -44,6 +44,7 @@ void createFramebuffers(std::vector<VkFramebuffer>& framebuffers, std::vector<Vk
 void createCommandPool(VkCommandPool* command_pool, VkSurfaceKHR surface, VkPhysicalDevice physical_device, VkDevice device);
 void createCommandBuffers(std::vector<VkCommandBuffer>& command_buffers, VkCommandPool command_pool, int MAX_FRAMES_IN_FLIGHT, VkDevice device);
 void createSyncObjects(std::vector<VkSemaphore>& imageAvailableSemaphores, std::vector<VkSemaphore>& renderFinishedSemaphores, std::vector<VkFence>& inFlightFences, int MAX_FRAMES_IN_FLIGHT, VkDevice device);
-void recordCommandBuffer(VkCommandBuffer command_buffer, uint32_t image_index, VkExtent2D extent, VkRenderPass render_pass, std::vector<VkFramebuffer>& framebuffers, VkPipeline graphics_pipeline);
+void recordCommandBuffer(VkCommandBuffer command_buffer, VkBuffer vertex_buffer, std::vector<Vertex> vertices, uint32_t image_index, VkExtent2D extent, VkRenderPass render_pass, std::vector<VkFramebuffer>& framebuffers, VkPipeline graphics_pipeline);
 void recreateSwapChain(VkSwapchainKHR* swap_chain, VkRenderPass render_pass, std::vector<VkFramebuffer>& framebuffers, GLFWwindow* window, VkSurfaceKHR surface, std::vector<VkImage>& images, std::vector<VkImageView>& image_views, VkFormat* format, VkExtent2D* extent, VkPhysicalDevice physical_device, VkDevice device);
+void createVertexBuffer(VkBuffer* vertex_buffer, std::vector<Vertex> vertices, VkDeviceMemory* vertex_buffer_memory, VkPhysicalDevice physical_device, VkDevice device);
 static std::vector<char> readFile(const std::string& filename);
