@@ -42,7 +42,7 @@ void createGraphicsPipeline(const std::string vertex_shader_path, const std::str
 void createRenderPass(VkRenderPass* render_pass, VkPipelineLayout* pipeline_layout, VkFormat swap_chain_image_format, VkDevice device);
 void createFramebuffers(std::vector<VkFramebuffer>& framebuffers, std::vector<VkImageView>& swap_chain_image_views, VkRenderPass render_pass, VkExtent2D extent, VkDevice device);
 void createCommandPool(VkCommandPool* command_pool, VkSurfaceKHR surface, VkPhysicalDevice physical_device, VkDevice device);
-void createCommandBuffers(std::vector<VkCommandBuffer>& command_buffers, VkCommandPool command_pool, const int MAX_FRAMES_IN_FLIGHT, VkDevice device);
-void createSyncObjects(std::vector<VkSemaphore>& imageAvailableSemaphores, std::vector<VkSemaphore>& renderFinishedSemaphores, std::vector<VkFence>& inFlightFences, const int MAX_FRAMES_IN_FLIGHT, VkDevice device);
+void createCommandBuffers(std::vector<VkCommandBuffer>& command_buffers, VkCommandPool command_pool, int MAX_FRAMES_IN_FLIGHT, VkDevice device);
+void createSyncObjects(std::vector<VkSemaphore>& imageAvailableSemaphores, std::vector<VkSemaphore>& renderFinishedSemaphores, std::vector<VkFence>& inFlightFences, int MAX_FRAMES_IN_FLIGHT, VkDevice device);
 void recordCommandBuffer(VkCommandBuffer command_buffer, uint32_t image_index, VkExtent2D extent, VkRenderPass render_pass, std::vector<VkFramebuffer>& framebuffers, VkPipeline graphics_pipeline);
 static std::vector<char> readFile(const std::string& filename);

@@ -687,7 +687,7 @@ void createCommandPool(VkCommandPool* command_pool, VkSurfaceKHR surface, VkPhys
         err("Failed to create command pool", res);
 }
 
-void createCommandBuffers(std::vector<VkCommandBuffer>& command_buffers, VkCommandPool command_pool, const int MAX_FRAMES_IN_FLIGHT, VkDevice device)
+void createCommandBuffers(std::vector<VkCommandBuffer>& command_buffers, VkCommandPool command_pool, int MAX_FRAMES_IN_FLIGHT, VkDevice device)
 {
     command_buffers.resize(MAX_FRAMES_IN_FLIGHT);
 
@@ -750,7 +750,7 @@ void recordCommandBuffer(VkCommandBuffer command_buffer, uint32_t image_index, V
         err("Failed to record command buffer", res);
 }
 
-void createSyncObjects(std::vector<VkSemaphore>& imageAvailableSemaphores, std::vector<VkSemaphore>& renderFinishedSemaphores, std::vector<VkFence>& inFlightFences, const int MAX_FRAMES_IN_FLIGHT, VkDevice device) {
+void createSyncObjects(std::vector<VkSemaphore>& imageAvailableSemaphores, std::vector<VkSemaphore>& renderFinishedSemaphores, std::vector<VkFence>& inFlightFences, int MAX_FRAMES_IN_FLIGHT, VkDevice device) {
     imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
     renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
     inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);

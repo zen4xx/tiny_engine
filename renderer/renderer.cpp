@@ -106,6 +106,7 @@ void Renderer::setWindow(GLFWwindow* window){
     createGraphicsPipeline("renderer/shaders/vert.spv", "renderer/shaders/frag.spv", &m_vert_shader_module, &m_frag_shader_module, m_dynamic_states, &m_viewport, &m_scissor, m_swap_chain_extent, &m_render_pass, &m_pipeline_layout, &m_graphics_pipeline, m_device);
     createFramebuffers(m_swap_chain_frame_buffers, m_swap_chain_image_views, m_render_pass, m_swap_chain_extent, m_device);
     createCommandPool(&m_command_pool, m_surface, m_physical_device, m_device);
+    MAX_FRAMES_IN_FLIGHT = m_swap_chain_images.size() + 1;
     createCommandBuffers(m_command_buffers, m_command_pool, MAX_FRAMES_IN_FLIGHT, m_device);
     createSyncObjects(m_image_available_semaphores, m_render_finished_semaphores, m_in_flight_fences, MAX_FRAMES_IN_FLIGHT, m_device);
 }
@@ -115,23 +116,12 @@ void Renderer::drawScene() {
     vkResetFences(m_device, 1, &m_in_flight_fences[current_frame]);
 
     uint32_t imageIndex;
-    VkResult res = vkAcquireNextImageKHR(m_device, m_swap_chain, UINT64_MAX,
-                                            m_image_available_semaphores[current_frame],
-                                            VK_NULL_HANDLE, &imageIndex);
-
-    if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR) {
-        // recreateSwapChain(); 
-        return;
-    } else if (res != VK_SUCCESS) {
-        err("Failed to acquire swap chain image!", res);
-    }
+    vkAcquireNextImageKHR(m_device, m_swap_chain, UINT64_MAX, m_image_available_semaphores[current_frame], VK_NULL_HANDLE, &imageIndex);
 
     vkResetCommandBuffer(m_command_buffers[current_frame], 0);
-    recordCommandBuffer(m_command_buffers[current_frame], imageIndex, m_swap_chain_extent,
-                        m_render_pass, m_swap_chain_frame_buffers, m_graphics_pipeline);
+    recordCommandBuffer(m_command_buffers[current_frame], imageIndex, m_swap_chain_extent, m_render_pass, m_swap_chain_frame_buffers, m_graphics_pipeline);
 
-
-    VkSubmitInfo submitInfo{};
+    VkSubmitInfo submitInfo = {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
     VkSemaphore waitSemaphores[] = {m_image_available_semaphores[current_frame]};
@@ -143,19 +133,17 @@ void Renderer::drawScene() {
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &m_command_buffers[current_frame];
 
-    VkSemaphore signalSemaphores[] = {m_render_finished_semaphores[current_frame]};
+    VkSemaphore signalSemaphore[] = {m_render_finished_semaphores[current_frame]};
     submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores = signalSemaphores;
+    submitInfo.pSignalSemaphores = signalSemaphore;
 
-    if (vkQueueSubmit(m_graphics_queue, 1, &submitInfo, m_in_flight_fences[current_frame]) != VK_SUCCESS) {
-        err("Failed to submit draw command buffer", 0);
-    }
+    vkQueueSubmit(m_graphics_queue, 1, &submitInfo, m_in_flight_fences[current_frame]);
 
-    VkPresentInfoKHR presentInfo{};
+    VkPresentInfoKHR presentInfo = {};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
     presentInfo.waitSemaphoreCount = 1;
-    presentInfo.pWaitSemaphores = signalSemaphores;
+    presentInfo.pWaitSemaphores = signalSemaphore;
 
     VkSwapchainKHR swapChains[] = {m_swap_chain};
     presentInfo.swapchainCount = 1;
@@ -163,12 +151,7 @@ void Renderer::drawScene() {
 
     presentInfo.pImageIndices = &imageIndex;
 
-    res = vkQueuePresentKHR(m_present_queue, &presentInfo);
-    if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR) {
-        // recreateSwapChain();
-    } else if (res != VK_SUCCESS) {
-        err("Failed to present swap chain image", res);
-    }
+    vkQueuePresentKHR(m_present_queue, &presentInfo);
 
     current_frame = (current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
 }

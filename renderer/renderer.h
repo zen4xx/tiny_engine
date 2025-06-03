@@ -49,8 +49,7 @@ class Renderer{
         
         uint32_t current_frame = 0;
 
-        //constants
-        const int MAX_FRAMES_IN_FLIGHT = 2;
+        int MAX_FRAMES_IN_FLIGHT;
         
         //vectors
         std::vector<VkCommandBuffer> m_command_buffers;
