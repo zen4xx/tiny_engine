@@ -771,3 +771,24 @@ void createSyncObjects(std::vector<VkSemaphore>& imageAvailableSemaphores, std::
         }
     }
 }
+
+void cleanupSwapChain(std::vector<VkFramebuffer>& framebuffers, VkSwapchainKHR swap_chain, std::vector<VkImageView>& image_views, VkDevice device){
+    for (size_t i = 0; i < framebuffers.size(); i++) {
+        vkDestroyFramebuffer(device, framebuffers[i], nullptr);
+    }
+
+    for (size_t i = 0; i < framebuffers.size(); i++) {
+        vkDestroyImageView(device, image_views[i], nullptr);
+    }
+
+    vkDestroySwapchainKHR(device, swap_chain, nullptr);
+}
+
+void recreateSwapChain(VkSwapchainKHR* swap_chain, VkRenderPass render_pass, std::vector<VkFramebuffer>& framebuffers, GLFWwindow* window, VkSurfaceKHR surface, std::vector<VkImage>& images, std::vector<VkImageView>& image_views, VkFormat* format, VkExtent2D* extent, VkPhysicalDevice physical_device, VkDevice device){
+    vkDeviceWaitIdle(device);
+    cleanupSwapChain(framebuffers, *swap_chain, image_views, device);
+
+    createSwapChain(device, physical_device, window, surface, swap_chain, images, format, extent);
+    createImageViews(image_views, images, *format, device);
+    createFramebuffers(framebuffers, image_views, render_pass, *extent, device);
+}

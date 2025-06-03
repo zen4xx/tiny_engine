@@ -113,11 +113,16 @@ void Renderer::setWindow(GLFWwindow* window){
 
 void Renderer::drawScene() {
     vkWaitForFences(m_device, 1, &m_in_flight_fences[current_frame], VK_TRUE, UINT64_MAX);
-    vkResetFences(m_device, 1, &m_in_flight_fences[current_frame]);
-
+    
     uint32_t imageIndex;
-    vkAcquireNextImageKHR(m_device, m_swap_chain, UINT64_MAX, m_image_available_semaphores[current_frame], VK_NULL_HANDLE, &imageIndex);
-
+    VkResult res = vkAcquireNextImageKHR(m_device, m_swap_chain, UINT64_MAX, m_image_available_semaphores[current_frame], VK_NULL_HANDLE, &imageIndex);
+    
+    if(res == VK_ERROR_OUT_OF_DATE_KHR){
+        recreateSwapChain(&m_swap_chain, m_render_pass, m_swap_chain_frame_buffers, m_window, m_surface, m_swap_chain_images, m_swap_chain_image_views, &m_swap_chain_image_format, &m_swap_chain_extent, m_physical_device, m_device);
+        return;
+    }
+    
+    vkResetFences(m_device, 1, &m_in_flight_fences[current_frame]);
     vkResetCommandBuffer(m_command_buffers[current_frame], 0);
     recordCommandBuffer(m_command_buffers[current_frame], imageIndex, m_swap_chain_extent, m_render_pass, m_swap_chain_frame_buffers, m_graphics_pipeline);
 
@@ -151,7 +156,9 @@ void Renderer::drawScene() {
 
     presentInfo.pImageIndices = &imageIndex;
 
-    vkQueuePresentKHR(m_present_queue, &presentInfo);
+    res = vkQueuePresentKHR(m_present_queue, &presentInfo);
+    if(res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
+        recreateSwapChain(&m_swap_chain, m_render_pass, m_swap_chain_frame_buffers, m_window, m_surface, m_swap_chain_images, m_swap_chain_image_views, &m_swap_chain_image_format, &m_swap_chain_extent, m_physical_device, m_device);
 
     current_frame = (current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
