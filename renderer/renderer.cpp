@@ -53,13 +53,13 @@ Renderer::~Renderer(){
 
     vkDestroySwapchainKHR(m_device, m_swap_chain, nullptr);
 
-    vkDestroyBuffer(m_device, m_vertex_buffer, nullptr);
-    vkFreeMemory(m_device, m_vertex_buffer_memory, nullptr);
+    vmaDestroyBuffer(m_allocator, m_vertex_buffer, m_vertex_buffer_memory);
 
     vkDestroyShaderModule(m_device, m_frag_shader_module, nullptr);
     vkDestroyShaderModule(m_device, m_vert_shader_module, nullptr);
 
     vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
+    vmaDestroyAllocator(m_allocator);
     vkDestroyDevice(m_device, nullptr);
 
     if (m_debugMessenger) {
@@ -103,6 +103,7 @@ void Renderer::setWindow(GLFWwindow* window){
 
     pickPhysicalDevice(&m_instance, &m_physical_device, m_surface, isDebug);
     createLogicalDevice(&m_graphics_queue, &m_present_queue, &m_device, &m_physical_device, validationLayers, m_surface, isDebug);
+    createAllocator(&m_allocator, m_instance, m_physical_device, m_device);
     createSwapChain(m_device, m_physical_device, m_window, m_surface, &m_swap_chain, m_swap_chain_images, &m_swap_chain_image_format, &m_swap_chain_extent);
     createImageViews(m_swap_chain_image_views, m_swap_chain_images, m_swap_chain_image_format, m_device);
     createRenderPass(&m_render_pass, &m_pipeline_layout, m_swap_chain_image_format, m_device);
@@ -110,7 +111,7 @@ void Renderer::setWindow(GLFWwindow* window){
     createFramebuffers(m_swap_chain_frame_buffers, m_swap_chain_image_views, m_render_pass, m_swap_chain_extent, m_device);
     createCommandPool(&m_command_pool, m_surface, m_physical_device, m_device);
     MAX_FRAMES_IN_FLIGHT = m_swap_chain_images.size() + 1;
-    createVertexBuffer(&m_vertex_buffer, m_vertices, &m_vertex_buffer_memory, m_physical_device, m_device);
+    createVertexBuffer(&m_vertex_buffer, m_vertices, &m_vertex_buffer_memory, m_command_pool, m_graphics_queue, m_allocator, m_physical_device, m_device);
     createCommandBuffers(m_command_buffers, m_command_pool, MAX_FRAMES_IN_FLIGHT, m_device);
     createSyncObjects(m_image_available_semaphores, m_render_finished_semaphores, m_in_flight_fences, MAX_FRAMES_IN_FLIGHT, m_device);
 }

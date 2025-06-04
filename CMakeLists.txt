@@ -32,6 +32,15 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glm)
 
+FetchContent_Declare(
+    VulkanMemoryAllocator
+    GIT_REPOSITORY https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git 
+    GIT_TAG        master  
+)
+FetchContent_MakeAvailable(VulkanMemoryAllocator)
+
+include_directories(${VulkanMemoryAllocator_SOURCE_DIR}/include)
+
 set(SOURCE_FILES main.cpp)
 
 file(GLOB CORE "core/*.cpp")
@@ -60,6 +69,8 @@ set(SOURCE_FILES ${SOURCE_FILES} ${CORE} ${WINDOW} ${RENDERER} ${SCENE} ${ERR_HA
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 
 include_directories(${PROJECT_SOURCE_DIR}/external/glm)  # for GLM
+include_directories(${VulkanMemoryAllocator_SOURCE_DIR}/include) # for vma
+
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${PROJECT_SOURCE_DIR}/core
     ${PROJECT_SOURCE_DIR}/window
@@ -72,5 +83,6 @@ target_link_libraries(${PROJECT_NAME}
     Vulkan::Vulkan
     glfw
     glm
+    VulkanMemoryAllocator
 )
 

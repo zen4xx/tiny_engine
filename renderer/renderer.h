@@ -20,6 +20,8 @@ class Renderer{
         VkPhysicalDevice m_physical_device = VK_NULL_HANDLE;
         VkDevice m_device = VK_NULL_HANDLE;
         
+        VmaAllocator m_allocator;
+
         VkSurfaceKHR m_surface;
         GLFWwindow* m_window;
         
@@ -42,7 +44,7 @@ class Renderer{
         VkCommandPool m_command_pool;
         
         VkBuffer m_vertex_buffer;
-        VkDeviceMemory m_vertex_buffer_memory;
+        VmaAllocation m_vertex_buffer_memory;
 
         VkSwapchainKHR m_swap_chain;
         std::vector<VkImage> m_swap_chain_images;
@@ -55,7 +57,7 @@ class Renderer{
         
         //vectors
         std::vector<Vertex> m_vertices = {
-            {{0.0f, -0.5f}, {1.0f, 1.0f, 1.0f}},
+            {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
             {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
             {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
         };
