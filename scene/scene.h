@@ -4,6 +4,8 @@
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <array>
+#include <vector>
+#include "vk_mem_alloc.h"
 
 struct Vertex {
     glm::vec2 pos;
@@ -35,12 +37,13 @@ struct Vertex {
     }
 };
 
-class Scene{
-    public:
-        Scene();
-        ~Scene();
-    public:
-    private:
+struct Object{
+    std::vector<Vertex> vertices;
+    glm::mat4 pos;
+    VkBuffer vertexBuffer;
+    VmaAllocation vertexBufferMemory;
+    uint32_t vertexCount;
 };
+
 
 #endif

@@ -820,7 +820,7 @@ void createCommandBuffers(std::vector<VkCommandBuffer> &command_buffers, VkComma
     }
 }
 
-void recordCommandBuffer(VkCommandBuffer command_buffer, VkBuffer vertex_buffer, std::vector<Vertex> vertices, uint32_t image_index, VkExtent2D extent, VkRenderPass render_pass, std::vector<VkFramebuffer> &framebuffers, VkPipeline graphics_pipeline)
+void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<Object>& objects, uint32_t image_index, VkExtent2D extent, VkRenderPass render_pass, std::vector<VkFramebuffer> &framebuffers, VkPipeline graphics_pipeline)
 {
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -859,11 +859,13 @@ void recordCommandBuffer(VkCommandBuffer command_buffer, VkBuffer vertex_buffer,
     scissor.extent = extent;
     vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 
-    VkBuffer vertexBuffers[] = {vertex_buffer};
-    VkDeviceSize offsets[] = {0};
-    vkCmdBindVertexBuffers(command_buffer, 0, 1, vertexBuffers, offsets);
+    for(auto object : objects){    
+        VkBuffer vertexBuffers[] = {object.vertexBuffer};
 
-    vkCmdDraw(command_buffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+        VkDeviceSize offsets[] = {0};
+        vkCmdBindVertexBuffers(command_buffer, 0, 1, vertexBuffers, offsets);
+        vkCmdDraw(command_buffer, object.vertexCount, 1, 0, 0);
+    }
 
     vkCmdEndRenderPass(command_buffer);
 
