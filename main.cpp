@@ -1,6 +1,4 @@
 #include "core/core.h"
-#include <chrono>
-#include <thread>
 
 int main(){
     auto engine = Tiny_engine("app", 800, 600, "test");
