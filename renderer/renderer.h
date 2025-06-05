@@ -5,16 +5,20 @@
 
 class Renderer{
     public:
-        Renderer(const char* app_name);
+        Renderer(const char* app_name, bool use_default_shaders=true);
         ~Renderer();
     public:
         void setWindow(GLFWwindow* window);
         void drawScene();
         void addObject(std::vector<Vertex> vertices, std::vector<uint16_t> indices, glm::mat4 pos);
+        void setShaders(const char* vs_path, const char* fs_path);
     private:
         bool checkValidationLayerSupport();
     private:
+
+        //booleans
         bool isDebug = false;
+        bool m_use_default_shaders = true;
 
         VkInstance m_instance;
         

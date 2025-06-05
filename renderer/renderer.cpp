@@ -14,12 +14,12 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
     return VK_FALSE;
 }
 
-Renderer::Renderer(const char* app_name){
+Renderer::Renderer(const char* app_name, bool use_default_shaders){
 
 #ifdef ENGINE_DEBUG
     isDebug = true;
 #endif
-
+    m_use_default_shaders = use_default_shaders;
     if(isDebug){
         if(!checkValidationLayerSupport())
             err("Validation layers is requested, but not avaibled", 1);
@@ -110,7 +110,8 @@ void Renderer::setWindow(GLFWwindow* window){
     createSwapChain(m_device, m_physical_device, m_window, m_surface, &m_swap_chain, m_swap_chain_images, &m_swap_chain_image_format, &m_swap_chain_extent);
     createImageViews(m_swap_chain_image_views, m_swap_chain_images, m_swap_chain_image_format, m_device);
     createRenderPass(&m_render_pass, &m_pipeline_layout, m_swap_chain_image_format, m_device);
-    createGraphicsPipeline("renderer/shaders/vert.spv", "renderer/shaders/frag.spv", &m_vert_shader_module, &m_frag_shader_module, m_dynamic_states, &m_viewport, &m_scissor, m_swap_chain_extent, &m_render_pass, &m_pipeline_layout, &m_graphics_pipeline, m_device);
+    if(m_use_default_shaders)
+        createGraphicsPipeline("renderer/shaders/vert.spv", "renderer/shaders/frag.spv", &m_vert_shader_module, &m_frag_shader_module, m_dynamic_states, &m_viewport, &m_scissor, m_swap_chain_extent, &m_render_pass, &m_pipeline_layout, &m_graphics_pipeline, m_device);
     createFramebuffers(m_swap_chain_frame_buffers, m_swap_chain_image_views, m_render_pass, m_swap_chain_extent, m_device);
     createCommandPool(&m_command_pool, m_surface, m_physical_device, m_device);
     MAX_FRAMES_IN_FLIGHT = m_swap_chain_images.size() + 1;
@@ -119,6 +120,9 @@ void Renderer::setWindow(GLFWwindow* window){
 }
 
 void Renderer::drawScene() {
+    if(!m_use_default_shaders && !m_graphics_pipeline)
+        err("If you setting \"use_default_shaders\" to false, you need to call setShaders()", 1);
+
     vkWaitForFences(m_device, 1, &m_in_flight_fences[current_frame], VK_TRUE, UINT64_MAX);
 
     uint32_t imageIndex;
@@ -181,4 +185,10 @@ void Renderer::addObject(std::vector<Vertex> vertices, std::vector<uint16_t> ind
     createIndexBuffer(object.indices, &object.indexBuffer, &object.indexBufferMemory, m_command_pool, m_graphics_queue, m_allocator, m_device);
 
     m_objects.push_back(object);
+}
+
+void Renderer::setShaders(const char* vs_path, const char* fs_path){
+    if(m_use_default_shaders)
+        err("If you call setShaders() you need to set \"use_default_shaders\" to false", 1);
+    createGraphicsPipeline(vs_path, fs_path, &m_vert_shader_module, &m_frag_shader_module, m_dynamic_states, &m_viewport, &m_scissor, m_swap_chain_extent, &m_render_pass, &m_pipeline_layout, &m_graphics_pipeline, m_device);
 }
