@@ -10,7 +10,7 @@ class Renderer{
     public:
         void setWindow(GLFWwindow* window);
         void drawScene();
-        void addObject(std::vector<Vertex> vertices, std::vector<uint16_t> indices, glm::mat4 pos);
+        void addObject(std::string name, std::vector<Vertex> vertices, std::vector<uint16_t> indices, glm::mat4 pos);
         void setShaders(const char* vs_path, const char* fs_path);
     private:
         bool checkValidationLayerSupport();
@@ -56,9 +56,9 @@ class Renderer{
         
         int MAX_FRAMES_IN_FLIGHT;
         
+        std::unordered_map<std::string, std::unique_ptr<Object>> m_objects;
+
         //vectors
-        std::vector<Object> m_objects;
-        
         std::vector<VkImage> m_swap_chain_images;
         std::vector<VkCommandBuffer> m_command_buffers;
 

@@ -53,9 +53,9 @@ Renderer::~Renderer(){
 
     vkDestroySwapchainKHR(m_device, m_swap_chain, nullptr);
 
-    for(auto object : m_objects){
-        vmaDestroyBuffer(m_allocator, object.vertexBuffer, object.vertexBufferMemory);
-        vmaDestroyBuffer(m_allocator, object.indexBuffer, object.indexBufferMemory);
+    for(auto it = m_objects.begin(); it != m_objects.end(); ++it){
+        vmaDestroyBuffer(m_allocator, it->second->vertexBuffer, it->second->vertexBufferMemory);
+        vmaDestroyBuffer(m_allocator, it->second->indexBuffer, it->second->indexBufferMemory);
     }
 
     vkDestroyShaderModule(m_device, m_frag_shader_module, nullptr);
@@ -174,17 +174,18 @@ void Renderer::drawScene() {
     current_frame = (current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-void Renderer::addObject(std::vector<Vertex> vertices, std::vector<uint16_t> indices, glm::mat4 pos){
-    Object object;
-    object.vertices = vertices;
-    object.pos = pos;
-    object.vertexCount = vertices.size();
-    object.indices = indices;
+void Renderer::addObject(std::string name, std::vector<Vertex> vertices, std::vector<uint16_t> indices, glm::mat4 pos){
+    // Object object;
+    auto object = std::make_unique<Object>();
+    
+    object->vertices = vertices;
+    object->pos = pos;
+    object->indices = indices;
 
-    createVertexBuffer(&object.vertexBuffer, object.vertices, &object.vertexBufferMemory, m_command_pool, m_graphics_queue, m_allocator, m_physical_device, m_device);    
-    createIndexBuffer(object.indices, &object.indexBuffer, &object.indexBufferMemory, m_command_pool, m_graphics_queue, m_allocator, m_device);
+    createVertexBuffer(&object->vertexBuffer, object->vertices, &object->vertexBufferMemory, m_command_pool, m_graphics_queue, m_allocator, m_physical_device, m_device);    
+    createIndexBuffer(object->indices, &object->indexBuffer, &object->indexBufferMemory, m_command_pool, m_graphics_queue, m_allocator, m_device);
 
-    m_objects.push_back(object);
+    m_objects[name] = std::move(object);
 }
 
 void Renderer::setShaders(const char* vs_path, const char* fs_path){

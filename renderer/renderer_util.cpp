@@ -820,7 +820,7 @@ void createCommandBuffers(std::vector<VkCommandBuffer> &command_buffers, VkComma
     }
 }
 
-void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<Object>& objects, uint32_t image_index, VkExtent2D extent, VkRenderPass render_pass, std::vector<VkFramebuffer> &framebuffers, VkPipeline graphics_pipeline)
+void recordCommandBuffer(VkCommandBuffer command_buffer, std::unordered_map<std::string, std::unique_ptr<Object>>& objects, uint32_t image_index, VkExtent2D extent, VkRenderPass render_pass, std::vector<VkFramebuffer> &framebuffers, VkPipeline graphics_pipeline)
 {
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -859,14 +859,14 @@ void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<Object>& ob
     scissor.extent = extent;
     vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 
-    for(auto object : objects){    
-        VkBuffer vertexBuffers[] = {object.vertexBuffer};
+    for(auto it = objects.begin(); it != objects.end(); ++it){    
+        VkBuffer vertexBuffers[] = {it->second->vertexBuffer};
 
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(command_buffer, 0, 1, vertexBuffers, offsets);
-        vkCmdBindIndexBuffer(command_buffer, object.indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+        vkCmdBindIndexBuffer(command_buffer, it->second->indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
-        vkCmdDrawIndexed(command_buffer, static_cast<uint32_t>(object.indices.size()), 1, 0, 0, 0);
+        vkCmdDrawIndexed(command_buffer, static_cast<uint32_t>(it->second->indices.size()), 1, 0, 0, 0);
     }
 
     vkCmdEndRenderPass(command_buffer);
