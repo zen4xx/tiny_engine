@@ -10,7 +10,7 @@ class Renderer{
     public:
         void setWindow(GLFWwindow* window);
         void drawScene();
-        void addObject(std::vector<Vertex> vertices, glm::mat4 pos);
+        void addObject(std::vector<Vertex> vertices, std::vector<uint16_t> indices, glm::mat4 pos);
     private:
         bool checkValidationLayerSupport();
     private:

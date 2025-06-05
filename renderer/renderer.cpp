@@ -55,6 +55,7 @@ Renderer::~Renderer(){
 
     for(auto object : m_objects){
         vmaDestroyBuffer(m_allocator, object.vertexBuffer, object.vertexBufferMemory);
+        vmaDestroyBuffer(m_allocator, object.indexBuffer, object.indexBufferMemory);
     }
 
     vkDestroyShaderModule(m_device, m_frag_shader_module, nullptr);
@@ -169,11 +170,15 @@ void Renderer::drawScene() {
     current_frame = (current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-void Renderer::addObject(std::vector<Vertex> vertices, glm::mat4 pos){
+void Renderer::addObject(std::vector<Vertex> vertices, std::vector<uint16_t> indices, glm::mat4 pos){
     Object object;
     object.vertices = vertices;
     object.pos = pos;
     object.vertexCount = vertices.size();
+    object.indices = indices;
+
     createVertexBuffer(&object.vertexBuffer, object.vertices, &object.vertexBufferMemory, m_command_pool, m_graphics_queue, m_allocator, m_physical_device, m_device);    
+    createIndexBuffer(object.indices, &object.indexBuffer, &object.indexBufferMemory, m_command_pool, m_graphics_queue, m_allocator, m_device);
+
     m_objects.push_back(object);
 }

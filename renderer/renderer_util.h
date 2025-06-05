@@ -50,4 +50,5 @@ void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<Object>& ob
 void recreateSwapChain(VkSwapchainKHR* swap_chain, VkRenderPass render_pass, std::vector<VkFramebuffer>& framebuffers, GLFWwindow* window, VkSurfaceKHR surface, std::vector<VkImage>& images, std::vector<VkImageView>& image_views, VkFormat* format, VkExtent2D* extent, VkPhysicalDevice physical_device, VkDevice device);
 void createVertexBuffer(VkBuffer *vertex_buffer, std::vector<Vertex> vertices, VmaAllocation *vertex_buffer_memory, VkCommandPool command_pool, VkQueue graphics_queue, VmaAllocator allocator, VkPhysicalDevice physical_device, VkDevice device);
 void createAllocator(VmaAllocator* allocator, VkInstance instance, VkPhysicalDevice physical_device, VkDevice device);
+void createIndexBuffer(std::vector<uint16_t> indices, VkBuffer* index_buffer, VmaAllocation* index_buffer_memory, VkCommandPool command_pool, VkQueue graphics_queue, VmaAllocator allocator, VkDevice device);
 static std::vector<char> readFile(const std::string& filename);

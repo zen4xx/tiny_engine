@@ -864,7 +864,9 @@ void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<Object>& ob
 
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(command_buffer, 0, 1, vertexBuffers, offsets);
-        vkCmdDraw(command_buffer, object.vertexCount, 1, 0, 0);
+        vkCmdBindIndexBuffer(command_buffer, object.indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+
+        vkCmdDrawIndexed(command_buffer, static_cast<uint32_t>(object.indices.size()), 1, 0, 0, 0);
     }
 
     vkCmdEndRenderPass(command_buffer);
@@ -982,5 +984,24 @@ void createVertexBuffer(VkBuffer *vertex_buffer, std::vector<Vertex> vertices, V
                  allocator);
 
     copyBuffer(stagingBuffer, *vertex_buffer, bufferSize, command_pool, graphics_queue, device);
+    vmaDestroyBuffer(allocator, stagingBuffer, stagingBufferMemory);
+}
+
+void createIndexBuffer(std::vector<uint16_t> indices, VkBuffer* index_buffer, VmaAllocation* index_buffer_memory, VkCommandPool command_pool, VkQueue graphics_queue, VmaAllocator allocator, VkDevice device){
+    VkDeviceSize bufferSize = sizeof(uint16_t) * indices.size();   
+
+    VkBuffer stagingBuffer;
+    VmaAllocation stagingBufferMemory;
+
+    createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_AUTO, nullptr, &stagingBuffer, &stagingBufferMemory, allocator);
+    
+    void* data;
+    vmaMapMemory(allocator, stagingBufferMemory, &data);
+    memcpy(data, indices.data(), (size_t)bufferSize);
+    vmaUnmapMemory(allocator, stagingBufferMemory);
+
+    createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VMA_MEMORY_USAGE_AUTO, nullptr, index_buffer, index_buffer_memory, allocator);
+    copyBuffer(stagingBuffer, *index_buffer, bufferSize, command_pool, graphics_queue, device);
+
     vmaDestroyBuffer(allocator, stagingBuffer, stagingBufferMemory);
 }

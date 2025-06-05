@@ -39,10 +39,13 @@ struct Vertex {
 
 struct Object{
     std::vector<Vertex> vertices;
-    glm::mat4 pos;
+    std::vector<uint16_t> indices;
     VkBuffer vertexBuffer;
     VmaAllocation vertexBufferMemory;
+    VkBuffer indexBuffer;
+    VmaAllocation indexBufferMemory;
     uint32_t vertexCount;
+    glm::mat4 pos;
 };
 
 
