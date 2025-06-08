@@ -153,7 +153,7 @@ void Renderer::drawScene()
 
     vkResetFences(m_device, 1, &m_in_flight_fences[current_frame]);
     vkResetCommandBuffer(m_command_buffers[current_frame], 0);
-    recordCommandBuffer(m_command_buffers[current_frame], m_objects, imageIndex, m_swap_chain_extent, m_render_pass, m_swap_chain_frame_buffers, m_graphics_pipeline, m_pipeline_layout);
+    recordCommandBuffer(m_command_buffers[current_frame], m_objects, imageIndex, m_swap_chain_extent, m_render_pass, m_swap_chain_frame_buffers, m_graphics_pipeline, m_pipeline_layout, m_view, m_proj);
 
     VkSubmitInfo submitInfo = {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -207,11 +207,7 @@ void Renderer::addObject(std::string name, std::vector<Vertex> vertices, std::ve
 
 void Renderer::moveObject(std::string name, glm::mat4 pos)
 {
-    UniformBufferObject ubo;
-    ubo.model = pos;
-    ubo.view = m_view;
-    ubo.proj = m_proj;
-    memcpy(m_objects[name]->uniformBufferMapped, &ubo, sizeof(ubo));
+    m_objects[name]->pos = pos;
 }
 
 void Renderer::createWorld()

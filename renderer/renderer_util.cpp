@@ -820,7 +820,7 @@ void createCommandBuffers(std::vector<VkCommandBuffer> &command_buffers, VkComma
     }
 }
 
-void recordCommandBuffer(VkCommandBuffer command_buffer, std::unordered_map<std::string, std::unique_ptr<Object>> &objects, uint32_t image_index, VkExtent2D extent, VkRenderPass render_pass, std::vector<VkFramebuffer> &framebuffers, VkPipeline graphics_pipeline, VkPipelineLayout pipeline_layout)
+void recordCommandBuffer(VkCommandBuffer command_buffer, std::unordered_map<std::string, std::unique_ptr<Object>> &objects, uint32_t image_index, VkExtent2D extent, VkRenderPass render_pass, std::vector<VkFramebuffer> &framebuffers, VkPipeline graphics_pipeline, VkPipelineLayout pipeline_layout, glm::mat4 view, glm::mat4 proj)
 {
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -859,10 +859,17 @@ void recordCommandBuffer(VkCommandBuffer command_buffer, std::unordered_map<std:
     scissor.extent = extent;
     vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 
+    UniformBufferObject ubo;
+    ubo.view = view;
+    ubo.proj = proj;
+
     for (auto it = objects.begin(); it != objects.end(); ++it)
     {
-        VkBuffer vertexBuffers[] = {it->second->vertexBuffer};
+        ubo.model = it->second->pos;
+        memcpy(it->second->uniformBufferMapped, &ubo, sizeof(ubo));
 
+        VkBuffer vertexBuffers[] = {it->second->vertexBuffer};
+        
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(command_buffer, 0, 1, vertexBuffers, offsets);
         vkCmdBindIndexBuffer(command_buffer, it->second->indexBuffer, 0, VK_INDEX_TYPE_UINT16);

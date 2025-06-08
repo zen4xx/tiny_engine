@@ -50,6 +50,8 @@ struct UniformBufferObject
 
 struct Object
 {
+    glm::mat4 pos;
+
     std::vector<Vertex> vertices;
     std::vector<uint16_t> indices;
 
