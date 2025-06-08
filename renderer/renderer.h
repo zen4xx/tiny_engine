@@ -6,15 +6,15 @@
 class Renderer
 {
 public:
-    Renderer(const char *app_name);
+    Renderer(const char *app_name, bool is_debug=false);
     ~Renderer();
 
 public:
     void setWindow(GLFWwindow *window);
     void drawScene();
     void addObject(std::string name, std::vector<Vertex> vertices, std::vector<uint16_t> indices, glm::mat4 pos);
-    void moveObject(std::string name, glm::mat4 pos);
-    inline void setView(glm::mat4 view){ m_view = view; };
+    inline void moveObject(std::string name, glm::mat4 pos) { m_objects[name]->pos = pos; };
+    inline void setView(glm::mat4 view) { m_view = view; };
     void createWorld();
 
 private:

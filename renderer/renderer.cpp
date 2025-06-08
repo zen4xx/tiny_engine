@@ -15,12 +15,9 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
     return VK_FALSE;
 }
 
-Renderer::Renderer(const char *app_name)
+Renderer::Renderer(const char *app_name, bool is_debug)
 {
-
-#ifdef ENGINE_DEBUG
-    isDebug = true;
-#endif
+    isDebug = is_debug;
     if (isDebug)
     {
         if (!checkValidationLayerSupport())
@@ -204,11 +201,6 @@ void Renderer::addObject(std::string name, std::vector<Vertex> vertices, std::ve
     createUniformBuffer(&object->uniformBuffer, &object->uniformBufferMemory, &object->uniformBufferMapped, m_allocator);
     ++m_object_count;
     m_objects[name] = std::move(object);
-}
-
-void Renderer::moveObject(std::string name, glm::mat4 pos)
-{
-    m_objects[name]->pos = pos;
 }
 
 void Renderer::createWorld()

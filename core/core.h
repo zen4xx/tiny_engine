@@ -5,7 +5,7 @@
 class Tiny_engine
 {
 public:
-    Tiny_engine(const char *application_name, int width, int height, const char *title, GLFWmonitor *monitor = nullptr, GLFWwindow *share = nullptr);
+    Tiny_engine(const char *application_name, int width, int height, const char *title, bool is_debug = false, GLFWmonitor *monitor = nullptr, GLFWwindow *share = nullptr);
     ~Tiny_engine();
 
 public:
