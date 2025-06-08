@@ -3,15 +3,18 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <array>
 #include <vector>
 #include "vk_mem_alloc.h"
 
-struct Vertex {
+struct Vertex
+{
     glm::vec2 pos;
     glm::vec3 color;
 
-    static VkVertexInputBindingDescription getBindingDescription() {
+    static VkVertexInputBindingDescription getBindingDescription()
+    {
         VkVertexInputBindingDescription description{};
         description.binding = 0;
         description.stride = sizeof(Vertex);
@@ -20,7 +23,8 @@ struct Vertex {
         return description;
     }
 
-    static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions() {
+    static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions()
+    {
         std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
 
         attributeDescriptions[0].binding = 0;
@@ -37,7 +41,15 @@ struct Vertex {
     }
 };
 
-struct Object{
+struct UniformBufferObject
+{
+    glm::mat4 model;
+    glm::mat4 view;
+    glm::mat4 proj;
+};
+
+struct Object
+{
     std::vector<Vertex> vertices;
     std::vector<uint16_t> indices;
 
@@ -47,8 +59,11 @@ struct Object{
     VkBuffer indexBuffer;
     VmaAllocation indexBufferMemory;
 
-    glm::mat4 pos;
-};
+    VkBuffer uniformBuffer;
+    VmaAllocation uniformBufferMemory;
+    void *uniformBufferMapped;
 
+    VkDescriptorSet *descriptorSet;
+};
 
 #endif

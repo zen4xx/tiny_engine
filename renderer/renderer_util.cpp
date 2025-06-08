@@ -564,7 +564,7 @@ void createShaderModule(const std::vector<char> &code, VkShaderModule *shader_mo
         err("Failed to create shader module", res);
 }
 
-void createGraphicsPipeline(const std::string vertex_shader_path, const std::string frag_shader_path, VkShaderModule *vert_shader_module, VkShaderModule *frag_shader_module, std::vector<VkDynamicState> dynamic_states, VkViewport *viewport, VkRect2D *scissor, VkExtent2D extent, VkRenderPass *render_pass, VkPipelineLayout *pipeline_layout, VkPipeline *pipeline, VkDevice device)
+void createGraphicsPipeline(const std::string vertex_shader_path, const std::string frag_shader_path, VkShaderModule *vert_shader_module, VkShaderModule *frag_shader_module, VkDescriptorSetLayout *descriptor_set_layout, std::vector<VkDynamicState> dynamic_states, VkViewport *viewport, VkRect2D *scissor, VkExtent2D extent, VkRenderPass *render_pass, VkPipelineLayout *pipeline_layout, VkPipeline *pipeline, VkDevice device)
 {
     auto vertShaderCode = readFile(vertex_shader_path);
     auto fragShaderCode = readFile(frag_shader_path);
@@ -634,7 +634,7 @@ void createGraphicsPipeline(const std::string vertex_shader_path, const std::str
     rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
     rasterizer.lineWidth = 1.0f;
     rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-    rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+    rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rasterizer.depthBiasEnable = VK_FALSE;
     rasterizer.depthBiasConstantFactor = 0.0f;
     rasterizer.depthBiasClamp = 0.0f;
@@ -672,8 +672,8 @@ void createGraphicsPipeline(const std::string vertex_shader_path, const std::str
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount = 0;
-    pipelineLayoutInfo.pSetLayouts = nullptr;
+    pipelineLayoutInfo.setLayoutCount = 1;
+    pipelineLayoutInfo.pSetLayouts = descriptor_set_layout;
     pipelineLayoutInfo.pushConstantRangeCount = 0;
     pipelineLayoutInfo.pPushConstantRanges = nullptr;
 
@@ -820,7 +820,7 @@ void createCommandBuffers(std::vector<VkCommandBuffer> &command_buffers, VkComma
     }
 }
 
-void recordCommandBuffer(VkCommandBuffer command_buffer, std::unordered_map<std::string, std::unique_ptr<Object>>& objects, uint32_t image_index, VkExtent2D extent, VkRenderPass render_pass, std::vector<VkFramebuffer> &framebuffers, VkPipeline graphics_pipeline)
+void recordCommandBuffer(VkCommandBuffer command_buffer, std::unordered_map<std::string, std::unique_ptr<Object>> &objects, uint32_t image_index, VkExtent2D extent, VkRenderPass render_pass, std::vector<VkFramebuffer> &framebuffers, VkPipeline graphics_pipeline, VkPipelineLayout pipeline_layout)
 {
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -859,12 +859,14 @@ void recordCommandBuffer(VkCommandBuffer command_buffer, std::unordered_map<std:
     scissor.extent = extent;
     vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 
-    for(auto it = objects.begin(); it != objects.end(); ++it){    
+    for (auto it = objects.begin(); it != objects.end(); ++it)
+    {
         VkBuffer vertexBuffers[] = {it->second->vertexBuffer};
 
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(command_buffer, 0, 1, vertexBuffers, offsets);
         vkCmdBindIndexBuffer(command_buffer, it->second->indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+        vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, it->second->descriptorSet, 0, nullptr);
 
         vkCmdDrawIndexed(command_buffer, static_cast<uint32_t>(it->second->indices.size()), 1, 0, 0, 0);
     }
@@ -987,15 +989,16 @@ void createVertexBuffer(VkBuffer *vertex_buffer, std::vector<Vertex> vertices, V
     vmaDestroyBuffer(allocator, stagingBuffer, stagingBufferMemory);
 }
 
-void createIndexBuffer(std::vector<uint16_t> indices, VkBuffer* index_buffer, VmaAllocation* index_buffer_memory, VkCommandPool command_pool, VkQueue graphics_queue, VmaAllocator allocator, VkDevice device){
-    VkDeviceSize bufferSize = sizeof(uint16_t) * indices.size();   
+void createIndexBuffer(std::vector<uint16_t> indices, VkBuffer *index_buffer, VmaAllocation *index_buffer_memory, VkCommandPool command_pool, VkQueue graphics_queue, VmaAllocator allocator, VkDevice device)
+{
+    VkDeviceSize bufferSize = sizeof(uint16_t) * indices.size();
 
     VkBuffer stagingBuffer;
     VmaAllocation stagingBufferMemory;
 
     createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_AUTO, nullptr, &stagingBuffer, &stagingBufferMemory, allocator);
-    
-    void* data;
+
+    void *data;
     vmaMapMemory(allocator, stagingBufferMemory, &data);
     memcpy(data, indices.data(), (size_t)bufferSize);
     vmaUnmapMemory(allocator, stagingBufferMemory);
@@ -1004,4 +1007,81 @@ void createIndexBuffer(std::vector<uint16_t> indices, VkBuffer* index_buffer, Vm
     copyBuffer(stagingBuffer, *index_buffer, bufferSize, command_pool, graphics_queue, device);
 
     vmaDestroyBuffer(allocator, stagingBuffer, stagingBufferMemory);
+}
+
+void createDescriptorSetLayout(VkDescriptorSetLayout *descriptor_set_layout, VkDevice device)
+{
+    VkDescriptorSetLayoutBinding uboLayoutBinding{};
+    uboLayoutBinding.binding = 0;
+    uboLayoutBinding.descriptorCount = 1;
+    uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    uboLayoutBinding.pImmutableSamplers = nullptr;
+    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+    VkDescriptorSetLayoutCreateInfo layoutInfo{};
+    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.bindingCount = 1;
+    layoutInfo.pBindings = &uboLayoutBinding;
+
+    VkResult res = vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, descriptor_set_layout);
+    if (res != VK_SUCCESS)
+        err("Failed to create descriptor set layout", res);
+}
+
+void createUniformBuffer(VkBuffer *uniform_buffer, VmaAllocation *uniform_buffer_memory, void **uniform_buffer_mapped, VmaAllocator allocator)
+{
+    VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+    createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_AUTO, nullptr, uniform_buffer, uniform_buffer_memory, allocator);
+    vmaMapMemory(allocator, *uniform_buffer_memory, uniform_buffer_mapped);
+}
+
+void createDescriptorPool(VkDescriptorPool *descriptor_pool, uint32_t descriptor_count, VmaAllocator allocator, VkDevice device)
+{
+    VkDescriptorPoolSize poolSize{};
+    poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    poolSize.descriptorCount = descriptor_count;
+
+    VkDescriptorPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.poolSizeCount = 1;
+    poolInfo.pPoolSizes = &poolSize;
+    poolInfo.maxSets = descriptor_count;
+
+    VkResult res = vkCreateDescriptorPool(device, &poolInfo, allocator->GetAllocationCallbacks(), descriptor_pool);
+    if (res != VK_SUCCESS)
+        err("Failed to create descriptor pool", res);
+}
+
+void createDescriptorSets(std::vector<VkDescriptorSet> &descriptor_sets, VkDescriptorSetLayout descriptor_set_layout, int count, VkDescriptorPool descriptor_pool, VkDevice device)
+{
+    std::vector<VkDescriptorSetLayout> layouts(count, descriptor_set_layout);
+    VkDescriptorSetAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = descriptor_pool;
+    allocInfo.descriptorSetCount = static_cast<uint32_t>(count);
+    allocInfo.pSetLayouts = layouts.data();
+
+    descriptor_sets.resize(count);
+    VkResult res = vkAllocateDescriptorSets(device, &allocInfo, descriptor_sets.data());
+    if (res != VK_SUCCESS)
+        err("Failed to allocate descriptor sets", res);
+}
+
+void addDescriptorSet(VkDescriptorSet descriptor_set, VkBuffer uniform_buffer, VkDevice device)
+{
+    VkDescriptorBufferInfo bufferInfo{};
+    bufferInfo.buffer = uniform_buffer;
+    bufferInfo.offset = 0;
+    bufferInfo.range = sizeof(UniformBufferObject);
+
+    VkWriteDescriptorSet write{};
+    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    write.dstSet = descriptor_set;
+    write.dstBinding = 0;
+    write.dstArrayElement = 0;
+    write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    write.descriptorCount = 1;
+    write.pBufferInfo = &bufferInfo;
+
+    vkUpdateDescriptorSets(device, 1, &write, 0, nullptr);
 }

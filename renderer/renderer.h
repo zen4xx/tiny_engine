@@ -3,78 +3,89 @@
 
 #include "renderer_util.h"
 
-class Renderer{
-    public:
-        Renderer(const char* app_name, bool use_default_shaders=true);
-        ~Renderer();
-    public:
-        void setWindow(GLFWwindow* window);
-        void drawScene();
-        void addObject(std::string name, std::vector<Vertex> vertices, std::vector<uint16_t> indices, glm::mat4 pos);
-        void setShaders(const char* vs_path, const char* fs_path);
-    private:
-        bool checkValidationLayerSupport();
-    private:
+class Renderer
+{
+public:
+    Renderer(const char *app_name);
+    ~Renderer();
 
-        //booleans
-        bool isDebug = false;
-        bool m_use_default_shaders = true;
+public:
+    void setWindow(GLFWwindow *window);
+    void drawScene();
+    void addObject(std::string name, std::vector<Vertex> vertices, std::vector<uint16_t> indices, glm::mat4 pos);
+    void moveObject(std::string name, glm::mat4 pos);
+    inline void setView(glm::mat4 view){ m_view = view; };
+    void createWorld();
 
-        VkInstance m_instance;
-        
-        VkPhysicalDevice m_physical_device = VK_NULL_HANDLE;
-        VkDevice m_device = VK_NULL_HANDLE;
-        
-        VmaAllocator m_allocator;
+private:
+    bool checkValidationLayerSupport();
 
-        VkSurfaceKHR m_surface;
-        GLFWwindow* m_window;
-        
-        VkQueue m_graphics_queue;
-        VkQueue m_present_queue;
+private:
+    // booleans
+    bool isDebug = false;
+    bool isWorldCreated = false;
 
-        VkShaderModule m_vert_shader_module;
-        VkShaderModule m_frag_shader_module;       
+    VkInstance m_instance;
 
-        VkDebugUtilsMessengerEXT m_debugMessenger;
-        
-        VkRenderPass m_render_pass;
-        VkPipelineLayout m_pipeline_layout;
+    VkPhysicalDevice m_physical_device = VK_NULL_HANDLE;
+    VkDevice m_device = VK_NULL_HANDLE;
 
-        VkViewport m_viewport;
-        VkRect2D m_scissor;
+    VmaAllocator m_allocator;
 
-        VkPipeline m_graphics_pipeline;
+    VkSurfaceKHR m_surface;
+    GLFWwindow *m_window;
 
-        VkCommandPool m_command_pool;
-        
-        VkSwapchainKHR m_swap_chain;
-        VkFormat m_swap_chain_image_format;
-        VkExtent2D m_swap_chain_extent;
-        
-        uint32_t current_frame = 0;
-        
-        int MAX_FRAMES_IN_FLIGHT;
-        
-        std::unordered_map<std::string, std::unique_ptr<Object>> m_objects;
+    VkQueue m_graphics_queue;
+    VkQueue m_present_queue;
 
-        //vectors
-        std::vector<VkImage> m_swap_chain_images;
-        std::vector<VkCommandBuffer> m_command_buffers;
+    VkShaderModule m_vert_shader_module;
+    VkShaderModule m_frag_shader_module;
 
-        std::vector<VkSemaphore> m_image_available_semaphores;
-        std::vector<VkSemaphore> m_render_finished_semaphores;
-        std::vector<VkFence> m_in_flight_fences;
+    VkDebugUtilsMessengerEXT m_debugMessenger;
 
-        std::vector<VkImageView> m_swap_chain_image_views;
-        std::vector<VkFramebuffer> m_swap_chain_frame_buffers;
-        const std::vector<const char*> validationLayers = {
-            "VK_LAYER_KHRONOS_validation"
-        };
-        std::vector<VkDynamicState> m_dynamic_states = {
-            VK_DYNAMIC_STATE_VIEWPORT,
-            VK_DYNAMIC_STATE_SCISSOR
-        };
+    VkRenderPass m_render_pass;
+
+    std::vector<VkDescriptorSet> m_descriptor_sets;
+    VkDescriptorPool m_descriptor_pool;
+
+    VkDescriptorSetLayout m_descriptor_set_layout;
+    VkPipelineLayout m_pipeline_layout;
+
+    VkViewport m_viewport;
+    VkRect2D m_scissor;
+
+    VkPipeline m_graphics_pipeline;
+
+    VkCommandPool m_command_pool;
+
+    VkSwapchainKHR m_swap_chain;
+    VkFormat m_swap_chain_image_format;
+    VkExtent2D m_swap_chain_extent;
+
+    uint32_t current_frame = 0;
+
+    int MAX_FRAMES_IN_FLIGHT;
+
+    std::unordered_map<std::string, std::unique_ptr<Object>> m_objects;
+    uint32_t m_object_count = 0;
+    glm::mat4 m_view = {0};
+    glm::mat4 m_proj = {0};
+
+    // vectors
+    std::vector<VkImage> m_swap_chain_images;
+    std::vector<VkCommandBuffer> m_command_buffers;
+
+    std::vector<VkSemaphore> m_image_available_semaphores;
+    std::vector<VkSemaphore> m_render_finished_semaphores;
+    std::vector<VkFence> m_in_flight_fences;
+
+    std::vector<VkImageView> m_swap_chain_image_views;
+    std::vector<VkFramebuffer> m_swap_chain_frame_buffers;
+    const std::vector<const char *> validationLayers = {
+        "VK_LAYER_KHRONOS_validation"};
+    std::vector<VkDynamicState> m_dynamic_states = {
+        VK_DYNAMIC_STATE_VIEWPORT,
+        VK_DYNAMIC_STATE_SCISSOR};
 };
 
 #endif
