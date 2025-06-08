@@ -197,6 +197,7 @@ void Renderer::addObject(std::string name, std::vector<Vertex> vertices, std::ve
     auto object = std::make_unique<Object>();
     object->vertices = vertices;
     object->indices = indices;
+    object->pos = pos;
 
     createVertexBuffer(&object->vertexBuffer, object->vertices, &object->vertexBufferMemory, m_command_pool, m_graphics_queue, m_allocator, m_physical_device, m_device);
     createIndexBuffer(object->indices, &object->indexBuffer, &object->indexBufferMemory, m_command_pool, m_graphics_queue, m_allocator, m_device);
