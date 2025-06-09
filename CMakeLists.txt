@@ -39,7 +39,24 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(VulkanMemoryAllocator)
 
-include_directories(${VulkanMemoryAllocator_SOURCE_DIR}/include)
+set(STB_IMAGE_PATH "${PROJECT_SOURCE_DIR}/include/stb_image.h")
+if(NOT EXISTS "${STB_IMAGE_PATH}")
+message(STATUS "Downloading stb_image.h...")
+file(DOWNLOAD
+"https://raw.githubusercontent.com/nothings/stb/master/stb_image.h" 
+"${STB_IMAGE_PATH}"
+SHOW_PROGRESS
+TIMEOUT 10
+STATUS download_status
+)
+
+list(GET download_status 0 status_code)
+list(GET download_status 1 status_string)
+if(NOT status_code EQUAL 0)
+message(FATAL_ERROR "Failed to download stb_image.h: ${status_string}")
+endif()
+endif()
+
 
 set(SOURCE_FILES main.cpp)
 
@@ -70,10 +87,11 @@ add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 
 include_directories(${PROJECT_SOURCE_DIR}/external/glm)  # for GLM
 include_directories(${VulkanMemoryAllocator_SOURCE_DIR}/include) # for vma
+include_directories("${PROJECT_SOURCE_DIR}/include") 
 
 target_include_directories(${PROJECT_NAME} PRIVATE
-    ${PROJECT_SOURCE_DIR}/core
-    ${PROJECT_SOURCE_DIR}/window
+${PROJECT_SOURCE_DIR}/core
+${PROJECT_SOURCE_DIR}/window
     ${PROJECT_SOURCE_DIR}/renderer
     ${PROJECT_SOURCE_DIR}/scene
 )

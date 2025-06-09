@@ -14,6 +14,7 @@
 #include <set>
 #include <map>
 #include <unordered_map>
+#include <stb_image.h>
 
 #include "../scene/scene.h"
 #include "../error_handler/error_handler.h"
