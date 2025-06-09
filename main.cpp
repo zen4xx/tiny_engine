@@ -1,36 +1,51 @@
 #include "core/core.h"
-#include <chrono>
 
 int main()
 {
     auto engine = Tiny_engine("app", 800, 600, "test", true);
 
     std::vector<Vertex> vertices = {
-        {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-        {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-        {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-        {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
-    };
-    
-    std::vector<uint16_t> indices = {
-        0, 1, 2, 2, 3, 0
-    };
+        {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+        {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+        {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
 
-    glm::mat4 view = glm::lookAt(glm::vec3(-2.0f, -2.0f, -2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    std::vector<uint16_t> indices = {
+        0, 1, 2};
+
+    glm::mat4 view = glm::lookAt(glm::vec3(0.0f, -2.0f, -2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     engine.setView(view);
 
-    glm::mat4 matrix(0.f);
-    engine.addObject("test", vertices, indices, matrix);
+    engine.addObject("triangle", vertices, indices, glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)));
+
+    glm::vec3 pos(0.0f);
+    float angle = 0.0f;
 
     while (engine.isWindowOpen())
     {
-        static auto startTime = std::chrono::high_resolution_clock::now();
-        auto currentTime = std::chrono::high_resolution_clock::now();
-        float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-        glm::mat4 pos = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        engine.moveObject("test", pos);
+        if (engine.isKeyPressed(GLFW_KEY_W))
+            pos.y += 0.01f;
+        if (engine.isKeyPressed(GLFW_KEY_S))
+            pos.y -= 0.01f;
+        if (engine.isKeyPressed(GLFW_KEY_D))
+            pos.x += 0.01f;
+        if (engine.isKeyPressed(GLFW_KEY_A)) 
+            pos.x -= 0.01f;
+        if (engine.isKeyPressed(GLFW_KEY_SPACE))
+            pos.z += 0.01f;
+        if (engine.isKeyPressed(GLFW_KEY_LEFT_CONTROL))
+            pos.z -= 0.01f;
+        if (engine.isKeyPressed(GLFW_KEY_Q))
+            angle += 0.01f;
+        if (engine.isKeyPressed(GLFW_KEY_E))
+            angle -= 0.01f;
+    
+        glm::mat4 model = glm::mat4(1.0f);
+
+        model = glm::translate(model, pos);
+        model = glm::rotate(model, angle, glm::vec3(0.0f, 0.0f, 1.0f));
+
+        engine.moveObject("triangle", model);
         engine.update();
     }
-
     return 0;
 }
