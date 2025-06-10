@@ -137,6 +137,15 @@ void Renderer::drawScene()
 {
     if (!isWorldCreated)
         createWorld();
+    
+    static double lastTime = glfwGetTime();
+
+    double currentTime = glfwGetTime();
+    m_delta_time = static_cast<float>(currentTime - lastTime);
+    lastTime = currentTime;
+
+    fps = m_delta_time > 0.0f ? 1.0f / m_delta_time : 0.0f;
+
     vkWaitForFences(m_device, 1, &m_in_flight_fences[current_frame], VK_TRUE, UINT64_MAX);
 
     uint32_t imageIndex;
@@ -199,15 +208,15 @@ void Renderer::addObject(std::string name, std::vector<Vertex> vertices, std::ve
     createVertexBuffer(&object->vertexBuffer, object->vertices, &object->vertexBufferMemory, m_command_pool, m_graphics_queue, m_allocator, m_physical_device, m_device);
     createIndexBuffer(object->indices, &object->indexBuffer, &object->indexBufferMemory, m_command_pool, m_graphics_queue, m_allocator, m_device);
     createUniformBuffer(&object->uniformBuffer, &object->uniformBufferMemory, &object->uniformBufferMapped, m_allocator);
-    ++m_object_count;
+   
     m_objects[name] = std::move(object);
 }
 
 void Renderer::createWorld()
 {
     m_proj = glm::perspective(glm::radians(45.0f), m_swap_chain_extent.width / (float)m_swap_chain_extent.height, 0.1f, 10.0f);
-    createDescriptorPool(&m_descriptor_pool, m_object_count, m_allocator, m_device);
-    createDescriptorSets(m_descriptor_sets, m_descriptor_set_layout, m_object_count, m_descriptor_pool, m_device);
+    createDescriptorPool(&m_descriptor_pool, m_objects.size(), m_allocator, m_device);
+    createDescriptorSets(m_descriptor_sets, m_descriptor_set_layout, m_objects.size(), m_descriptor_pool, m_device);
     int i = 0;
     for (auto it = m_objects.begin(); it != m_objects.end(); ++it)
     {

@@ -15,6 +15,8 @@ public:
     void addObject(std::string name, std::vector<Vertex> vertices, std::vector<uint16_t> indices, glm::mat4 pos);
     inline void moveObject(std::string name, glm::mat4 pos) { m_objects[name]->pos = pos; };
     inline void setView(glm::mat4 view) { m_view = view; };
+    inline float getFPSCount() { return fps; };
+    inline float getDeltaTime() { return m_delta_time; };
     void createWorld();
 
 private:
@@ -66,8 +68,10 @@ private:
 
     int MAX_FRAMES_IN_FLIGHT;
 
+    float fps = 0;
+    float m_delta_time = 0;
+
     std::unordered_map<std::string, std::unique_ptr<Object>> m_objects;
-    uint32_t m_object_count = 0;
     glm::mat4 m_view = {0};
     glm::mat4 m_proj = {0};
 
