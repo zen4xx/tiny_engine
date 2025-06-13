@@ -16,9 +16,6 @@ int main()
     engine.setView(view);
 
     engine.addObject("triangle", vertices, indices, glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)));
-    engine.addObject("triangle1", vertices, indices, glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)));
-    engine.addObject("triangle2", vertices, indices, glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)));
-    engine.addObject("triangle3", vertices, indices, glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)));
 
     glm::vec3 pos(0.0f);
     float angle = 0.0f;
@@ -50,10 +47,6 @@ int main()
         model = glm::rotate(model, angle, glm::vec3(0.0f, 0.0f, 1.0f));
         
         engine.moveObject("triangle", model);
-        engine.moveObject("triangle1", glm::translate(glm::rotate(glm::mat4(1), (float)sin(glfwGetTime()), glm::vec3(0, 0, 1)), glm::vec3(0, 0, sin(glfwGetTime()))));
-        engine.moveObject("triangle2", glm::translate(glm::rotate(glm::mat4(1), (float)cos(glfwGetTime()), glm::vec3(0, 0, 1)), glm::vec3(0, sin(glfwGetTime()), 0)));
-        engine.moveObject("triangle3", glm::translate(glm::rotate(glm::mat4(1), (float)tan(glfwGetTime()), glm::vec3(0, 0 ,1)), glm::vec3(sin(glfwGetTime()), 0, 0)));
-        std::cout << engine.getFPSCount() << std::endl;
         engine.update();   
     }
     return 0;

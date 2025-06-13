@@ -41,7 +41,7 @@ struct Vertex
     }
 };
 
-struct UniformBufferObject
+struct alignas(16) UniformBufferObject
 {
     glm::mat4 model;
     glm::mat4 view;
