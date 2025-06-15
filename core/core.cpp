@@ -5,7 +5,7 @@ Tiny_engine::Tiny_engine(const char *applictaion_name, int width, int height, co
     glfwInit();
     m_window = std::make_unique<Window>(width, height, title, monitor, window);
     m_renderer = std::make_unique<Renderer>(applictaion_name, is_debug);
-    m_renderer.get()->setWindow(m_window.get()->GetWindow());
+    m_renderer->setWindow(m_window->GetWindow());
 }
 
 Tiny_engine::~Tiny_engine()

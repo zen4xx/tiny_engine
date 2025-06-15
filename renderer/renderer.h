@@ -6,15 +6,18 @@
 class Renderer
 {
 public:
-    Renderer(const char *app_name, bool is_debug=false);
+    Renderer(const char *app_name, bool is_debug = false);
     ~Renderer();
 
 public:
     void setWindow(GLFWwindow *window);
     void drawScene();
+    // Must be called before drawScene
     void addObject(std::string name, std::vector<Vertex> vertices, std::vector<uint16_t> indices, glm::mat4 pos);
     inline void moveObject(std::string name, glm::mat4 pos) { m_objects[name]->pos = pos; };
     inline void setView(glm::mat4 view) { m_view = view; };
+    // Must be called before setWindow
+    inline void setThreadCount(uint8_t count) { thread_count = count; };
     inline float getFPSCount() { return fps; };
     inline float getDeltaTime() { return m_delta_time; };
     void createWorld();
@@ -65,6 +68,7 @@ private:
     VkExtent2D m_swap_chain_extent;
 
     uint32_t current_frame = 0;
+    uint8_t thread_count = 6;
 
     int MAX_FRAMES_IN_FLIGHT;
 

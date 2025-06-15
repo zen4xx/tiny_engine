@@ -5,9 +5,9 @@ int main()
     auto engine = Tiny_engine("app", 800, 600, "test", true);
 
     std::vector<Vertex> vertices = {
-        {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-        {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-        {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
+        {{0.0f, -0.5f, 0}, {1.0f, 0.0f, 0.0f}},
+        {{0.5f, 0.5f, 0}, {0.0f, 1.0f, 0.0f}},
+        {{-0.5f, 0.5f, 0}, {0.0f, 0.0f, 1.0f}}};
 
     std::vector<uint16_t> indices = {
         0, 1, 2};
@@ -45,7 +45,7 @@ int main()
 
         model = glm::translate(model, pos);
         model = glm::rotate(model, angle, glm::vec3(0.0f, 0.0f, 1.0f));
-        
+
         engine.moveObject("triangle", model);
         engine.update();   
     }

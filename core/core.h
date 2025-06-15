@@ -15,6 +15,7 @@ public:
         glfwPollEvents();
         m_renderer->drawScene();
     };
+    // Must be called before drawScene
     inline void addObject(std::string name, std::vector<Vertex> vertices, std::vector<uint16_t> indices, glm::mat4 pos) { m_renderer->addObject(name, vertices, indices, pos); };
     inline void moveObject(std::string name, glm::mat4 pos) { m_renderer->moveObject(name, pos); };
     inline void setView(glm::mat4 view) { m_renderer->setView(view); };
