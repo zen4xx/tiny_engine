@@ -8,14 +8,14 @@ int main()
         {{0.0f, -0.5f, 0}, {1.0f, 0.0f, 0.0f}},
         {{0.5f, 0.5f, 0}, {0.0f, 1.0f, 0.0f}},
         {{-0.5f, 0.5f, 0}, {0.0f, 0.0f, 1.0f}}};
-
+        
     std::vector<uint16_t> indices = {
         0, 1, 2};
 
     glm::mat4 view = glm::lookAt(glm::vec3(0.0f, -2.0f, -2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     engine.setView(view);
 
-    engine.addObject("triangle", vertices, indices, glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)));
+    engine.addObject("triangle", vertices, indices, glm::translate(glm::mat4(1), glm::vec3(0, 0, 0)));
 
     glm::vec3 pos(0.0f);
     float angle = 0.0f;
@@ -23,7 +23,6 @@ int main()
 
     while (engine.isWindowOpen())
     {   
-
         if (engine.isKeyPressed(GLFW_KEY_W))
             pos.y += speed * engine.getDeltaTime();
         if (engine.isKeyPressed(GLFW_KEY_S))

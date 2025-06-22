@@ -869,7 +869,7 @@ void createSecondaryCommandBuffers(std::vector<VkCommandBuffer> &command_buffers
         err("Failed to allocate command buffers", res);
     }
 }
-void recordSecondary(ThreadData *thread, std::unordered_map<std::string, std::unique_ptr<Object>> &objects, VkExtent2D extent, VkRenderPass render_pass, VkFramebuffer framebuffer, VkPipeline graphics_pipeline, VkPipelineLayout pipeline_layout, uint32_t current_frame, glm::mat4 view, glm::mat4 proj, VkDevice device)
+void recordSecondary(ThreadData *thread, std::unordered_map<std::string, std::unique_ptr<Object>> &objects, VkExtent2D extent, VkRenderPass render_pass, VkFramebuffer framebuffer, VkPipeline graphics_pipeline, VkPipelineLayout pipeline_layout, uint32_t current_frame, glm::mat4 view, glm::mat4 proj, VkDevice device, typename std::unordered_map<std::string, std::unique_ptr<Object>>::const_iterator start, typename std::unordered_map<std::string, std::unique_ptr<Object>>::const_iterator end)
 {
     VkCommandBuffer cmd = thread->command_buffers[current_frame];
 
@@ -907,7 +907,7 @@ void recordSecondary(ThreadData *thread, std::unordered_map<std::string, std::un
     ubo.view = view;
     ubo.proj = proj;
 
-    for (auto it = objects.begin(); it != objects.end(); ++it)
+    for (auto it = start; it != end; ++it)
     {
         ubo.model = it->second->pos;
         memcpy(it->second->uniformBufferMapped, &ubo, sizeof(ubo));
@@ -923,6 +923,8 @@ void recordSecondary(ThreadData *thread, std::unordered_map<std::string, std::un
     }
 
     vkEndCommandBuffer(cmd);
+
+    thread->is_cmd_buffer_recorded = 1;
 }
 
 void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData> &threads, std::unordered_map<std::string, std::unique_ptr<Object>> &objects, uint32_t image_index, VkExtent2D extent, VkRenderPass render_pass, std::vector<VkFramebuffer> &framebuffers, VkPipeline graphics_pipeline, VkPipelineLayout pipeline_layout, uint32_t current_frame, glm::mat4 view, glm::mat4 proj, VkDevice device)
@@ -950,11 +952,35 @@ void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData>
     vkCmdBeginRenderPass(command_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_KHR);
     vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline);
 
-    std::thread test(recordSecondary, &threads[0], std::ref(objects), extent, render_pass, framebuffers[image_index], graphics_pipeline, pipeline_layout, current_frame, view, proj, device);
+    //std::thread test(recordSecondary, &threads[0], std::ref(objects), extent, render_pass, framebuffers[image_index], graphics_pipeline, pipeline_layout, current_frame, view, proj, device);
 
-    test.join();
+    //    test.join();
 
-    vkCmdExecuteCommands(command_buffer, 1, &threads[0].command_buffers[current_frame]);
+    size_t numThreads = threads.size();
+
+    size_t size = objects.size();
+    size_t chunkSize = size / numThreads + 1;
+
+    std::vector<std::thread> local_threads;
+
+    auto it = objects.begin();
+    for (int i = 0; i < numThreads && it != objects.end(); ++i) {
+        auto start = it;
+        for (size_t j = 0; j < chunkSize && it != objects.end(); ++j) {
+            ++it;
+        }
+        local_threads.emplace_back(recordSecondary, &threads[i], std::ref(objects), extent, render_pass, framebuffers[image_index], graphics_pipeline, pipeline_layout, current_frame, view, proj, device, start, it);
+    }
+
+    int i = 0;
+    for (auto& t : local_threads) {
+        t.join();
+        if(threads[i].is_cmd_buffer_recorded){
+            vkCmdExecuteCommands(command_buffer, 1, &threads[i].command_buffers[current_frame]);
+            threads[i].is_cmd_buffer_recorded = 0;
+        }
+        ++i;
+    }
 
     vkCmdEndRenderPass(command_buffer);
 

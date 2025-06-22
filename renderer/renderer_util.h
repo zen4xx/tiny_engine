@@ -44,6 +44,8 @@ struct SwapChainSupportDetails
 struct ThreadData{
     std::vector<VkCommandBuffer> command_buffers;
     VkCommandPool command_pool;
+
+    bool is_cmd_buffer_recorded;
 };
 
 void createInstance(const char *appName, VkInstance *instance, PFN_vkDebugUtilsMessengerCallbackEXT debugCallback, const std::vector<const char *> &validationLayers, bool isDebug);
