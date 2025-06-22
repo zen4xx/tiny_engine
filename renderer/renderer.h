@@ -17,7 +17,7 @@ public:
     inline void moveObject(std::string name, glm::mat4 pos) { m_objects[name]->pos = pos; };
     inline void setView(glm::mat4 view) { m_view = view; };
     // Must be called before setWindow
-    inline void setThreadCount(uint8_t count) { thread_count = count; };
+    inline void setThreadCount(uint8_t count) { m_thread_count = count; };
     inline float getFPSCount() { return fps; };
     inline float getDeltaTime() { return m_delta_time; };
     void createWorld();
@@ -68,9 +68,9 @@ private:
     VkExtent2D m_swap_chain_extent;
 
     uint32_t current_frame = 0;
-    uint8_t thread_count = 6;
 
     int MAX_FRAMES_IN_FLIGHT;
+    unsigned int m_thread_count = 6;
 
     float fps = 0;
     float m_delta_time = 0;
@@ -82,6 +82,8 @@ private:
     // vectors
     std::vector<VkImage> m_swap_chain_images;
     std::vector<VkCommandBuffer> m_command_buffers;
+
+    std::vector<ThreadData> m_threads;
 
     std::vector<VkSemaphore> m_image_available_semaphores;
     std::vector<VkSemaphore> m_render_finished_semaphores;

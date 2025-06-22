@@ -42,6 +42,11 @@ Renderer::~Renderer()
     }
 
     vkDestroyCommandPool(m_device, m_command_pool, nullptr);
+
+    for(auto thread : m_threads){
+        vkDestroyCommandPool(m_device, thread.command_pool, nullptr);
+    }
+
     for (auto framebuffer : m_swap_chain_frame_buffers)
         vkDestroyFramebuffer(m_device, framebuffer, nullptr);
 
@@ -130,6 +135,13 @@ void Renderer::setWindow(GLFWwindow *window)
     createCommandPool(&m_command_pool, m_surface, m_physical_device, m_device);
     MAX_FRAMES_IN_FLIGHT = m_swap_chain_images.size();
     createCommandBuffers(m_command_buffers, m_command_pool, MAX_FRAMES_IN_FLIGHT, m_device);
+
+    m_threads.resize(m_thread_count);
+    for(int i = 0; i < m_thread_count; ++i){
+        createCommandPool(&m_threads[i].command_pool, m_surface, m_physical_device, m_device);
+        createSecondaryCommandBuffers(m_threads[i].command_buffers, m_threads[i].command_pool, MAX_FRAMES_IN_FLIGHT, m_device);
+    }
+
     createSyncObjects(m_image_available_semaphores, m_render_finished_semaphores, m_in_flight_fences, MAX_FRAMES_IN_FLIGHT, m_device);
 }
 
@@ -146,21 +158,22 @@ void Renderer::drawScene()
 
     fps = m_delta_time > 0.0f ? 1.0f / m_delta_time : 0.0f;
 
+    
     vkWaitForFences(m_device, 1, &m_in_flight_fences[current_frame], VK_TRUE, UINT64_MAX);
 
     uint32_t imageIndex;
     VkResult res = vkAcquireNextImageKHR(m_device, m_swap_chain, UINT64_MAX, m_image_available_semaphores[current_frame], VK_NULL_HANDLE, &imageIndex);
-
+    
     if (res == VK_ERROR_OUT_OF_DATE_KHR)
     {
         recreateSwapChain(&m_swap_chain, m_render_pass, m_swap_chain_frame_buffers, m_window, m_surface, m_swap_chain_images, m_swap_chain_image_views, &m_swap_chain_image_format, &m_swap_chain_extent, m_physical_device, m_device);
         return;
     }
-
+    
     vkResetFences(m_device, 1, &m_in_flight_fences[current_frame]);
     vkResetCommandBuffer(m_command_buffers[current_frame], 0);
-    recordCommandBuffer(m_command_buffers[current_frame], m_objects, imageIndex, m_swap_chain_extent, m_render_pass, m_swap_chain_frame_buffers, m_graphics_pipeline, m_pipeline_layout, m_view, m_proj);
-
+    recordCommandBuffer(m_command_buffers[current_frame], m_threads, m_objects, imageIndex, m_swap_chain_extent, m_render_pass, m_swap_chain_frame_buffers, m_graphics_pipeline, m_pipeline_layout, current_frame, m_view, m_proj, m_device);
+    
     VkSubmitInfo submitInfo = {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 

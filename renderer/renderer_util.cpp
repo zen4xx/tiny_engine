@@ -5,7 +5,9 @@ std::vector<const char *> getRequiredExtensions(bool isDebug);
 
 std::vector<const char *> required_extensions;
 const std::vector<const char *> deviceExtensions = {
-    VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+    VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+    VK_EXT_NESTED_COMMAND_BUFFER_EXTENSION_NAME
+};
 
 void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo, PFN_vkDebugUtilsMessengerCallbackEXT debugCallback)
 {
@@ -134,6 +136,7 @@ std::vector<const char *> getRequiredExtensions(bool isDebug)
 
     extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
     extensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
+    extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 
     return extensions;
 }
@@ -456,15 +459,19 @@ void createLogicalDevice(VkQueue *graphicsQueue, VkQueue *presentQueue, VkDevice
 
     VkPhysicalDeviceFeatures deviceFeatures{};
 
+    VkPhysicalDeviceNestedCommandBufferFeaturesEXT nestedCmdBufFeatures = {};
+    nestedCmdBufFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_NESTED_COMMAND_BUFFER_FEATURES_EXT;
+    nestedCmdBufFeatures.nestedCommandBuffer = VK_TRUE;
+
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+
+    createInfo.pNext = &nestedCmdBufFeatures;
 
     createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
     createInfo.pQueueCreateInfos = queueCreateInfos.data();
 
     createInfo.pEnabledFeatures = &deviceFeatures;
-
-    createInfo.enabledExtensionCount = 0;
 
     createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
     createInfo.ppEnabledExtensionNames = deviceExtensions.data();
@@ -846,7 +853,79 @@ void createCommandBuffers(std::vector<VkCommandBuffer> &command_buffers, VkComma
     }
 }
 
-void recordCommandBuffer(VkCommandBuffer command_buffer, std::unordered_map<std::string, std::unique_ptr<Object>> &objects, uint32_t image_index, VkExtent2D extent, VkRenderPass render_pass, std::vector<VkFramebuffer> &framebuffers, VkPipeline graphics_pipeline, VkPipelineLayout pipeline_layout, glm::mat4 view, glm::mat4 proj)
+void createSecondaryCommandBuffers(std::vector<VkCommandBuffer> &command_buffers, VkCommandPool command_pool, int count, VkDevice device)
+{
+    command_buffers.resize(count);
+
+    VkCommandBufferAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.commandPool = command_pool;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
+    allocInfo.commandBufferCount = count;
+
+    VkResult res = vkAllocateCommandBuffers(device, &allocInfo, command_buffers.data());
+    if (res != VK_SUCCESS)
+    {
+        err("Failed to allocate command buffers", res);
+    }
+}
+void recordSecondary(ThreadData *thread, std::unordered_map<std::string, std::unique_ptr<Object>> &objects, VkExtent2D extent, VkRenderPass render_pass, VkFramebuffer framebuffer, VkPipeline graphics_pipeline, VkPipelineLayout pipeline_layout, uint32_t current_frame, glm::mat4 view, glm::mat4 proj, VkDevice device)
+{
+    VkCommandBuffer cmd = thread->command_buffers[current_frame];
+
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+
+    VkCommandBufferInheritanceInfo inheritanceInfo{};
+    inheritanceInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
+    inheritanceInfo.renderPass = render_pass;
+    inheritanceInfo.framebuffer = framebuffer;
+
+    beginInfo.pInheritanceInfo = &inheritanceInfo;
+
+    vkResetCommandBuffer(cmd, 0);
+    vkBeginCommandBuffer(cmd, &beginInfo);
+
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline);
+
+    VkViewport viewport{};
+    viewport.x = 0.f;
+    viewport.y = 0.f;
+    viewport.width = static_cast<float>(extent.width);
+    viewport.height = static_cast<float>(extent.height);
+    viewport.minDepth = 0.f;
+    viewport.maxDepth = 1.f;
+    vkCmdSetViewport(cmd, 0, 1, &viewport);
+
+    VkRect2D scissor{};
+    scissor.offset = {0, 0};
+    scissor.extent = extent;
+    vkCmdSetScissor(cmd, 0, 1, &scissor);
+
+    UniformBufferObject ubo;
+    ubo.view = view;
+    ubo.proj = proj;
+
+    for (auto it = objects.begin(); it != objects.end(); ++it)
+    {
+        ubo.model = it->second->pos;
+        memcpy(it->second->uniformBufferMapped, &ubo, sizeof(ubo));
+
+        VkBuffer vertexBuffers[] = {it->second->vertexBuffer};
+
+        VkDeviceSize offsets[] = {0};
+        vkCmdBindVertexBuffers(cmd, 0, 1, vertexBuffers, offsets);
+        vkCmdBindIndexBuffer(cmd, it->second->indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, it->second->descriptorSet, 0, nullptr);
+
+        vkCmdDrawIndexed(cmd, static_cast<uint32_t>(it->second->indices.size()), 1, 0, 0, 0);
+    }
+
+    vkEndCommandBuffer(cmd);
+}
+
+void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData> &threads, std::unordered_map<std::string, std::unique_ptr<Object>> &objects, uint32_t image_index, VkExtent2D extent, VkRenderPass render_pass, std::vector<VkFramebuffer> &framebuffers, VkPipeline graphics_pipeline, VkPipelineLayout pipeline_layout, uint32_t current_frame, glm::mat4 view, glm::mat4 proj, VkDevice device)
 {
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -868,41 +947,14 @@ void recordCommandBuffer(VkCommandBuffer command_buffer, std::unordered_map<std:
     renderPassInfo.clearValueCount = 1;
     renderPassInfo.pClearValues = &clearColor;
 
-    vkCmdBeginRenderPass(command_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBeginRenderPass(command_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_KHR);
     vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline);
 
-    VkViewport viewport{};
-    viewport.x = 0.f;
-    viewport.y = 0.f;
-    viewport.width = static_cast<float>(extent.width);
-    viewport.height = static_cast<float>(extent.height);
-    viewport.minDepth = 0.f;
-    viewport.maxDepth = 1.f;
-    vkCmdSetViewport(command_buffer, 0, 1, &viewport);
+    std::thread test(recordSecondary, &threads[0], std::ref(objects), extent, render_pass, framebuffers[image_index], graphics_pipeline, pipeline_layout, current_frame, view, proj, device);
 
-    VkRect2D scissor{};
-    scissor.offset = {0, 0};
-    scissor.extent = extent;
-    vkCmdSetScissor(command_buffer, 0, 1, &scissor);
+    test.join();
 
-    UniformBufferObject ubo;
-    ubo.view = view;
-    ubo.proj = proj;
-
-    for (auto it = objects.begin(); it != objects.end(); ++it)
-    {
-        ubo.model = it->second->pos;
-        memcpy(it->second->uniformBufferMapped, &ubo, sizeof(ubo));
-
-        VkBuffer vertexBuffers[] = {it->second->vertexBuffer};
-
-        VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(command_buffer, 0, 1, vertexBuffers, offsets);
-        vkCmdBindIndexBuffer(command_buffer, it->second->indexBuffer, 0, VK_INDEX_TYPE_UINT16);
-        vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, it->second->descriptorSet, 0, nullptr);
-
-        vkCmdDrawIndexed(command_buffer, static_cast<uint32_t>(it->second->indices.size()), 1, 0, 0, 0);
-    }
+    vkCmdExecuteCommands(command_buffer, 1, &threads[0].command_buffers[current_frame]);
 
     vkCmdEndRenderPass(command_buffer);
 

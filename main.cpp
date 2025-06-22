@@ -45,7 +45,6 @@ int main()
 
         model = glm::translate(model, pos);
         model = glm::rotate(model, angle, glm::vec3(0.0f, 0.0f, 1.0f));
-
         engine.moveObject("triangle", model);
         engine.update();   
     }
