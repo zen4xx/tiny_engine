@@ -133,7 +133,8 @@ void Renderer::setWindow(GLFWwindow *window)
     createGraphicsPipeline("renderer/shaders/vert.spv", "renderer/shaders/frag.spv", &m_vert_shader_module, &m_frag_shader_module, &m_descriptor_set_layout, m_dynamic_states, &m_viewport, &m_scissor, m_swap_chain_extent, &m_render_pass, &m_pipeline_layout, &m_graphics_pipeline, m_device);
     createFramebuffers(m_swap_chain_frame_buffers, m_swap_chain_image_views, m_render_pass, m_swap_chain_extent, m_device);
     createCommandPool(&m_command_pool, m_surface, m_physical_device, m_device);
-    MAX_FRAMES_IN_FLIGHT = m_swap_chain_images.size();
+    // я хз как эта магия работает и если ты шакал захочешь это изменить то тебе п***а (8 вроде норм тк у меня еще многопоточка и получаеться что колчиество cmd buffers 8*numThread)
+    MAX_FRAMES_IN_FLIGHT = m_swap_chain_images.size() + 4;
     createCommandBuffers(m_command_buffers, m_command_pool, MAX_FRAMES_IN_FLIGHT, m_device);
 
     m_threads.resize(m_thread_count);
@@ -158,7 +159,6 @@ void Renderer::drawScene()
 
     fps = m_delta_time > 0.0f ? 1.0f / m_delta_time : 0.0f;
 
-    
     vkWaitForFences(m_device, 1, &m_in_flight_fences[current_frame], VK_TRUE, UINT64_MAX);
 
     uint32_t imageIndex;
@@ -173,7 +173,7 @@ void Renderer::drawScene()
     vkResetFences(m_device, 1, &m_in_flight_fences[current_frame]);
     vkResetCommandBuffer(m_command_buffers[current_frame], 0);
     recordCommandBuffer(m_command_buffers[current_frame], m_threads, m_objects, imageIndex, m_swap_chain_extent, m_render_pass, m_swap_chain_frame_buffers, m_graphics_pipeline, m_pipeline_layout, current_frame, m_view, m_proj, m_device);
-    
+
     VkSubmitInfo submitInfo = {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
@@ -201,7 +201,6 @@ void Renderer::drawScene()
     VkSwapchainKHR swapChains[] = {m_swap_chain};
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = swapChains;
-
     presentInfo.pImageIndices = &imageIndex;
 
     res = vkQueuePresentKHR(m_present_queue, &presentInfo);

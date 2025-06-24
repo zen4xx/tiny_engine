@@ -952,10 +952,6 @@ void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData>
     vkCmdBeginRenderPass(command_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_KHR);
     vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline);
 
-    //std::thread test(recordSecondary, &threads[0], std::ref(objects), extent, render_pass, framebuffers[image_index], graphics_pipeline, pipeline_layout, current_frame, view, proj, device);
-
-    //    test.join();
-
     size_t numThreads = threads.size();
 
     size_t size = objects.size();

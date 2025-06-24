@@ -2,7 +2,7 @@
 
 int main()
 {
-    auto engine = Tiny_engine("app", 800, 600, "test", true);
+    auto engine = Tiny_engine("app", 800, 600, "test", 6, true);
 
     std::vector<Vertex> vertices = {
         {{0.0f, -0.5f, 0}, {1.0f, 0.0f, 0.0f}},
@@ -15,7 +15,7 @@ int main()
     glm::mat4 view = glm::lookAt(glm::vec3(0.0f, -2.0f, -2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     engine.setView(view);
 
-    engine.addObject("triangle", vertices, indices, glm::translate(glm::mat4(1), glm::vec3(0, 0, 0)));
+    engine.addObject("triangle", vertices, indices, glm::translate(glm::mat4(1), glm::vec3(0, 0, 0)));    
 
     glm::vec3 pos(0.0f);
     float angle = 0.0f;
@@ -36,9 +36,11 @@ int main()
         if (engine.isKeyPressed(GLFW_KEY_LEFT_CONTROL))
             pos.z -= speed * engine.getDeltaTime();
         if (engine.isKeyPressed(GLFW_KEY_Q))
-            angle += speed * engine.getDeltaTime();
+            angle += speed * engine.getDeltaTime(); 
         if (engine.isKeyPressed(GLFW_KEY_E))
             angle -= speed * engine.getDeltaTime();
+        if (engine.isKeyPressed(GLFW_KEY_F))
+            std::cout << engine.getFPSCount() << std::endl;
     
         glm::mat4 model = glm::mat4(1.0f);
 
