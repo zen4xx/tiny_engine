@@ -76,7 +76,7 @@ private:
     float fps = 0;
     float m_delta_time = 0;
 
-    std::unordered_map<std::string, std::unique_ptr<Object>> m_objects;
+    std::unordered_map<std::string, std::unique_ptr<_Object>> m_objects;
     glm::mat4 m_view = {0};
     glm::mat4 m_proj = {0};
 

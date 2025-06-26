@@ -210,7 +210,7 @@ void Renderer::drawScene()
 
 void Renderer::addObject(std::string name, std::vector<Vertex> vertices, std::vector<uint16_t> indices, glm::mat4 pos)
 {
-    auto object = std::make_unique<Object>();
+    auto object = std::make_unique<_Object>();
     object->vertices = vertices;
     object->indices = indices;
     object->pos = pos;

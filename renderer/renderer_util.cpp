@@ -869,7 +869,7 @@ void createSecondaryCommandBuffers(std::vector<VkCommandBuffer> &command_buffers
         err("Failed to allocate command buffers", res);
     }
 }
-void recordSecondary(ThreadData *thread, std::unordered_map<std::string, std::unique_ptr<Object>> &objects, VkExtent2D extent, VkRenderPass render_pass, VkFramebuffer framebuffer, VkPipeline graphics_pipeline, VkPipelineLayout pipeline_layout, uint32_t current_frame, glm::mat4 view, glm::mat4 proj, VkDevice device, typename std::unordered_map<std::string, std::unique_ptr<Object>>::const_iterator start, typename std::unordered_map<std::string, std::unique_ptr<Object>>::const_iterator end)
+void recordSecondary(ThreadData *thread, std::unordered_map<std::string, std::unique_ptr<_Object>> &objects, VkExtent2D extent, VkRenderPass render_pass, VkFramebuffer framebuffer, VkPipeline graphics_pipeline, VkPipelineLayout pipeline_layout, uint32_t current_frame, glm::mat4 view, glm::mat4 proj, VkDevice device, typename std::unordered_map<std::string, std::unique_ptr<_Object>>::const_iterator start, typename std::unordered_map<std::string, std::unique_ptr<_Object>>::const_iterator end)
 {
     VkCommandBuffer cmd = thread->command_buffers[current_frame];
 
@@ -903,7 +903,7 @@ void recordSecondary(ThreadData *thread, std::unordered_map<std::string, std::un
     scissor.extent = extent;
     vkCmdSetScissor(cmd, 0, 1, &scissor);
 
-    UniformBufferObject ubo;
+    _UniformBufferObject ubo;
     ubo.view = view;
     ubo.proj = proj;
 
@@ -927,7 +927,7 @@ void recordSecondary(ThreadData *thread, std::unordered_map<std::string, std::un
     thread->is_cmd_buffer_recorded = 1;
 }
 
-void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData> &threads, std::unordered_map<std::string, std::unique_ptr<Object>> &objects, uint32_t image_index, VkExtent2D extent, VkRenderPass render_pass, std::vector<VkFramebuffer> &framebuffers, VkPipeline graphics_pipeline, VkPipelineLayout pipeline_layout, uint32_t current_frame, glm::mat4 view, glm::mat4 proj, VkDevice device)
+void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData> &threads, std::unordered_map<std::string, std::unique_ptr<_Object>> &objects, uint32_t image_index, VkExtent2D extent, VkRenderPass render_pass, std::vector<VkFramebuffer> &framebuffers, VkPipeline graphics_pipeline, VkPipelineLayout pipeline_layout, uint32_t current_frame, glm::mat4 view, glm::mat4 proj, VkDevice device)
 {
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -1137,7 +1137,7 @@ void createDescriptorSetLayout(VkDescriptorSetLayout *descriptor_set_layout, VkD
 
 void createUniformBuffer(VkBuffer *uniform_buffer, VmaAllocation *uniform_buffer_memory, void **uniform_buffer_mapped, VmaAllocator allocator)
 {
-    VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+    VkDeviceSize bufferSize = sizeof(_UniformBufferObject);
     createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_AUTO, nullptr, uniform_buffer, uniform_buffer_memory, allocator);
     vmaMapMemory(allocator, *uniform_buffer_memory, uniform_buffer_mapped);
 }
@@ -1179,7 +1179,7 @@ void addDescriptorSet(VkDescriptorSet descriptor_set, VkBuffer uniform_buffer, V
     VkDescriptorBufferInfo bufferInfo{};
     bufferInfo.buffer = uniform_buffer;
     bufferInfo.offset = 0;
-    bufferInfo.range = sizeof(UniformBufferObject);
+    bufferInfo.range = sizeof(_UniformBufferObject);
 
     VkWriteDescriptorSet write{};
     write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;

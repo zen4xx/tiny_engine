@@ -41,14 +41,14 @@ struct Vertex
     }
 };
 
-struct alignas(16) UniformBufferObject
+struct alignas(16) _UniformBufferObject
 {
     glm::mat4 model;
     glm::mat4 view;
     glm::mat4 proj;
 };
 
-struct Object
+struct _Object
 {
     glm::mat4 pos;
 
