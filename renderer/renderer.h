@@ -69,7 +69,8 @@ private:
 
     uint32_t current_frame = 0;
 
-    int MAX_FRAMES_IN_FLIGHT;
+    // я хз как эта магия работает и если ты шакал захочешь это изменить то тебе п***а (8 вроде норм тк у меня еще многопоточка и получаеться что колчиество cmd buffers 8*numThread)
+    const int MAX_FRAMES_IN_FLIGHT = 8;
     unsigned int m_thread_count = 6;
 
     float fps = 0;
