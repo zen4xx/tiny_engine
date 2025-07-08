@@ -10,15 +10,14 @@ public:
 
 public:
     inline bool isWindowOpen() { return !glfwWindowShouldClose(m_window->GetWindow()); };
-    inline void update()
-    {
-        glfwPollEvents();
-        m_renderer->drawScene();
-    };
+    // glfw, physics, etc..
+    inline void update() { glfwPollEvents(); };
+    inline void drawScene(const std::string &scene_name) { m_renderer->drawScene(scene_name); };
     // Must be called before drawScene
-    inline void addObject(std::string name, std::vector<Vertex> vertices, std::vector<uint16_t> indices, glm::mat4 pos) { m_renderer->addObject(name, vertices, indices, pos); };
-    inline void moveObject(std::string name, glm::mat4 pos) { m_renderer->moveObject(name, pos); };
-    inline void setView(glm::mat4 view) { m_renderer->setView(view); };
+    inline void addObject(const std::string &scene_name, const std::string &obj_name, std::vector<Vertex> vertices, std::vector<uint16_t> indices, glm::mat4 pos) { m_renderer->addObject(scene_name, obj_name, vertices, indices, pos); };
+    inline void moveObject(const std::string &scene_name, const std::string &obj_name, glm::mat4 pos) { m_renderer->moveObject(scene_name, obj_name, pos); };
+    inline void createScene(const std::string &scene_name) { m_renderer->createScene(scene_name); };
+    inline void setView(const std::string &scene_name, glm::mat4 view) { m_renderer->setView(scene_name, view); };
     inline bool isKeyPressed(int key) { return glfwGetKey(m_window->GetWindow(), key); };
     inline float getDeltaTime() { return m_renderer->getDeltaTime(); };
     inline float getFPSCount() { return m_renderer->getFPSCount(); };

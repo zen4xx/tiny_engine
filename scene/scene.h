@@ -8,64 +8,48 @@
 #include <vector>
 #include "vk_mem_alloc.h"
 
-struct Vertex
+#include "../renderer/renderer_util.h"
+
+class _Scene
 {
-    glm::vec3 pos;
-    glm::vec3 color;
-
-    static VkVertexInputBindingDescription getBindingDescription()
+public:
+    void createScene(VkExtent2D extent, VmaAllocator allocator, VkDescriptorSetLayout descriptor_set_layout, VkDevice device)
     {
-        VkVertexInputBindingDescription description{};
-        description.binding = 0;
-        description.stride = sizeof(Vertex);
-        description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-        return description;
+        proj = glm::perspective(glm::radians(45.0f), extent.width / (float)extent.height, 0.1f, 10.0f);
+        createDescriptorPool(&descriptor_pool, objects.size(), allocator, device);
+        createDescriptorSets(descriptor_sets, descriptor_set_layout, objects.size(), descriptor_pool, device);
+        int i = 0;
+        for (auto it = objects.begin(); it != objects.end(); ++it)
+        {
+            addDescriptorSet(descriptor_sets[i], it->second->uniformBuffer, device);
+            it->second->descriptorSet = &descriptor_sets[i];
+            ++i;
+        }
+        isCreated = 1;
     }
 
-    static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions()
+    void deleteScene(VmaAllocator allocator, VkDevice device)
     {
-        std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
+        for (auto it = objects.begin(); it != objects.end(); ++it)
+        {
+            vmaDestroyBuffer(allocator, it->second->vertexBuffer, it->second->vertexBufferMemory);
+            vmaDestroyBuffer(allocator, it->second->indexBuffer, it->second->indexBufferMemory);
+            vmaUnmapMemory(allocator, it->second->uniformBufferMemory);
+            vmaDestroyBuffer(allocator, it->second->uniformBuffer, it->second->uniformBufferMemory);
+        }
 
-        attributeDescriptions[0].binding = 0;
-        attributeDescriptions[0].location = 0;
-        attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
-        attributeDescriptions[0].offset = offsetof(Vertex, pos);
-
-        attributeDescriptions[1].binding = 0;
-        attributeDescriptions[1].location = 1;
-        attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-        attributeDescriptions[1].offset = offsetof(Vertex, color);
-
-        return attributeDescriptions;
+        vkDestroyDescriptorPool(device, descriptor_pool, nullptr);
     }
-};
 
-struct alignas(16) _UniformBufferObject
-{
-    glm::mat4 model;
-    glm::mat4 view;
-    glm::mat4 proj;
-};
+public:
+    bool isCreated = 0;
 
-struct _Object
-{
-    glm::mat4 pos;
+    std::unordered_map<std::string, std::unique_ptr<_Object>> objects;
+    glm::mat4 view = {0};
+    glm::mat4 proj = {0};
 
-    std::vector<Vertex> vertices;
-    std::vector<uint16_t> indices;
-
-    VkBuffer vertexBuffer;
-    VmaAllocation vertexBufferMemory;
-
-    VkBuffer indexBuffer;
-    VmaAllocation indexBufferMemory;
-
-    VkBuffer uniformBuffer;
-    VmaAllocation uniformBufferMemory;
-    void *uniformBufferMapped;
-
-    VkDescriptorSet *descriptorSet;
+    VkDescriptorPool descriptor_pool;
+    std::vector<VkDescriptorSet> descriptor_sets;
 };
 
 #endif

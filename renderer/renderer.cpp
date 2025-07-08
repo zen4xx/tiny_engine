@@ -43,7 +43,8 @@ Renderer::~Renderer()
 
     vkDestroyCommandPool(m_device, m_command_pool, nullptr);
 
-    for(auto thread : m_threads){
+    for (auto thread : m_threads)
+    {
         vkDestroyCommandPool(m_device, thread.command_pool, nullptr);
     }
 
@@ -59,14 +60,10 @@ Renderer::~Renderer()
 
     vkDestroySwapchainKHR(m_device, m_swap_chain, nullptr);
 
-    for (auto it = m_objects.begin(); it != m_objects.end(); ++it)
+    for (auto it = m_scenes.begin(); it != m_scenes.end(); ++it)
     {
-        vmaDestroyBuffer(m_allocator, it->second->vertexBuffer, it->second->vertexBufferMemory);
-        vmaDestroyBuffer(m_allocator, it->second->indexBuffer, it->second->indexBufferMemory);
-        vmaUnmapMemory(m_allocator, it->second->uniformBufferMemory);
-        vmaDestroyBuffer(m_allocator, it->second->uniformBuffer, it->second->uniformBufferMemory);
+        it->second->deleteScene(m_allocator, m_device);
     }
-    vkDestroyDescriptorPool(m_device, m_descriptor_pool, nullptr);
     vkDestroyDescriptorSetLayout(m_device, m_descriptor_set_layout, nullptr);
 
     vkDestroyShaderModule(m_device, m_frag_shader_module, nullptr);
@@ -136,7 +133,8 @@ void Renderer::setWindow(GLFWwindow *window)
     createCommandBuffers(m_command_buffers, m_command_pool, MAX_FRAMES_IN_FLIGHT, m_device);
 
     m_threads.resize(m_thread_count);
-    for(int i = 0; i < m_thread_count; ++i){
+    for (int i = 0; i < m_thread_count; ++i)
+    {
         createCommandPool(&m_threads[i].command_pool, m_surface, m_physical_device, m_device);
         createSecondaryCommandBuffers(m_threads[i].command_buffers, m_threads[i].command_pool, MAX_FRAMES_IN_FLIGHT, m_device);
     }
@@ -144,11 +142,12 @@ void Renderer::setWindow(GLFWwindow *window)
     createSyncObjects(m_image_available_semaphores, m_render_finished_semaphores, m_in_flight_fences, MAX_FRAMES_IN_FLIGHT, m_device);
 }
 
-void Renderer::drawScene()
+void Renderer::drawScene(const std::string &scene_name)
 {
-    if (!isWorldCreated)
-        createWorld();
-    
+
+    if (!m_scenes[scene_name]->isCreated)
+        m_scenes[scene_name]->createScene(m_swap_chain_extent, m_allocator, m_descriptor_set_layout, m_device);
+
     static double lastTime = glfwGetTime();
 
     double currentTime = glfwGetTime();
@@ -161,16 +160,16 @@ void Renderer::drawScene()
 
     uint32_t imageIndex;
     VkResult res = vkAcquireNextImageKHR(m_device, m_swap_chain, UINT64_MAX, m_image_available_semaphores[current_frame], VK_NULL_HANDLE, &imageIndex);
-    
+
     if (res == VK_ERROR_OUT_OF_DATE_KHR)
     {
         recreateSwapChain(&m_swap_chain, m_render_pass, m_swap_chain_frame_buffers, m_window, m_surface, m_swap_chain_images, m_swap_chain_image_views, &m_swap_chain_image_format, &m_swap_chain_extent, m_physical_device, m_device);
         return;
     }
-    
+
     vkResetFences(m_device, 1, &m_in_flight_fences[current_frame]);
     vkResetCommandBuffer(m_command_buffers[current_frame], 0);
-    recordCommandBuffer(m_command_buffers[current_frame], m_threads, m_objects, imageIndex, m_swap_chain_extent, m_render_pass, m_swap_chain_frame_buffers, m_graphics_pipeline, m_pipeline_layout, current_frame, m_view, m_proj, m_device);
+    recordCommandBuffer(m_command_buffers[current_frame], m_threads, m_scenes[scene_name]->objects, imageIndex, m_swap_chain_extent, m_render_pass, m_swap_chain_frame_buffers, m_graphics_pipeline, m_pipeline_layout, current_frame, m_scenes[scene_name]->view, m_scenes[scene_name]->proj, m_device);
 
     VkSubmitInfo submitInfo = {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -208,7 +207,7 @@ void Renderer::drawScene()
     current_frame = (current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-void Renderer::addObject(std::string name, std::vector<Vertex> vertices, std::vector<uint16_t> indices, glm::mat4 pos)
+void Renderer::addObject(std::string scene_name, std::string name, std::vector<Vertex> vertices, std::vector<uint16_t> indices, glm::mat4 pos)
 {
     auto object = std::make_unique<_Object>();
     object->vertices = vertices;
@@ -218,22 +217,13 @@ void Renderer::addObject(std::string name, std::vector<Vertex> vertices, std::ve
     createVertexBuffer(&object->vertexBuffer, object->vertices, &object->vertexBufferMemory, m_command_pool, m_graphics_queue, m_allocator, m_physical_device, m_device);
     createIndexBuffer(object->indices, &object->indexBuffer, &object->indexBufferMemory, m_command_pool, m_graphics_queue, m_allocator, m_device);
     createUniformBuffer(&object->uniformBuffer, &object->uniformBufferMemory, &object->uniformBufferMapped, m_allocator);
-   
-    m_objects[name] = std::move(object);
+
+    // moves object to scene
+    m_scenes[scene_name]->objects[name] = std::move(object);
 }
 
-void Renderer::createWorld()
+void Renderer::createScene(std::string name)
 {
-    m_proj = glm::perspective(glm::radians(45.0f), m_swap_chain_extent.width / (float)m_swap_chain_extent.height, 0.1f, 10.0f);
-    createDescriptorPool(&m_descriptor_pool, m_objects.size(), m_allocator, m_device);
-    createDescriptorSets(m_descriptor_sets, m_descriptor_set_layout, m_objects.size(), m_descriptor_pool, m_device);
-    int i = 0;
-    for (auto it = m_objects.begin(); it != m_objects.end(); ++it)
-    {
-        addDescriptorSet(m_descriptor_sets[i], it->second->uniformBuffer, m_device);
-        it->second->descriptorSet = &m_descriptor_sets[i];
-        ++i;
-    }
-
-    isWorldCreated = true;
+    auto scene = std::make_unique<_Scene>();
+    m_scenes[name] = std::move(scene);
 }

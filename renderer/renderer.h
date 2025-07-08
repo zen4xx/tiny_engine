@@ -2,6 +2,7 @@
 #define RENDERER_H
 
 #include "renderer_util.h"
+#include "../scene/scene.h"
 
 class Renderer
 {
@@ -11,16 +12,16 @@ public:
 
 public:
     void setWindow(GLFWwindow *window);
-    void drawScene();
+    void drawScene(const std::string &scene_name);
     // Must be called before drawScene
-    void addObject(std::string name, std::vector<Vertex> vertices, std::vector<uint16_t> indices, glm::mat4 pos);
-    inline void moveObject(std::string name, glm::mat4 pos) { m_objects[name]->pos = pos; };
-    inline void setView(glm::mat4 view) { m_view = view; };
+    void addObject(std::string scene_name, std::string obj_name, std::vector<Vertex> vertices, std::vector<uint16_t> indices, glm::mat4 pos);
+    inline void moveObject(const std::string &scene_name, const std::string &obj_name, glm::mat4 pos) { m_scenes[scene_name]->objects[obj_name]->pos = pos; };
+    inline void setView(const std::string &scene_name, glm::mat4 view) { m_scenes[scene_name]->view = view; };
     // Must be called before setWindow
     inline void setThreadCount(uint8_t count) { m_thread_count = count; };
     inline float getFPSCount() { return fps; };
     inline float getDeltaTime() { return m_delta_time; };
-    void createWorld();
+    void createScene(std::string scene_name);
 
 private:
     bool checkValidationLayerSupport();
@@ -28,7 +29,6 @@ private:
 private:
     // booleans
     bool isDebug = false;
-    bool isWorldCreated = false;
 
     VkInstance m_instance;
 
@@ -49,9 +49,6 @@ private:
     VkDebugUtilsMessengerEXT m_debugMessenger;
 
     VkRenderPass m_render_pass;
-
-    std::vector<VkDescriptorSet> m_descriptor_sets;
-    VkDescriptorPool m_descriptor_pool;
 
     VkDescriptorSetLayout m_descriptor_set_layout;
     VkPipelineLayout m_pipeline_layout;
@@ -76,9 +73,7 @@ private:
     float fps = 0;
     float m_delta_time = 0;
 
-    std::unordered_map<std::string, std::unique_ptr<_Object>> m_objects;
-    glm::mat4 m_view = {0};
-    glm::mat4 m_proj = {0};
+    std::unordered_map<std::string, std::unique_ptr<_Scene>> m_scenes;
 
     // vectors
     std::vector<VkImage> m_swap_chain_images;
