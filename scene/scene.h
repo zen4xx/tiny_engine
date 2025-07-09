@@ -13,7 +13,7 @@
 class _Scene
 {
 public:
-    void createScene(VkExtent2D extent, VmaAllocator allocator, VkDescriptorSetLayout descriptor_set_layout, VkDevice device)
+    void createDescriptorSetsForScene(VkExtent2D extent, VmaAllocator allocator, VkDescriptorSetLayout descriptor_set_layout, VkDevice device)
     {
         proj = glm::perspective(glm::radians(45.0f), extent.width / (float)extent.height, 0.1f, 10.0f);
         createDescriptorPool(&descriptor_pool, objects.size(), allocator, device);
@@ -25,9 +25,14 @@ public:
             it->second->descriptorSet = &descriptor_sets[i];
             ++i;
         }
-        isCreated = 1;
+        isDescriptorSetsCreated = 1;
     }
 
+    void destroyDescriptorPool(VmaAllocator allocator, VkDevice device)
+    {
+        vkDestroyDescriptorPool(device, descriptor_pool, nullptr);
+    }
+    
     void deleteScene(VmaAllocator allocator, VkDevice device)
     {
         for (auto it = objects.begin(); it != objects.end(); ++it)
@@ -37,12 +42,13 @@ public:
             vmaUnmapMemory(allocator, it->second->uniformBufferMemory);
             vmaDestroyBuffer(allocator, it->second->uniformBuffer, it->second->uniformBufferMemory);
         }
-
-        vkDestroyDescriptorPool(device, descriptor_pool, nullptr);
+        destroyDescriptorPool(allocator, device);
     }
+    
 
 public:
-    bool isCreated = 0;
+    bool isDescriptorSetsCreated = 0;
+    bool isDeleted = 0;
 
     std::unordered_map<std::string, std::unique_ptr<_Object>> objects;
     glm::mat4 view = {0};

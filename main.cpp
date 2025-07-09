@@ -51,6 +51,11 @@ int main()
             std::cout << engine.getFPSCount() << std::endl;
         if (engine.isKeyPressed(GLFW_KEY_X))
             isMainScene ? isMainScene = 0 : isMainScene = 1;
+        if (engine.isKeyPressed(GLFW_KEY_Z))
+        {
+            engine.addObject("main", "triangle2", vertices, indices, glm::mat4(1.0f));
+            engine.updateScene("main");
+        }
 
         glm::mat4 model = glm::mat4(1.0f);
 

@@ -62,7 +62,10 @@ Renderer::~Renderer()
 
     for (auto it = m_scenes.begin(); it != m_scenes.end(); ++it)
     {
-        it->second->deleteScene(m_allocator, m_device);
+        if(!it->second->isDeleted){
+            it->second->deleteScene(m_allocator, m_device);
+            it->second->isDeleted = 1;
+        }
     }
     vkDestroyDescriptorSetLayout(m_device, m_descriptor_set_layout, nullptr);
 
@@ -70,6 +73,7 @@ Renderer::~Renderer()
     vkDestroyShaderModule(m_device, m_vert_shader_module, nullptr);
 
     vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
+
     vmaDestroyAllocator(m_allocator);
     vkDestroyDevice(m_device, nullptr);
 
@@ -145,8 +149,8 @@ void Renderer::setWindow(GLFWwindow *window)
 void Renderer::drawScene(const std::string &scene_name)
 {
 
-    if (!m_scenes[scene_name]->isCreated)
-        m_scenes[scene_name]->createScene(m_swap_chain_extent, m_allocator, m_descriptor_set_layout, m_device);
+    if (!m_scenes[scene_name]->isDescriptorSetsCreated)
+        m_scenes[scene_name]->createDescriptorSetsForScene(m_swap_chain_extent, m_allocator, m_descriptor_set_layout, m_device);
 
     static double lastTime = glfwGetTime();
 
@@ -220,10 +224,4 @@ void Renderer::addObject(std::string scene_name, std::string name, std::vector<V
 
     // moves object to scene
     m_scenes[scene_name]->objects[name] = std::move(object);
-}
-
-void Renderer::createScene(std::string name)
-{
-    auto scene = std::make_unique<_Scene>();
-    m_scenes[name] = std::move(scene);
 }

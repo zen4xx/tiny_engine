@@ -21,7 +21,17 @@ public:
     inline void setThreadCount(uint8_t count) { m_thread_count = count; };
     inline float getFPSCount() { return fps; };
     inline float getDeltaTime() { return m_delta_time; };
-    void createScene(std::string scene_name);
+
+    inline void createScene(const std::string& scene_name) { m_scenes[scene_name] = std::move(std::make_unique<_Scene>()); };
+    inline void deleteScene(const std::string& scene_name) { 
+        m_scenes[scene_name]->deleteScene(m_allocator, m_device); 
+        m_scenes[scene_name]->isDeleted = 1;
+    }; 
+    // If objects are added to the scene, the function must be called before drawScene()
+    inline void updateScene(const std::string& scene_name) {
+        m_scenes[scene_name]->destroyDescriptorPool(m_allocator, m_device);
+        m_scenes[scene_name]->createDescriptorSetsForScene(m_swap_chain_extent, m_allocator, m_descriptor_set_layout, m_device);
+    };
 
 private:
     bool checkValidationLayerSupport();
