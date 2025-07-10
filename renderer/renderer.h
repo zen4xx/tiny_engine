@@ -22,14 +22,16 @@ public:
     inline float getFPSCount() { return fps; };
     inline float getDeltaTime() { return m_delta_time; };
 
-    inline void createScene(const std::string& scene_name) { m_scenes[scene_name] = std::move(std::make_unique<_Scene>()); };
-    inline void deleteScene(const std::string& scene_name) { 
-        m_scenes[scene_name]->deleteScene(m_allocator, m_device); 
+    inline void createScene(const std::string &scene_name) { m_scenes[scene_name] = std::move(std::make_unique<_Scene>()); };
+    inline void deleteScene(const std::string &scene_name)
+    {
+        m_scenes[scene_name]->deleteScene(m_allocator, m_device);
         m_scenes[scene_name]->isDeleted = 1;
-    }; 
+    };
     // If objects are added to the scene, the function must be called before drawScene()
-    inline void updateScene(const std::string& scene_name) {
-        m_scenes[scene_name]->destroyDescriptorPool(m_allocator, m_device);
+    inline void updateScene(const std::string &scene_name)
+    {
+        m_scenes[scene_name]->destroyDescriptorPool(m_device);
         m_scenes[scene_name]->createDescriptorSetsForScene(m_swap_chain_extent, m_allocator, m_descriptor_set_layout, m_device);
     };
 
@@ -76,8 +78,8 @@ private:
 
     uint32_t current_frame = 0;
 
-    // я хз как эта магия работает и если ты шакал захочешь это изменить то тебе п***а (8 вроде норм тк у меня еще многопоточка и получаеться что колчиество cmd buffers 8*numThread)
-    const int MAX_FRAMES_IN_FLIGHT = 8;
+    // я хз как эта магия работает и если ты шакал захочешь это изменить то тебе п***а (10 вроде норм тк у меня еще многопоточка и получаеться что колчиество cmd buffers 10*numThread)
+    const int MAX_FRAMES_IN_FLIGHT = 10;
     unsigned int m_thread_count = 6;
 
     float fps = 0;

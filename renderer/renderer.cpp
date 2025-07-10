@@ -62,10 +62,8 @@ Renderer::~Renderer()
 
     for (auto it = m_scenes.begin(); it != m_scenes.end(); ++it)
     {
-        if(!it->second->isDeleted){
+        if (!it->second->isDeleted)
             it->second->deleteScene(m_allocator, m_device);
-            it->second->isDeleted = 1;
-        }
     }
     vkDestroyDescriptorSetLayout(m_device, m_descriptor_set_layout, nullptr);
 

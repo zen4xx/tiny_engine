@@ -1,4 +1,5 @@
 #include "core/core.h"
+#include <bits/stdc++.h>
 
 int main()
 {
@@ -28,6 +29,11 @@ int main()
     float speed = 3.0f;
 
     bool isMainScene = 1;
+    int cnt = 1;
+
+    // For random generation triangles
+    std::default_random_engine gen;
+    std::uniform_real_distribution<double> distribution(-5.0, 5.0);
 
     while (engine.isWindowOpen())
     {
@@ -53,7 +59,7 @@ int main()
             isMainScene ? isMainScene = 0 : isMainScene = 1;
         if (engine.isKeyPressed(GLFW_KEY_Z))
         {
-            engine.addObject("main", "triangle2", vertices, indices, glm::mat4(1.0f));
+            engine.addObject("main", "triangle" + std::to_string(++cnt), vertices, indices, glm::translate(glm::mat4(1), glm::vec3(distribution(gen), distribution(gen), distribution(gen))));
             engine.updateScene("main");
         }
 
