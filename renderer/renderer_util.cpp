@@ -340,7 +340,7 @@ int rateDeviceSuitablity(VkPhysicalDevice device, VkSurfaceKHR surface)
     return score;
 }
 
-void copyBuffer(VkBuffer src_buffer, VkBuffer dst_buffer, VkDeviceSize size, VkCommandPool command_pool, VkQueue graphics_queue, VkDevice device)
+VkCommandBuffer beginSingleTimeCommands(VkCommandPool command_pool, VkDevice device)
 {
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -357,21 +357,32 @@ void copyBuffer(VkBuffer src_buffer, VkBuffer dst_buffer, VkDeviceSize size, VkC
 
     vkBeginCommandBuffer(commandBuffer, &beginInfo);
 
-    VkBufferCopy copyRegion{};
-    copyRegion.size = size;
-    vkCmdCopyBuffer(commandBuffer, src_buffer, dst_buffer, 1, &copyRegion);
+    return commandBuffer;
+}
 
-    vkEndCommandBuffer(commandBuffer);
+void endSingleTimeCommands(VkCommandBuffer command_buffer, VkCommandPool command_pool, VkQueue graphics_queue, VkDevice device) {
+    vkEndCommandBuffer(command_buffer);
 
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &commandBuffer;
+    submitInfo.pCommandBuffers = &command_buffer;
 
     vkQueueSubmit(graphics_queue, 1, &submitInfo, VK_NULL_HANDLE);
     vkQueueWaitIdle(graphics_queue);
 
-    vkFreeCommandBuffers(device, command_pool, 1, &commandBuffer);
+    vkFreeCommandBuffers(device, command_pool, 1, &command_buffer);
+}
+
+void copyBuffer(VkBuffer src_buffer, VkBuffer dst_buffer, VkDeviceSize size, VkCommandPool command_pool, VkQueue graphics_queue, VkDevice device)
+{
+    VkCommandBuffer commandBuffer = beginSingleTimeCommands(command_pool, device);
+
+    VkBufferCopy copyRegion{};
+    copyRegion.size = size;
+    vkCmdCopyBuffer(commandBuffer, src_buffer, dst_buffer, 1, &copyRegion);
+
+    endSingleTimeCommands(commandBuffer, command_pool, graphics_queue, device);
 }
 
 void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage &image, VmaAllocation &image_memory, VmaAllocator allocator)

@@ -62,6 +62,8 @@ int main()
             engine.addObject("main", "triangle" + std::to_string(++cnt), vertices, indices, glm::translate(glm::mat4(1), glm::vec3(distribution(gen), distribution(gen), distribution(gen))));
             engine.updateScene("main");
         }
+        if (engine.isKeyPressed(GLFW_KEY_C))
+            std::cout << cnt << std::endl;
 
         glm::mat4 model = glm::mat4(1.0f);
 
