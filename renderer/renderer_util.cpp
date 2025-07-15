@@ -1286,8 +1286,9 @@ void createTextureImage(const char *texture_path, VkImage image, VmaAllocation i
 
     VkBuffer stagingBuffer;
     VmaAllocation stagingBufferMemory;
-    createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_AUTO, nullptr, &stagingBuffer, &stagingBufferMemory, allocator);
 
+    createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_AUTO, nullptr, &stagingBuffer, &stagingBufferMemory, allocator);
+    
     void *data;
     vmaMapMemory(allocator, stagingBufferMemory, &data);
     memcpy(data, pixels, static_cast<size_t>(imageSize));

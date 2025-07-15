@@ -139,5 +139,6 @@ void createUniformBuffer(VkBuffer *uniform_buffer, VmaAllocation *uniform_buffer
 void createDescriptorPool(VkDescriptorPool *descriptor_pool, uint32_t descriptor_count, VmaAllocator allocator, VkDevice device);
 void addDescriptorSet(VkDescriptorSet descriptor_set, VkBuffer uniform_buffer, VkDevice device);
 void createDescriptorSets(std::vector<VkDescriptorSet> &descriptor_sets, VkDescriptorSetLayout descriptor_set_layout, int count, VkDescriptorPool descriptor_pool, VkDevice device);
+void createTextureImage(const char *texture_path, VkImage image, VmaAllocation image_memory, VmaAllocator allocator, VkCommandPool command_pool, VkQueue graphics_queue, VkDevice device);
 static std::vector<char> readFile(const std::string &filename);
 #endif
