@@ -70,6 +70,8 @@ Renderer::~Renderer()
     vkDestroyShaderModule(m_device, m_frag_shader_module, nullptr);
     vkDestroyShaderModule(m_device, m_vert_shader_module, nullptr);
 
+    vkDestroySampler(m_device, m_sampler, nullptr);
+
     vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
 
     vmaDestroyAllocator(m_allocator);
@@ -133,7 +135,8 @@ void Renderer::setWindow(GLFWwindow *window)
     createFramebuffers(m_swap_chain_frame_buffers, m_swap_chain_image_views, m_render_pass, m_swap_chain_extent, m_device);
     createCommandPool(&m_command_pool, m_surface, m_physical_device, m_device);
     createCommandBuffers(m_command_buffers, m_command_pool, MAX_FRAMES_IN_FLIGHT, m_device);
-    
+    createTextureSampler(&m_sampler, m_physical_device, m_device);
+
     m_threads.resize(m_thread_count);
     for (int i = 0; i < m_thread_count; ++i)
     {

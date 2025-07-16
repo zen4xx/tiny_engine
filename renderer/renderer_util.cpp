@@ -328,7 +328,10 @@ int rateDeviceSuitablity(VkPhysicalDevice device, VkSurfaceKHR surface)
     SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device, surface);
     swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
 
-    if (!indices.isComplete() || !swapChainAdequate)
+    VkPhysicalDeviceFeatures supportedFeatures;
+    vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
+
+    if (!indices.isComplete() || !swapChainAdequate || !supportedFeatures.samplerAnisotropy)
         return 0;
 
     int score = 0;
@@ -542,6 +545,7 @@ void createLogicalDevice(VkQueue *graphicsQueue, VkQueue *presentQueue, VkDevice
     }
 
     VkPhysicalDeviceFeatures deviceFeatures{};
+    deviceFeatures.samplerAnisotropy = VK_TRUE;
 
     VkPhysicalDeviceNestedCommandBufferFeaturesEXT nestedCmdBufFeatures = {};
     nestedCmdBufFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_NESTED_COMMAND_BUFFER_FEATURES_EXT;
@@ -1304,4 +1308,55 @@ void createTextureImage(const char *texture_path, VkImage image, VmaAllocation i
     transitionImageLayout(image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, command_pool, graphics_queue, device);
     
     vmaDestroyBuffer(allocator, stagingBuffer, stagingBufferMemory);
+}
+
+void createTextureImageView(VkImageView *texture_image_view, VkImage image, VkDevice device)
+{
+    VkImageViewCreateInfo viewInfo{};
+    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    viewInfo.image = image;
+    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    viewInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
+    viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    viewInfo.subresourceRange.baseMipLevel = 0;
+    viewInfo.subresourceRange.levelCount = 1;
+    viewInfo.subresourceRange.baseArrayLayer = 0;
+    viewInfo.subresourceRange.layerCount = 1;
+
+    VkResult res = vkCreateImageView(device, &viewInfo, nullptr, texture_image_view);
+    if (res != VK_SUCCESS)
+    {
+        err("Failed to create texture image view", res);
+    }
+}
+
+void createTextureSampler(VkSampler *texture_sampler, VkPhysicalDevice physical_device, VkDevice device){
+    VkSamplerCreateInfo samplerInfo{};
+    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerInfo.magFilter = VK_FILTER_LINEAR;
+    samplerInfo.minFilter = VK_FILTER_LINEAR;
+    
+    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    
+    VkPhysicalDeviceProperties properties{};
+    vkGetPhysicalDeviceProperties(physical_device, &properties);
+    
+    samplerInfo.anisotropyEnable = VK_TRUE;
+    samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
+    
+    samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    samplerInfo.unnormalizedCoordinates = VK_FALSE;
+    samplerInfo.compareEnable = VK_FALSE;
+    samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+    
+    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    samplerInfo.mipLodBias = 0.0f;
+    samplerInfo.minLod = 0.0f;
+    samplerInfo.maxLod = 0.0f;
+
+    VkResult res = vkCreateSampler(device, &samplerInfo, nullptr, texture_sampler);
+    if (res != VK_SUCCESS)
+        err("Failed to create texture sampler", res);
 }

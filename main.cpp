@@ -78,7 +78,9 @@ int main()
         }
         else
         {
-            engine.moveObject("secondary", "triangle", glm::mat4(1));
+            glm::mat4 secondary_model = glm::translate(glm::mat4(1), glm::vec3(sin(glfwGetTime()), cos(glfwGetTime()), 0));
+            secondary_model = glm::rotate(secondary_model, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
+            engine.moveObject("secondary", "triangle", secondary_model); 
             engine.drawScene("secondary");
         }
     }
