@@ -222,7 +222,12 @@ void Renderer::addObject(std::string scene_name, std::string name, std::vector<V
     createVertexBuffer(&object->vertexBuffer, object->vertices, &object->vertexBufferMemory, m_command_pool, m_graphics_queue, m_allocator, m_physical_device, m_device);
     createIndexBuffer(object->indices, &object->indexBuffer, &object->indexBufferMemory, m_command_pool, m_graphics_queue, m_allocator, m_device);
     createUniformBuffer(&object->uniformBuffer, &object->uniformBufferMemory, &object->uniformBufferMapped, m_allocator);
-    createTextureImage(texture_path.c_str(), object->textureImage, object->textureImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
+    
+    if (texture_path != "_default" && std::ifstream(texture_path).is_open())
+        createTextureImage(texture_path.c_str(), object->textureImage, object->textureImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
+    else
+        createTextureImage("core/default_assets/textures/black_purple_grid.png", object->textureImage, object->textureImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
+
     createTextureImageView(&object->textureImageView, object->textureImage, m_device);
     object->sampler = &m_sampler;
 
