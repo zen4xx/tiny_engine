@@ -60,6 +60,7 @@ Renderer::~Renderer()
 
     vkDestroySwapchainKHR(m_device, m_swap_chain, nullptr);
 
+    vkDestroySampler(m_device, m_sampler, nullptr);
     for (auto it = m_scenes.begin(); it != m_scenes.end(); ++it)
     {
         if (!it->second->isDeleted)
@@ -70,7 +71,6 @@ Renderer::~Renderer()
     vkDestroyShaderModule(m_device, m_frag_shader_module, nullptr);
     vkDestroyShaderModule(m_device, m_vert_shader_module, nullptr);
 
-    vkDestroySampler(m_device, m_sampler, nullptr);
 
     vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
 
@@ -212,7 +212,7 @@ void Renderer::drawScene(const std::string &scene_name)
     current_frame = (current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-void Renderer::addObject(std::string scene_name, std::string name, std::vector<Vertex> vertices, std::vector<uint16_t> indices, glm::mat4 pos)
+void Renderer::addObject(std::string scene_name, std::string name, std::vector<Vertex> vertices, std::vector<uint16_t> indices, glm::mat4 pos, std::string texture_path)
 {
     auto object = std::make_unique<_Object>();
     object->vertices = vertices;
@@ -222,6 +222,9 @@ void Renderer::addObject(std::string scene_name, std::string name, std::vector<V
     createVertexBuffer(&object->vertexBuffer, object->vertices, &object->vertexBufferMemory, m_command_pool, m_graphics_queue, m_allocator, m_physical_device, m_device);
     createIndexBuffer(object->indices, &object->indexBuffer, &object->indexBufferMemory, m_command_pool, m_graphics_queue, m_allocator, m_device);
     createUniformBuffer(&object->uniformBuffer, &object->uniformBufferMemory, &object->uniformBufferMapped, m_allocator);
+    createTextureImage(texture_path.c_str(), object->textureImage, object->textureImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
+    createTextureImageView(&object->textureImageView, object->textureImage, m_device);
+    object->sampler = &m_sampler;
 
     // moves object to scene
     m_scenes[scene_name]->objects[name] = std::move(object);

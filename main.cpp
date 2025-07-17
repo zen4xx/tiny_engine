@@ -5,13 +5,15 @@ int main()
 {
     auto engine = Tiny_engine("app", 800, 600, "test", 6, true);
 
-    std::vector<Vertex> vertices = {
-        {{0.0f, -0.5f, 0}, {1.0f, 0.0f, 0.0f}},
-        {{0.5f, 0.5f, 0}, {0.0f, 1.0f, 0.0f}},
-        {{-0.5f, 0.5f, 0}, {0.0f, 0.0f, 1.0f}}};
+    const std::vector<Vertex> vertices = {
+        {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+        {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+        {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+        {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
+    };
 
     std::vector<uint16_t> indices = {
-        0, 1, 2};
+        0, 1, 2, 2, 3, 0};
 
     glm::mat4 view = glm::lookAt(glm::vec3(0.0f, -2.0f, -2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
@@ -21,8 +23,8 @@ int main()
     engine.setView("main", view);
     engine.setView("secondary", view);
 
-    engine.addObject("main", "triangle", vertices, indices, glm::translate(glm::mat4(1), glm::vec3(0, 0, 0)));
-    engine.addObject("secondary", "triangle", vertices, indices, glm::translate(glm::mat4(1), glm::vec3(0, 0, 0)));
+    engine.addObject("main", "triangle", vertices, indices, glm::translate(glm::mat4(1), glm::vec3(0, 0, 0)), "texture.jpg");
+    engine.addObject("secondary", "triangle", vertices, indices, glm::translate(glm::mat4(1), glm::vec3(0, 0, 0)), "texture.jpg");
 
     glm::vec3 pos(0.0f);
     float angle = 0.0f;
@@ -59,7 +61,7 @@ int main()
             isMainScene ? isMainScene = 0 : isMainScene = 1;
         if (engine.isKeyPressed(GLFW_KEY_Z))
         {
-            engine.addObject("main", "triangle" + std::to_string(++cnt), vertices, indices, glm::translate(glm::mat4(1), glm::vec3(distribution(gen), distribution(gen), distribution(gen))));
+            engine.addObject("main", "triangle" + std::to_string(++cnt), vertices, indices, glm::translate(glm::mat4(1), glm::vec3(distribution(gen), distribution(gen), distribution(gen))), "texture.jpg");
             engine.updateScene("main");
         }
         if (engine.isKeyPressed(GLFW_KEY_C))

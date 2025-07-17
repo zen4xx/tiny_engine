@@ -57,6 +57,7 @@ struct Vertex
 {
     glm::vec3 pos;
     glm::vec3 color;
+    glm::vec2 texCoord;
 
     static VkVertexInputBindingDescription getBindingDescription()
     {
@@ -68,19 +69,24 @@ struct Vertex
         return description;
     }
 
-    static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions()
+    static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions()
     {
-        std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
+        std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
 
         attributeDescriptions[0].binding = 0;
         attributeDescriptions[0].location = 0;
-        attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+        attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
         attributeDescriptions[0].offset = offsetof(Vertex, pos);
 
         attributeDescriptions[1].binding = 0;
         attributeDescriptions[1].location = 1;
         attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
         attributeDescriptions[1].offset = offsetof(Vertex, color);
+
+        attributeDescriptions[2].binding = 0;
+        attributeDescriptions[2].location = 2;
+        attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
+        attributeDescriptions[2].offset = offsetof(Vertex, texCoord);
 
         return attributeDescriptions;
     }
@@ -112,6 +118,11 @@ struct _Object
     VmaAllocation uniformBufferMemory;
     void *uniformBufferMapped;
 
+    VkImage textureImage;
+    VkImageView textureImageView;
+    VmaAllocation textureImageMemory;
+    VkSampler *sampler;
+
     VkDescriptorSet *descriptorSet;
 };
 
@@ -137,9 +148,9 @@ void createIndexBuffer(std::vector<uint16_t> indices, VkBuffer *index_buffer, Vm
 void createDescriptorSetLayout(VkDescriptorSetLayout *descriptor_set_layout, VkDevice device);
 void createUniformBuffer(VkBuffer *uniform_buffer, VmaAllocation *uniform_buffer_memory, void **uniform_buffer_mapped, VmaAllocator allocator);
 void createDescriptorPool(VkDescriptorPool *descriptor_pool, uint32_t descriptor_count, VmaAllocator allocator, VkDevice device);
-void addDescriptorSet(VkDescriptorSet descriptor_set, VkBuffer uniform_buffer, VkDevice device);
+void addDescriptorSet(VkDescriptorSet descriptor_set, VkBuffer uniform_buffer, VkImageView texture_image_view, VkSampler texture_sampler, VkDevice device);
 void createDescriptorSets(std::vector<VkDescriptorSet> &descriptor_sets, VkDescriptorSetLayout descriptor_set_layout, int count, VkDescriptorPool descriptor_pool, VkDevice device);
-void createTextureImage(const char *texture_path, VkImage image, VmaAllocation image_memory, VmaAllocator allocator, VkCommandPool command_pool, VkQueue graphics_queue, VkDevice device);
+void createTextureImage(const char *texture_path, VkImage &image, VmaAllocation image_memory, VmaAllocator allocator, VkCommandPool command_pool, VkQueue graphics_queue, VkDevice device);
 void createTextureImageView(VkImageView *texture_image_view, VkImage image, VkDevice device);
 void createTextureSampler(VkSampler *texture_sampler, VkPhysicalDevice physical_device, VkDevice device);
 static std::vector<char> readFile(const std::string &filename);

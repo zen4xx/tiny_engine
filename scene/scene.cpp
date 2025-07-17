@@ -9,7 +9,7 @@ void _Scene::createDescriptorSetsForScene(VkExtent2D extent, VmaAllocator alloca
     int i = 0;
     for (auto it = objects.begin(); it != objects.end(); ++it)
     {
-        addDescriptorSet(descriptor_sets[i], it->second->uniformBuffer, device);
+        addDescriptorSet(descriptor_sets[i], it->second->uniformBuffer, it->second->textureImageView, *it->second->sampler, device);
         it->second->descriptorSet = &descriptor_sets[i];
         ++i;
     }
@@ -52,6 +52,12 @@ void _Scene::deleteScene(VmaAllocator allocator, VkDevice device)
         if (obj->uniformBuffer != VK_NULL_HANDLE)
         {
             vmaDestroyBuffer(allocator, obj->uniformBuffer, obj->uniformBufferMemory);
+        }
+        
+        if (obj->textureImage != VK_NULL_HANDLE)
+        {
+            vkDestroyImageView(device, obj->textureImageView, nullptr);
+            vmaDestroyImage(allocator, obj->textureImage, obj->textureImageMemory);
         }
     }
 
