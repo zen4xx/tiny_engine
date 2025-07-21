@@ -20,7 +20,7 @@ include(FetchContent)
 FetchContent_Declare(
     glfw
     GIT_REPOSITORY https://github.com/glfw/glfw.git
-    GIT_TAG 3.3.9
+    GIT_TAG 3.4
 )
 message("fetching glfw")
 FetchContent_MakeAvailable(glfw)
@@ -35,7 +35,7 @@ FetchContent_MakeAvailable(glm)
 FetchContent_Declare(
     VulkanMemoryAllocator
     GIT_REPOSITORY https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git 
-    GIT_TAG        master  
+    GIT_TAG        3.3.0
 )
 FetchContent_MakeAvailable(VulkanMemoryAllocator)
 
