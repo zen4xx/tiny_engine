@@ -38,13 +38,30 @@ FetchContent_Declare(
     GIT_TAG        v3.3.0
 )
 FetchContent_MakeAvailable(VulkanMemoryAllocator)
-message("fetching assimp")
+
+message("fetching nlohmann_json")
+
 FetchContent_Declare(
-    assimp
-    GIT_REPOSITORY https://github.com/assimp/assimp.git
-    GIT_TAG v6.0.2
+    nlohmann_json
+    GIT_REPOSITORY https://github.com/nlohmann/json.git 
+    GIT_TAG        v3.12.0
 )
-FetchContent_MakeAvailable(assimp)
+FetchContent_MakeAvailable(nlohmann_json)
+
+message("fetching tinygltf")
+
+FetchContent_Declare(
+    tinygltf
+    GIT_REPOSITORY https://github.com/syoyo/tinygltf.git 
+    GIT_TAG        v2.9.6
+)
+
+set(TINYGLTF_ENABLE_STB_IMAGE_WRITE OFF CACHE BOOL "Enable STB image write" FORCE)
+set(TINYGLTF_ENABLE_DRACO OFF CACHE BOOL "Enable Draco support" FORCE)
+set(TINYGLTF_NOEXCEPTION ON CACHE BOOL "Disable exceptions" FORCE)
+
+FetchContent_MakeAvailable(tinygltf)
+
 set(STB_IMAGE_PATH "${PROJECT_SOURCE_DIR}/include/stb_image.h")
 if(NOT EXISTS "${STB_IMAGE_PATH}")
 message(STATUS "Downloading stb_image.h...")
@@ -108,6 +125,7 @@ target_link_libraries(${PROJECT_NAME}
     glfw
     glm
     VulkanMemoryAllocator
-    assimp
+    nlohmann_json
+    tinygltf
 )
 
