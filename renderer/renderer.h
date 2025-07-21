@@ -78,6 +78,10 @@ private:
 
     VkSampler m_sampler;
 
+    VkImage m_depth_image;
+    VmaAllocation m_depth_image_memory;
+    VkImageView m_depth_image_view;
+
     uint32_t current_frame = 0;
 
     // я хз как эта магия работает и если ты шакал захочешь это изменить то тебе п***а (10 вроде норм тк у меня еще многопоточка и получаеться что колчиество cmd buffers 10*numThread)
