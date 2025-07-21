@@ -31,14 +31,20 @@ FetchContent_Declare(
     GIT_TAG 1.0.1
 )
 FetchContent_MakeAvailable(glm)
-
+message("fetching vma")
 FetchContent_Declare(
     VulkanMemoryAllocator
     GIT_REPOSITORY https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git 
-    GIT_TAG        3.3.0
+    GIT_TAG        v3.3.0
 )
 FetchContent_MakeAvailable(VulkanMemoryAllocator)
-
+message("fetching assimp")
+FetchContent_Declare(
+    assimp
+    GIT_REPOSITORY https://github.com/assimp/assimp.git
+    GIT_TAG v6.0.2
+)
+FetchContent_MakeAvailable(assimp)
 set(STB_IMAGE_PATH "${PROJECT_SOURCE_DIR}/include/stb_image.h")
 if(NOT EXISTS "${STB_IMAGE_PATH}")
 message(STATUS "Downloading stb_image.h...")
@@ -102,5 +108,6 @@ target_link_libraries(${PROJECT_NAME}
     glfw
     glm
     VulkanMemoryAllocator
+    assimp
 )
 
