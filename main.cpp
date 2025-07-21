@@ -23,8 +23,8 @@ int main()
     engine.setView("main", view);
     engine.setView("secondary", view);
 
-    engine.addObject("main", "triangle", vertices, indices, glm::translate(glm::mat4(1), glm::vec3(0, 0, 0)), "texture.jpg");
-    engine.addObject("secondary", "triangle", vertices, indices, glm::translate(glm::mat4(1), glm::vec3(0, 0, 0)), "texture.jpg");
+    engine.addObject("main", "grid", vertices, indices, glm::translate(glm::mat4(1), glm::vec3(0, 0, 0)), "texture.jpg");
+    engine.addObject("secondary", "grid", vertices, indices, glm::translate(glm::mat4(1), glm::vec3(0, 0, 0)), "texture.jpg");
 
     glm::vec3 pos(0.0f);
     float angle = 0.0f;
@@ -61,7 +61,7 @@ int main()
             isMainScene ? isMainScene = 0 : isMainScene = 1;
         if (engine.isKeyPressed(GLFW_KEY_Z))
         {
-            engine.addObject("main", "triangle" + std::to_string(++cnt), vertices, indices, glm::translate(glm::mat4(1), glm::vec3(distribution(gen), distribution(gen), distribution(gen))));
+            engine.addObject("main", "grid" + std::to_string(++cnt), vertices, indices, glm::translate(glm::mat4(1), glm::vec3(distribution(gen), distribution(gen), distribution(gen))));
             engine.updateScene("main");
         }
         if (engine.isKeyPressed(GLFW_KEY_C))
@@ -75,14 +75,14 @@ int main()
 
         if (isMainScene)
         {
-            engine.moveObject("main", "triangle", model);
+            engine.moveObject("main", "grid", model);
             engine.drawScene("main");
         }
         else
         {
             glm::mat4 secondary_model = glm::translate(glm::mat4(1), glm::vec3(sin(glfwGetTime()), cos(glfwGetTime()), 0));
             secondary_model = glm::rotate(secondary_model, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
-            engine.moveObject("secondary", "triangle", secondary_model); 
+            engine.moveObject("secondary", "grid", secondary_model); 
             engine.drawScene("secondary");
         }
     }
