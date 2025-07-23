@@ -122,7 +122,7 @@ struct _Object
     VkDescriptorSet *descriptorSet;
 };
 
-bool loadModel(const std::string& filename, _Object& object);
+bool loadModel(const std::string &filename, _Object *object);
 
 void createInstance(const char *appName, VkInstance *instance, PFN_vkDebugUtilsMessengerCallbackEXT debugCallback, const std::vector<const char *> &validationLayers, bool isDebug);
 void setupDebugMessenger(VkInstance instance, VkDebugUtilsMessengerEXT *outMessenger,

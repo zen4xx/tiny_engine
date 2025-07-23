@@ -1079,7 +1079,6 @@ void recordSecondary(ThreadData *thread, std::unordered_map<std::string, std::un
     {
         ubo.model = it->second->pos;
         memcpy(it->second->uniformBufferMapped, &ubo, sizeof(ubo));
-
         VkBuffer vertexBuffers[] = {it->second->vertexBuffer};
 
         VkDeviceSize offsets[] = {0};
@@ -1497,7 +1496,7 @@ void createDepthResources(VkImage &depth_image, VmaAllocation &depth_image_memor
     transitionImageLayout(depth_image, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, command_pool, graphics_queue, device);
 }
 
-bool loadModel(const std::string& filename, _Object& object)
+bool loadModel(const std::string &filename, _Object *object)
 {
     tinygltf::Model model;
     tinygltf::TinyGLTF loader;
@@ -1525,15 +1524,15 @@ bool loadModel(const std::string& filename, _Object& object)
             for (size_t i = 0; i < positionAccessor.count; ++i) {
                 Vertex vertex;
 
-                // Позиция
-                vertex.pos.x = positionBuffer.data[positionView.byteOffset + positionAccessor.byteOffset + i * sizeof(float) * 3 + 0 * sizeof(float)];
-                vertex.pos.y = positionBuffer.data[positionView.byteOffset + positionAccessor.byteOffset + i * sizeof(float) * 3 + 1 * sizeof(float)];
-                vertex.pos.z = positionBuffer.data[positionView.byteOffset + positionAccessor.byteOffset + i * sizeof(float) * 3 + 2 * sizeof(float)];
+                vertex.pos.x = (positionBuffer.data[positionView.byteOffset + positionAccessor.byteOffset + i * sizeof(float) * 3 + 0 * sizeof(float)]);
+                vertex.pos.y = (positionBuffer.data[positionView.byteOffset + positionAccessor.byteOffset + i * sizeof(float) * 3 + 1 * sizeof(float)]);
+                vertex.pos.z = (positionBuffer.data[positionView.byteOffset + positionAccessor.byteOffset + i * sizeof(float) * 3 + 2 * sizeof(float)]);
 
-                vertex.texCoord.x = texCoordBuffer.data[texCoordView.byteOffset + texCoordAccessor.byteOffset + i * sizeof(float) * 2 + 0 * sizeof(float)];
-                vertex.texCoord.y = texCoordBuffer.data[texCoordView.byteOffset + texCoordAccessor.byteOffset + i * sizeof(float) * 2 + 1 * sizeof(float)];
-
-                object.vertices.push_back(vertex);
+                vertex.texCoord.x = (texCoordBuffer.data[texCoordView.byteOffset + texCoordAccessor.byteOffset + i * sizeof(float) * 2 + 0 * sizeof(float)]);
+                vertex.texCoord.y = (texCoordBuffer.data[texCoordView.byteOffset + texCoordAccessor.byteOffset + i * sizeof(float) * 2 + 1 * sizeof(float)]);
+                
+                object->vertices.push_back(vertex);
+                std::cout << object->vertices[i].pos.x << std::endl;
             }
 
             const tinygltf::Accessor& indexAccessor = model.accessors[primitive.indices];
@@ -1542,7 +1541,7 @@ bool loadModel(const std::string& filename, _Object& object)
 
             for (size_t i = 0; i < indexAccessor.count; ++i) {
                 uint16_t index = *(uint16_t*)(indexBuffer.data.data() + indexView.byteOffset + indexAccessor.byteOffset + i * sizeof(uint16_t));
-                object.indices.push_back(index);
+                object->indices.push_back(index);
             }
         }
     }
