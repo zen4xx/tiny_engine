@@ -1,4 +1,6 @@
 #define VMA_IMPLEMENTATION
+#define STB_IMAGE_IMPLEMENTATION
+#define TINYGLTF_IMPLEMENTATION
 #include "renderer_util.h"
 
 std::vector<const char *> getRequiredExtensions(bool isDebug);
@@ -1493,4 +1495,57 @@ void createDepthResources(VkImage &depth_image, VmaAllocation &depth_image_memor
     }
     
     transitionImageLayout(depth_image, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, command_pool, graphics_queue, device);
+}
+
+bool loadModel(const std::string& filename, _Object& object)
+{
+    tinygltf::Model model;
+    tinygltf::TinyGLTF loader;
+    std::string err_msg;
+    std::string warn;
+
+    bool ret = loader.LoadASCIIFromFile(&model, &err_msg, &warn, filename);
+    if (!ret) {
+        std::string err_msg = "Failed to load glTF model: " + err_msg;
+        err(err_msg.c_str(), 1);
+        return false;
+    }
+
+    for (const auto& mesh : model.meshes) {
+        for (const auto& primitive : mesh.primitives) {
+
+            const tinygltf::Accessor& positionAccessor = model.accessors[primitive.attributes.at("POSITION")];
+            const tinygltf::BufferView& positionView = model.bufferViews[positionAccessor.bufferView];
+            const tinygltf::Buffer& positionBuffer = model.buffers[positionView.buffer];
+
+            const tinygltf::Accessor& texCoordAccessor = model.accessors[primitive.attributes.at("TEXCOORD_0")];
+            const tinygltf::BufferView& texCoordView = model.bufferViews[texCoordAccessor.bufferView];
+            const tinygltf::Buffer& texCoordBuffer = model.buffers[texCoordView.buffer];
+
+            for (size_t i = 0; i < positionAccessor.count; ++i) {
+                Vertex vertex;
+
+                // Позиция
+                vertex.pos.x = positionBuffer.data[positionView.byteOffset + positionAccessor.byteOffset + i * sizeof(float) * 3 + 0 * sizeof(float)];
+                vertex.pos.y = positionBuffer.data[positionView.byteOffset + positionAccessor.byteOffset + i * sizeof(float) * 3 + 1 * sizeof(float)];
+                vertex.pos.z = positionBuffer.data[positionView.byteOffset + positionAccessor.byteOffset + i * sizeof(float) * 3 + 2 * sizeof(float)];
+
+                vertex.texCoord.x = texCoordBuffer.data[texCoordView.byteOffset + texCoordAccessor.byteOffset + i * sizeof(float) * 2 + 0 * sizeof(float)];
+                vertex.texCoord.y = texCoordBuffer.data[texCoordView.byteOffset + texCoordAccessor.byteOffset + i * sizeof(float) * 2 + 1 * sizeof(float)];
+
+                object.vertices.push_back(vertex);
+            }
+
+            const tinygltf::Accessor& indexAccessor = model.accessors[primitive.indices];
+            const tinygltf::BufferView& indexView = model.bufferViews[indexAccessor.bufferView];
+            const tinygltf::Buffer& indexBuffer = model.buffers[indexView.buffer];
+
+            for (size_t i = 0; i < indexAccessor.count; ++i) {
+                uint16_t index = *(uint16_t*)(indexBuffer.data.data() + indexView.byteOffset + indexAccessor.byteOffset + i * sizeof(uint16_t));
+                object.indices.push_back(index);
+            }
+        }
+    }
+
+    return true;
 }

@@ -22,9 +22,11 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <array>
-
 #include "../error_handler/error_handler.h"
 
+#define TINYGLTF_NO_INCLUDE_STB_IMAGE
+#define TINYGLTF_NO_STB_IMAGE_WRITE
+#include "../include/tiny_gltf.h"
 #include "vk_mem_alloc.h"
 
 struct QueueFamilyIndices
@@ -119,6 +121,8 @@ struct _Object
 
     VkDescriptorSet *descriptorSet;
 };
+
+bool loadModel(const std::string& filename, _Object& object);
 
 void createInstance(const char *appName, VkInstance *instance, PFN_vkDebugUtilsMessengerCallbackEXT debugCallback, const std::vector<const char *> &validationLayers, bool isDebug);
 void setupDebugMessenger(VkInstance instance, VkDebugUtilsMessengerEXT *outMessenger,

@@ -1,4 +1,3 @@
-#define STB_IMAGE_IMPLEMENTATION
 #include "renderer.h"
 
 /*INITIALIZATION VULKAN*/

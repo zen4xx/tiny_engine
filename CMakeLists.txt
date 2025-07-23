@@ -13,6 +13,7 @@ message(STATUS "Vulkan SDK: ${Vulkan_LIBRARY}")
 option(GLFW_BUILD_DOCS "Build documentation" OFF)
 option(GLFW_BUILD_TESTS "Build tests" OFF)
 option(GLFW_BUILD_EXAMPLES "Build examples" OFF)
+option(BUILD_EXAMPLES "Build examples" OFF)
 
 include(FetchContent)
 
@@ -38,29 +39,6 @@ FetchContent_Declare(
     GIT_TAG        v3.3.0
 )
 FetchContent_MakeAvailable(VulkanMemoryAllocator)
-
-message("fetching nlohmann_json")
-
-FetchContent_Declare(
-    nlohmann_json
-    GIT_REPOSITORY https://github.com/nlohmann/json.git 
-    GIT_TAG        v3.12.0
-)
-FetchContent_MakeAvailable(nlohmann_json)
-
-message("fetching tinygltf")
-
-FetchContent_Declare(
-    tinygltf
-    GIT_REPOSITORY https://github.com/syoyo/tinygltf.git 
-    GIT_TAG        v2.9.6
-)
-
-set(TINYGLTF_ENABLE_STB_IMAGE_WRITE OFF CACHE BOOL "Enable STB image write" FORCE)
-set(TINYGLTF_ENABLE_DRACO OFF CACHE BOOL "Enable Draco support" FORCE)
-set(TINYGLTF_NOEXCEPTION ON CACHE BOOL "Disable exceptions" FORCE)
-
-FetchContent_MakeAvailable(tinygltf)
 
 set(STB_IMAGE_PATH "${PROJECT_SOURCE_DIR}/include/stb_image.h")
 if(NOT EXISTS "${STB_IMAGE_PATH}")
@@ -125,7 +103,5 @@ target_link_libraries(${PROJECT_NAME}
     glfw
     glm
     VulkanMemoryAllocator
-    nlohmann_json
-    tinygltf
 )
 
