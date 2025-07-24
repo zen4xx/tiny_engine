@@ -15,7 +15,7 @@ int main()
     std::vector<uint32_t> indices = {
         0, 1, 2, 2, 3, 0};
 
-    glm::mat4 view = glm::lookAt(glm::vec3(0.0f, -2.0f, -1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    glm::mat4 view = glm::lookAt(glm::vec3(0.0f, -4.0f, -2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
     engine.createScene("main");
     engine.createScene("secondary");
@@ -23,8 +23,8 @@ int main()
     engine.setView("main", view);
     engine.setView("secondary", view);
 
-    engine.addObject("main", "helmet", "glTF/DamagedHelmet.gltf", glm::translate(glm::mat4(1), glm::vec3(0, 0, 0)), "glTF/Default_albedo.jpg");
-    engine.addObject("secondary", "grid", vertices, indices, glm::translate(glm::mat4(1), glm::vec3(0, 0, 0)), "texture.jpg");
+    engine.addObject("main", "helmet", "damaged_helmet/DamagedHelmet.gltf", glm::translate(glm::mat4(1), glm::vec3(0, 0, 0)), "damaged_helmet/Default_albedo.jpg");
+    engine.addObject("secondary", "monkey", "suzanne/Suzanne.gltf", glm::translate(glm::mat4(1), glm::vec3(0, 0, 0)), "suzanne/Suzanne_BaseColor.png");
 
     glm::vec3 pos(0.0f);
     float angle = 0.0f;
@@ -82,7 +82,8 @@ int main()
         {
             glm::mat4 secondary_model = glm::translate(glm::mat4(1), glm::vec3(sin(glfwGetTime()), cos(glfwGetTime()), 0));
             secondary_model = glm::rotate(secondary_model, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
-            engine.moveObject("secondary", "grid", secondary_model); 
+            secondary_model = glm::rotate(secondary_model, -1.57f, glm::vec3(1.0f, 0.0f, 0.0f));
+            engine.moveObject("secondary", "monkey", secondary_model); 
             engine.drawScene("secondary");
         }
     }
