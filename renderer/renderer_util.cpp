@@ -803,7 +803,7 @@ void createGraphicsPipeline(const std::string vertex_shader_path, const std::str
     rasterizer.rasterizerDiscardEnable = VK_FALSE;
     rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
     rasterizer.lineWidth = 1.0f;
-    rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+    rasterizer.cullMode = VK_CULL_MODE_NONE; //FIXME
     rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rasterizer.depthBiasEnable = VK_FALSE;
     rasterizer.depthBiasConstantFactor = 0.0f;
@@ -1083,7 +1083,7 @@ void recordSecondary(ThreadData *thread, std::unordered_map<std::string, std::un
 
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(cmd, 0, 1, vertexBuffers, offsets);
-        vkCmdBindIndexBuffer(cmd, it->second->indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+        vkCmdBindIndexBuffer(cmd, it->second->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, it->second->descriptorSet, 0, nullptr);
 
         vkCmdDrawIndexed(cmd, static_cast<uint32_t>(it->second->indices.size()), 1, 0, 0, 0);
@@ -1265,9 +1265,9 @@ void createVertexBuffer(VkBuffer *vertex_buffer, std::vector<Vertex> vertices, V
     vmaDestroyBuffer(allocator, stagingBuffer, stagingBufferMemory);
 }
 
-void createIndexBuffer(std::vector<uint16_t> indices, VkBuffer *index_buffer, VmaAllocation *index_buffer_memory, VkCommandPool command_pool, VkQueue graphics_queue, VmaAllocator allocator, VkDevice device)
+void createIndexBuffer(std::vector<uint32_t> indices, VkBuffer *index_buffer, VmaAllocation *index_buffer_memory, VkCommandPool command_pool, VkQueue graphics_queue, VmaAllocator allocator, VkDevice device)
 {
-    VkDeviceSize bufferSize = sizeof(uint16_t) * indices.size();
+    VkDeviceSize bufferSize = sizeof(uint32_t) * indices.size();
 
     VkBuffer stagingBuffer;
     VmaAllocation stagingBufferMemory;
@@ -1505,13 +1505,19 @@ bool loadModel(const std::string &filename, _Object *object)
 
     bool ret = loader.LoadASCIIFromFile(&model, &err_msg, &warn, filename);
     if (!ret) {
-        std::string err_msg = "Failed to load glTF model: " + err_msg;
-        err(err_msg.c_str(), 1);
+        std::string error_message = "Failed to load glTF model: " + err_msg;
+        err(error_message.c_str(), 1);
         return false;
     }
 
     for (const auto& mesh : model.meshes) {
         for (const auto& primitive : mesh.primitives) {
+        
+            if (primitive.attributes.find("POSITION") == primitive.attributes.end() ||
+                primitive.attributes.find("TEXCOORD_0") == primitive.attributes.end()) {
+                std::cerr << "Missing POSITION or TEXCOORD_0 attribute in primitive." << std::endl;
+                continue; 
+            }
 
             const tinygltf::Accessor& positionAccessor = model.accessors[primitive.attributes.at("POSITION")];
             const tinygltf::BufferView& positionView = model.bufferViews[positionAccessor.bufferView];
@@ -1521,27 +1527,43 @@ bool loadModel(const std::string &filename, _Object *object)
             const tinygltf::BufferView& texCoordView = model.bufferViews[texCoordAccessor.bufferView];
             const tinygltf::Buffer& texCoordBuffer = model.buffers[texCoordView.buffer];
 
+            const float* positionData = reinterpret_cast<const float*>(positionBuffer.data.data() + positionView.byteOffset + positionAccessor.byteOffset);
+            const float* texCoordData = reinterpret_cast<const float*>(texCoordBuffer.data.data() + texCoordView.byteOffset + texCoordAccessor.byteOffset);
+
             for (size_t i = 0; i < positionAccessor.count; ++i) {
                 Vertex vertex;
 
-                vertex.pos.x = (positionBuffer.data[positionView.byteOffset + positionAccessor.byteOffset + i * sizeof(float) * 3 + 0 * sizeof(float)]);
-                vertex.pos.y = (positionBuffer.data[positionView.byteOffset + positionAccessor.byteOffset + i * sizeof(float) * 3 + 1 * sizeof(float)]);
-                vertex.pos.z = (positionBuffer.data[positionView.byteOffset + positionAccessor.byteOffset + i * sizeof(float) * 3 + 2 * sizeof(float)]);
+                vertex.pos.x = positionData[i * 3 + 0];
+                vertex.pos.y = positionData[i * 3 + 1];
+                vertex.pos.z = positionData[i * 3 + 2];
 
-                vertex.texCoord.x = (texCoordBuffer.data[texCoordView.byteOffset + texCoordAccessor.byteOffset + i * sizeof(float) * 2 + 0 * sizeof(float)]);
-                vertex.texCoord.y = (texCoordBuffer.data[texCoordView.byteOffset + texCoordAccessor.byteOffset + i * sizeof(float) * 2 + 1 * sizeof(float)]);
-                
+                vertex.texCoord.x = texCoordData[i * 2 + 0];
+                vertex.texCoord.y = texCoordData[i * 2 + 1];
+
                 object->vertices.push_back(vertex);
-                std::cout << object->vertices[i].pos.x << std::endl;
             }
 
-            const tinygltf::Accessor& indexAccessor = model.accessors[primitive.indices];
-            const tinygltf::BufferView& indexView = model.bufferViews[indexAccessor.bufferView];
-            const tinygltf::Buffer& indexBuffer = model.buffers[indexView.buffer];
-
-            for (size_t i = 0; i < indexAccessor.count; ++i) {
-                uint16_t index = *(uint16_t*)(indexBuffer.data.data() + indexView.byteOffset + indexAccessor.byteOffset + i * sizeof(uint16_t));
-                object->indices.push_back(index);
+            if (primitive.indices >= 0) {
+                const tinygltf::Accessor& indexAccessor = model.accessors[primitive.indices];
+                const tinygltf::BufferView& indexView = model.bufferViews[indexAccessor.bufferView];
+                const tinygltf::Buffer& indexBuffer = model.buffers[indexView.buffer];
+                
+                if (indexAccessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT)
+                {
+                    const uint16_t* indexData = reinterpret_cast<const uint16_t*>(indexBuffer.data.data() + indexView.byteOffset + indexAccessor.byteOffset);
+                    for (size_t i = 0; i < indexAccessor.count; ++i) {
+                        uint16_t index = indexData[i];
+                        object->indices.push_back(index);
+                    }
+                }
+                else if (indexAccessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT)
+                {
+                    const uint32_t* indexData = reinterpret_cast<const uint32_t*>(indexBuffer.data.data() + indexView.byteOffset + indexAccessor.byteOffset);
+                    for (size_t i = 0; i < indexAccessor.count; ++i) {
+                        uint32_t index = indexData[i];
+                        object->indices.push_back(index);
+                    }
+                }
             }
         }
     }

@@ -14,7 +14,7 @@ public:
     void setWindow(GLFWwindow *window);
     void drawScene(const std::string &scene_name);
     // Must be called before drawScene
-    void addObject(std::string scene_name, std::string obj_name, std::vector<Vertex> vertices, std::vector<uint16_t> indices, glm::mat4 pos, std::string texture_path="_default");
+    void addObject(std::string scene_name, std::string obj_name, std::vector<Vertex> vertices, std::vector<uint32_t> indices, glm::mat4 pos, std::string texture_path="_default");
     void addObject(std::string scene_name, std::string obj_name, const std::string &gltf_model_path, glm::mat4 pos, std::string texture_path="_default");
 
     inline void moveObject(const std::string &scene_name, const std::string &obj_name, glm::mat4 pos) { m_scenes[scene_name]->objects[obj_name]->pos = pos; };

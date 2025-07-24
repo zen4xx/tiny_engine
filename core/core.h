@@ -14,7 +14,7 @@ public:
     inline void update() { glfwPollEvents(); };
 
     // Must be called before drawScene
-    inline void addObject(const std::string &scene_name, const std::string &obj_name, std::vector<Vertex> vertices, std::vector<uint16_t> indices, glm::mat4 pos, const std::string &texture_path="_default") { m_renderer->addObject(scene_name, obj_name, vertices, indices, pos, texture_path); };
+    inline void addObject(const std::string &scene_name, const std::string &obj_name, std::vector<Vertex> vertices, std::vector<uint32_t> indices, glm::mat4 pos, const std::string &texture_path="_default") { m_renderer->addObject(scene_name, obj_name, vertices, indices, pos, texture_path); };
     inline void addObject(const std::string &scene_name, const std::string &obj_name, const std::string &gltf_model_path, glm::mat4 pos, const std::string &texture_path="_default") { m_renderer->addObject(scene_name, obj_name, gltf_model_path, pos, texture_path); };
     inline void moveObject(const std::string &scene_name, const std::string &obj_name, glm::mat4 pos) { m_renderer->moveObject(scene_name, obj_name, pos); };
     

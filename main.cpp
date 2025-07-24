@@ -12,10 +12,10 @@ int main()
         {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f}}
     };
 
-    std::vector<uint16_t> indices = {
+    std::vector<uint32_t> indices = {
         0, 1, 2, 2, 3, 0};
 
-    glm::mat4 view = glm::lookAt(glm::vec3(0.0f, -2.0f, -2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    glm::mat4 view = glm::lookAt(glm::vec3(0.0f, -2.0f, -1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
     engine.createScene("main");
     engine.createScene("secondary");
@@ -23,7 +23,7 @@ int main()
     engine.setView("main", view);
     engine.setView("secondary", view);
 
-    engine.addObject("main", "grid", vertices, indices, glm::translate(glm::mat4(1), glm::vec3(0, 0, 0)), "texture.jpg");
+    engine.addObject("main", "helmet", "glTF/DamagedHelmet.gltf", glm::translate(glm::mat4(1), glm::vec3(0, 0, 0)), "glTF/Default_albedo.jpg");
     engine.addObject("secondary", "grid", vertices, indices, glm::translate(glm::mat4(1), glm::vec3(0, 0, 0)), "texture.jpg");
 
     glm::vec3 pos(0.0f);
@@ -75,7 +75,7 @@ int main()
 
         if (isMainScene)
         {
-            engine.moveObject("main", "grid", model);
+            engine.moveObject("main", "helmet", model);
             engine.drawScene("main");
         }
         else

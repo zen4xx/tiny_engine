@@ -225,7 +225,7 @@ void Renderer::drawScene(const std::string &scene_name)
     current_frame = (current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-void Renderer::addObject(std::string scene_name, std::string name, std::vector<Vertex> vertices, std::vector<uint16_t> indices, glm::mat4 pos, std::string texture_path)
+void Renderer::addObject(std::string scene_name, std::string name, std::vector<Vertex> vertices, std::vector<uint32_t> indices, glm::mat4 pos, std::string texture_path)
 {
     auto object = std::make_unique<_Object>();
     object->vertices = vertices;
