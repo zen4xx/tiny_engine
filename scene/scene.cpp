@@ -2,7 +2,7 @@
 
 void _Scene::createDescriptorSetsForScene(VkExtent2D extent, VmaAllocator allocator, VkDescriptorSetLayout descriptor_set_layout, VkDevice device)
 {
-    proj = glm::perspective(glm::radians(45.0f), extent.width / (float)extent.height, 0.1f, 10.0f);
+    proj = glm::perspective(glm::radians(45.0f), extent.width / (float)extent.height, 0.1f, draw_distance);
 
     createDescriptorPool(&descriptor_pool, objects.size(), allocator, device);
     createDescriptorSets(descriptor_sets, descriptor_set_layout, objects.size(), descriptor_pool, device);

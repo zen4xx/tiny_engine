@@ -18,7 +18,9 @@ public:
     void addObject(std::string scene_name, std::string obj_name, const std::string &gltf_model_path, glm::mat4 pos, std::string texture_path="_default");
 
     inline void moveObject(const std::string &scene_name, const std::string &obj_name, glm::mat4 pos) { m_scenes[scene_name]->objects[obj_name]->pos = pos; };
+
     inline void setView(const std::string &scene_name, glm::mat4 view) { m_scenes[scene_name]->view = view; };
+    inline void setDrawDistance(const std::string &scene_name, float distance) { m_scenes[scene_name]->setDrawDistance(distance); };
     // Must be called before setWindow
     inline void setThreadCount(uint8_t count) { m_thread_count = count; };
     inline float getFPSCount() { return fps; };

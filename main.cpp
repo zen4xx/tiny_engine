@@ -16,12 +16,15 @@ int main()
         0, 1, 2, 2, 3, 0};
 
     glm::mat4 view = glm::lookAt(glm::vec3(0.0f, -4.0f, -2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    glm::mat4 view2 = glm::lookAt(glm::vec3(0.0f, -5.0f, -3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
     engine.createScene("main");
     engine.createScene("secondary");
 
+    engine.setDrawDistance("main", 50.f);
+
     engine.setView("main", view);
-    engine.setView("secondary", view);
+    engine.setView("secondary", view2);
 
     engine.addObject("main", "helmet", "damaged_helmet/DamagedHelmet.gltf", glm::translate(glm::mat4(1), glm::vec3(0, 0, 0)), "damaged_helmet/Default_albedo.jpg");
     engine.addObject("secondary", "monkey", "suzanne/Suzanne.gltf", glm::translate(glm::mat4(1), glm::vec3(0, 0, 0)), "suzanne/Suzanne_BaseColor.png");
@@ -35,7 +38,7 @@ int main()
 
     // For random generation triangles
     std::default_random_engine gen;
-    std::uniform_real_distribution<double> distribution(-5.0, 5.0);
+    std::uniform_real_distribution<double> distribution(-10.f, 10.f);
 
     while (engine.isWindowOpen())
     {
@@ -61,7 +64,7 @@ int main()
             isMainScene ? isMainScene = 0 : isMainScene = 1;
         if (engine.isKeyPressed(GLFW_KEY_Z))
         {
-            engine.addObject("main", "grid" + std::to_string(++cnt), vertices, indices, glm::translate(glm::mat4(1), glm::vec3(distribution(gen), distribution(gen), distribution(gen))));
+            engine.addObject("main", "grid" + std::to_string(++cnt), vertices, indices, glm::translate(glm::mat4(1), glm::vec3(distribution(gen), distribution(gen), distribution(gen)+10.f)));
             engine.updateScene("main");
         }
         if (engine.isKeyPressed(GLFW_KEY_C))

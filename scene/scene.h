@@ -18,6 +18,8 @@ public:
     void destroyDescriptorPool(VkDevice device);
     void deleteScene(VmaAllocator allocator, VkDevice device);
 
+    inline void setDrawDistance(float distance) { draw_distance = distance; };
+
 public:
     bool isDescriptorSetsCreated = 0;
     bool isDeleted = 0;
@@ -25,6 +27,7 @@ public:
     std::unordered_map<std::string, std::unique_ptr<_Object>> objects;
     glm::mat4 view = {0};
     glm::mat4 proj = {0};
+    float draw_distance = 10;
 
     VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
     std::vector<VkDescriptorSet> descriptor_sets;

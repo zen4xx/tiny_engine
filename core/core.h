@@ -25,6 +25,7 @@ public:
     inline void updateScene(const std::string& scene_name) { m_renderer->updateScene(scene_name); };
 
     inline void setView(const std::string &scene_name, glm::mat4 view) { m_renderer->setView(scene_name, view); };
+    inline void setDrawDistance(const std::string &scene_name, float distance) { m_renderer->setDrawDistance(scene_name, distance); };
     
     inline bool isKeyPressed(int key) { return glfwGetKey(m_window->GetWindow(), key); };
 
