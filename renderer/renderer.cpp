@@ -25,8 +25,7 @@ Renderer::Renderer(const char *app_name, bool is_debug)
 
     createInstance(app_name, &m_instance, debugCallback, validationLayers, isDebug);
     if (isDebug)
-    setupDebugMessenger(m_instance, &m_debugMessenger, debugCallback); // validation layers and debug output
-
+        setupDebugMessenger(m_instance, &m_debugMessenger, debugCallback); // validation layers and debug output
 }
 
 Renderer::~Renderer()
@@ -74,7 +73,6 @@ Renderer::~Renderer()
     vkDestroyShaderModule(m_device, m_frag_shader_module, nullptr);
     vkDestroyShaderModule(m_device, m_vert_shader_module, nullptr);
 
-
     vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
 
     vmaDestroyAllocator(m_allocator);
@@ -110,7 +108,7 @@ bool Renderer::checkValidationLayerSupport()
                 break;
             }
         }
-        
+
         if (!layerFound)
         {
             return false;
@@ -238,12 +236,12 @@ void Renderer::addObject(std::string scene_name, std::string name, std::vector<V
     createVertexBuffer(&object->vertexBuffer, object->vertices, &object->vertexBufferMemory, m_command_pool, m_graphics_queue, m_allocator, m_physical_device, m_device);
     createIndexBuffer(object->indices, &object->indexBuffer, &object->indexBufferMemory, m_command_pool, m_graphics_queue, m_allocator, m_device);
     createUniformBuffer(&object->uniformBuffer, &object->uniformBufferMemory, &object->uniformBufferMapped, m_allocator);
-    
+
     if (texture_path != "_default" && std::ifstream(texture_path).is_open())
         createTextureImage(texture_path.c_str(), object->textureImage, object->textureImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
     else if (texture_path == "_default")
         createTextureImage("core/default_assets/textures/white.png", object->textureImage, object->textureImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
-    else 
+    else
         createTextureImage("core/default_assets/textures/black_purple_grid.png", object->textureImage, object->textureImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
 
     createTextureImageView(&object->textureImageView, object->textureImage, m_device);
@@ -262,12 +260,12 @@ void Renderer::addObject(std::string scene_name, std::string name, const std::st
     createVertexBuffer(&object->vertexBuffer, object->vertices, &object->vertexBufferMemory, m_command_pool, m_graphics_queue, m_allocator, m_physical_device, m_device);
     createIndexBuffer(object->indices, &object->indexBuffer, &object->indexBufferMemory, m_command_pool, m_graphics_queue, m_allocator, m_device);
     createUniformBuffer(&object->uniformBuffer, &object->uniformBufferMemory, &object->uniformBufferMapped, m_allocator);
-    
+
     if (texture_path != "_default" && std::ifstream(texture_path).is_open())
         createTextureImage(texture_path.c_str(), object->textureImage, object->textureImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
     else if (texture_path == "_default")
         createTextureImage("core/default_assets/textures/white.png", object->textureImage, object->textureImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
-    else 
+    else
         createTextureImage("core/default_assets/textures/black_purple_grid.png", object->textureImage, object->textureImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
 
     createTextureImageView(&object->textureImageView, object->textureImage, m_device);

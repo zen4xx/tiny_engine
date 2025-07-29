@@ -9,8 +9,7 @@ int main()
         {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f}},
         {{0.5f, -0.5f, 0.0f}, {0.0f, 0.0f}},
         {{0.5f, 0.5f, 0.0f}, {0.0f, 1.0f}},
-        {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f}}
-    };
+        {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f}}};
 
     std::vector<uint32_t> indices = {
         0, 1, 2, 2, 3, 0};
@@ -86,7 +85,7 @@ int main()
             glm::mat4 secondary_model = glm::translate(glm::mat4(1), glm::vec3(sin(glfwGetTime()), cos(glfwGetTime()), 0));
             secondary_model = glm::rotate(secondary_model, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
             secondary_model = glm::rotate(secondary_model, -1.57f, glm::vec3(1.0f, 0.0f, 0.0f));
-            engine.moveObject("secondary", "monkey", secondary_model); 
+            engine.moveObject("secondary", "monkey", secondary_model);
             engine.drawScene("secondary");
         }
     }

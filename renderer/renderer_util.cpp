@@ -8,8 +8,7 @@ std::vector<const char *> getRequiredExtensions(bool isDebug);
 std::vector<const char *> required_extensions;
 const std::vector<const char *> deviceExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-    VK_EXT_NESTED_COMMAND_BUFFER_EXTENSION_NAME
-};
+    VK_EXT_NESTED_COMMAND_BUFFER_EXTENSION_NAME};
 
 void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo, PFN_vkDebugUtilsMessengerCallbackEXT debugCallback)
 {
@@ -365,7 +364,8 @@ VkCommandBuffer beginSingleTimeCommands(VkCommandPool command_pool, VkDevice dev
     return commandBuffer;
 }
 
-void endSingleTimeCommands(VkCommandBuffer command_buffer, VkCommandPool command_pool, VkQueue graphics_queue, VkDevice device) {
+void endSingleTimeCommands(VkCommandBuffer command_buffer, VkCommandPool command_pool, VkQueue graphics_queue, VkDevice device)
+{
     vkEndCommandBuffer(command_buffer);
 
     VkSubmitInfo submitInfo{};
@@ -390,7 +390,8 @@ void copyBuffer(VkBuffer src_buffer, VkBuffer dst_buffer, VkDeviceSize size, VkC
     endSingleTimeCommands(commandBuffer, command_pool, graphics_queue, device);
 }
 
-void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, VkCommandPool command_pool, VkQueue graphics_queue, VkDevice device){
+void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, VkCommandPool command_pool, VkQueue graphics_queue, VkDevice device)
+{
     VkCommandBuffer commandBuffer = beginSingleTimeCommands(command_pool, device);
 
     VkBufferImageCopy region{};
@@ -406,23 +407,24 @@ void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t 
     region.imageExtent = {
         width,
         height,
-        1
-    };
+        1};
 
     vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
-    
+
     endSingleTimeCommands(commandBuffer, command_pool, graphics_queue, device);
 }
 
-bool hasStencilComponent(VkFormat format) {
+bool hasStencilComponent(VkFormat format)
+{
     return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 }
 
-void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout, VkCommandPool command_pool, VkQueue graphics_queue, VkDevice device){
+void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout, VkCommandPool command_pool, VkQueue graphics_queue, VkDevice device)
+{
     VkCommandBuffer commandBuffer = beginSingleTimeCommands(command_pool, device);
 
     VkImageMemoryBarrier barrier{};
-    
+
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     barrier.oldLayout = old_layout;
     barrier.newLayout = new_layout;
@@ -439,52 +441,49 @@ void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout old_lay
     VkPipelineStageFlags sourceStage;
     VkPipelineStageFlags destinationStage;
 
-    if (new_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) 
+    if (new_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
     {
         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-        if (hasStencilComponent(format)) 
+        if (hasStencilComponent(format))
             barrier.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
-        
-    } 
+    }
     else
         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    
 
-    if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED && new_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) 
+    if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED && new_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
     {
         barrier.srcAccessMask = 0;
         barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
         sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
         destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-    } 
-    else if (old_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) 
+    }
+    else if (old_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
     {
         barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
         barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
         sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
         destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-    } 
-    else if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED && new_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) 
+    }
+    else if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED && new_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
     {
         barrier.srcAccessMask = 0;
         barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
         sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
         destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-    } 
+    }
     else
         throw std::invalid_argument("unsupported layout transition!");
-    
+
     vkCmdPipelineBarrier(
         commandBuffer,
         sourceStage, destinationStage,
         0,
         0, nullptr,
         0, nullptr,
-        1, &barrier
-    );
+        1, &barrier);
 
     endSingleTimeCommands(commandBuffer, command_pool, graphics_queue, device);
 }
@@ -515,9 +514,10 @@ void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling
         err("Failed to create image", res);
 }
 
-VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features, VkPhysicalDevice physical_device)
+VkFormat findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features, VkPhysicalDevice physical_device)
 {
-    for (VkFormat format : candidates) {
+    for (VkFormat format : candidates)
+    {
         VkFormatProperties props;
         vkGetPhysicalDeviceFormatProperties(physical_device, format, &props);
 
@@ -535,17 +535,36 @@ VkFormat findDepthFormat(VkPhysicalDevice physical_device)
     return findSupportedFormat({VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT}, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT, physical_device);
 }
 
-VkSampleCountFlagBits getMaxUsableSampleCount(VkPhysicalDevice physical_device) {
+VkSampleCountFlagBits getMaxUsableSampleCount(VkPhysicalDevice physical_device)
+{
     VkPhysicalDeviceProperties physicalDeviceProperties;
     vkGetPhysicalDeviceProperties(physical_device, &physicalDeviceProperties);
 
     VkSampleCountFlags counts = physicalDeviceProperties.limits.framebufferColorSampleCounts & physicalDeviceProperties.limits.framebufferDepthSampleCounts;
-    if (counts & VK_SAMPLE_COUNT_64_BIT) { return VK_SAMPLE_COUNT_64_BIT; }
-    if (counts & VK_SAMPLE_COUNT_32_BIT) { return VK_SAMPLE_COUNT_32_BIT; }
-    if (counts & VK_SAMPLE_COUNT_16_BIT) { return VK_SAMPLE_COUNT_16_BIT; }
-    if (counts & VK_SAMPLE_COUNT_8_BIT) { return VK_SAMPLE_COUNT_8_BIT; }
-    if (counts & VK_SAMPLE_COUNT_4_BIT) { return VK_SAMPLE_COUNT_4_BIT; }
-    if (counts & VK_SAMPLE_COUNT_2_BIT) { return VK_SAMPLE_COUNT_2_BIT; }
+    if (counts & VK_SAMPLE_COUNT_64_BIT)
+    {
+        return VK_SAMPLE_COUNT_64_BIT;
+    }
+    if (counts & VK_SAMPLE_COUNT_32_BIT)
+    {
+        return VK_SAMPLE_COUNT_32_BIT;
+    }
+    if (counts & VK_SAMPLE_COUNT_16_BIT)
+    {
+        return VK_SAMPLE_COUNT_16_BIT;
+    }
+    if (counts & VK_SAMPLE_COUNT_8_BIT)
+    {
+        return VK_SAMPLE_COUNT_8_BIT;
+    }
+    if (counts & VK_SAMPLE_COUNT_4_BIT)
+    {
+        return VK_SAMPLE_COUNT_4_BIT;
+    }
+    if (counts & VK_SAMPLE_COUNT_2_BIT)
+    {
+        return VK_SAMPLE_COUNT_2_BIT;
+    }
 
     return VK_SAMPLE_COUNT_1_BIT;
 }
@@ -817,7 +836,7 @@ void createGraphicsPipeline(const std::string vertex_shader_path, const std::str
     rasterizer.rasterizerDiscardEnable = VK_FALSE;
     rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
     rasterizer.lineWidth = 1.0f;
-    rasterizer.cullMode = VK_CULL_MODE_BACK_BIT; 
+    rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
     rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rasterizer.depthBiasEnable = VK_FALSE;
     rasterizer.depthBiasConstantFactor = 0.0f;
@@ -867,11 +886,11 @@ void createGraphicsPipeline(const std::string vertex_shader_path, const std::str
     depthStencil.depthWriteEnable = VK_TRUE;
     depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
     depthStencil.depthBoundsTestEnable = VK_FALSE;
-    depthStencil.minDepthBounds = 0.0f; 
-    depthStencil.maxDepthBounds = 1.0f; 
+    depthStencil.minDepthBounds = 0.0f;
+    depthStencil.maxDepthBounds = 1.0f;
     depthStencil.stencilTestEnable = VK_FALSE;
     depthStencil.front = {};
-    depthStencil.back = {}; 
+    depthStencil.back = {};
 
     VkResult res = vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, pipeline_layout);
     if (res != VK_SUCCESS)
@@ -938,7 +957,7 @@ void createRenderPass(VkRenderPass *render_pass, VkPipelineLayout *pipeline_layo
     depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-    
+
     VkAttachmentReference colorAttachmentRef{};
     colorAttachmentRef.attachment = 0;
     colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -984,8 +1003,7 @@ void createFramebuffers(std::vector<VkFramebuffer> &framebuffers, std::vector<Vk
     {
         std::array<VkImageView, 2> attachments = {
             swap_chain_image_views[i],
-            depth_image_view
-        };
+            depth_image_view};
 
         VkFramebufferCreateInfo framebufferInfo{};
         framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -1144,18 +1162,22 @@ void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData>
     std::vector<std::thread> local_threads;
 
     auto it = objects.begin();
-    for (int i = 0; i < numThreads && it != objects.end(); ++i) {
+    for (int i = 0; i < numThreads && it != objects.end(); ++i)
+    {
         auto start = it;
-        for (size_t j = 0; j < chunkSize && it != objects.end(); ++j) {
+        for (size_t j = 0; j < chunkSize && it != objects.end(); ++j)
+        {
             ++it;
         }
         local_threads.emplace_back(recordSecondary, &threads[i], std::ref(objects), extent, render_pass, framebuffers[image_index], graphics_pipeline, pipeline_layout, current_frame, view, proj, device, start, it);
     }
 
     int i = 0;
-    for (auto& t : local_threads) {
+    for (auto &t : local_threads)
+    {
         t.join();
-        if(threads[i].is_cmd_buffer_recorded){
+        if (threads[i].is_cmd_buffer_recorded)
+        {
             vkCmdExecuteCommands(command_buffer, 1, &threads[i].command_buffers[current_frame]);
             threads[i].is_cmd_buffer_recorded = 0;
         }
@@ -1336,7 +1358,7 @@ void createUniformBuffer(VkBuffer *uniform_buffer, VmaAllocation *uniform_buffer
 
 void createDescriptorPool(VkDescriptorPool *descriptor_pool, uint32_t descriptor_count, VmaAllocator allocator, VkDevice device)
 {
-    
+
     std::array<VkDescriptorPoolSize, 2> poolSizes{};
 
     poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -1415,7 +1437,7 @@ void createTextureImage(const char *texture_path, VkImage &image, VmaAllocation 
     VmaAllocation stagingBufferMemory;
 
     createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_AUTO, nullptr, &stagingBuffer, &stagingBufferMemory, allocator);
-    
+
     void *data;
     vmaMapMemory(allocator, stagingBufferMemory, &data);
     memcpy(data, pixels, static_cast<size_t>(imageSize));
@@ -1429,7 +1451,7 @@ void createTextureImage(const char *texture_path, VkImage &image, VmaAllocation 
     copyBufferToImage(stagingBuffer, image, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight), command_pool, graphics_queue, device);
 
     transitionImageLayout(image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, command_pool, graphics_queue, device);
-    
+
     vmaDestroyBuffer(allocator, stagingBuffer, stagingBufferMemory);
 }
 
@@ -1453,27 +1475,28 @@ void createTextureImageView(VkImageView *texture_image_view, VkImage image, VkDe
     }
 }
 
-void createTextureSampler(VkSampler *texture_sampler, VkPhysicalDevice physical_device, VkDevice device){
+void createTextureSampler(VkSampler *texture_sampler, VkPhysicalDevice physical_device, VkDevice device)
+{
     VkSamplerCreateInfo samplerInfo{};
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
     samplerInfo.magFilter = VK_FILTER_LINEAR;
     samplerInfo.minFilter = VK_FILTER_LINEAR;
-    
+
     samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    
+
     VkPhysicalDeviceProperties properties{};
     vkGetPhysicalDeviceProperties(physical_device, &properties);
-    
+
     samplerInfo.anisotropyEnable = VK_TRUE;
     samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
-    
+
     samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
     samplerInfo.unnormalizedCoordinates = VK_FALSE;
     samplerInfo.compareEnable = VK_FALSE;
     samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-    
+
     samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
     samplerInfo.mipLodBias = 0.0f;
     samplerInfo.minLod = 0.0f;
@@ -1487,9 +1510,9 @@ void createTextureSampler(VkSampler *texture_sampler, VkPhysicalDevice physical_
 void createDepthResources(VkImage &depth_image, VmaAllocation &depth_image_memory, VkImageView &depth_image_view, VmaAllocator allocator, VkExtent2D swap_chain_extent, VkQueue graphics_queue, VkCommandPool command_pool, VkPhysicalDevice physical_device, VkDevice device)
 {
     VkFormat depthFormat = findDepthFormat(physical_device);
-    
+
     createImage(swap_chain_extent.width, swap_chain_extent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depth_image, depth_image_memory, allocator);
-    
+
     VkImageViewCreateInfo viewInfo{};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     viewInfo.image = depth_image;
@@ -1506,7 +1529,7 @@ void createDepthResources(VkImage &depth_image, VmaAllocation &depth_image_memor
     {
         err("Failed to create depth image view", res);
     }
-    
+
     transitionImageLayout(depth_image, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, command_pool, graphics_queue, device);
 }
 
@@ -1518,33 +1541,38 @@ bool loadModel(const std::string &filename, _Object *object)
     std::string warn;
 
     bool ret = loader.LoadASCIIFromFile(&model, &err_msg, &warn, filename);
-    if (!ret) {
+    if (!ret)
+    {
         std::string error_message = "Failed to load glTF model: " + err_msg;
         err(error_message.c_str(), 1);
         return false;
     }
 
-    for (const auto& mesh : model.meshes) {
-        for (const auto& primitive : mesh.primitives) {
-        
+    for (const auto &mesh : model.meshes)
+    {
+        for (const auto &primitive : mesh.primitives)
+        {
+
             if (primitive.attributes.find("POSITION") == primitive.attributes.end() ||
-                primitive.attributes.find("TEXCOORD_0") == primitive.attributes.end()) {
+                primitive.attributes.find("TEXCOORD_0") == primitive.attributes.end())
+            {
                 std::cerr << "Missing POSITION or TEXCOORD_0 attribute in primitive." << std::endl;
-                continue; 
+                continue;
             }
 
-            const tinygltf::Accessor& positionAccessor = model.accessors[primitive.attributes.at("POSITION")];
-            const tinygltf::BufferView& positionView = model.bufferViews[positionAccessor.bufferView];
-            const tinygltf::Buffer& positionBuffer = model.buffers[positionView.buffer];
+            const tinygltf::Accessor &positionAccessor = model.accessors[primitive.attributes.at("POSITION")];
+            const tinygltf::BufferView &positionView = model.bufferViews[positionAccessor.bufferView];
+            const tinygltf::Buffer &positionBuffer = model.buffers[positionView.buffer];
 
-            const tinygltf::Accessor& texCoordAccessor = model.accessors[primitive.attributes.at("TEXCOORD_0")];
-            const tinygltf::BufferView& texCoordView = model.bufferViews[texCoordAccessor.bufferView];
-            const tinygltf::Buffer& texCoordBuffer = model.buffers[texCoordView.buffer];
+            const tinygltf::Accessor &texCoordAccessor = model.accessors[primitive.attributes.at("TEXCOORD_0")];
+            const tinygltf::BufferView &texCoordView = model.bufferViews[texCoordAccessor.bufferView];
+            const tinygltf::Buffer &texCoordBuffer = model.buffers[texCoordView.buffer];
 
-            const float* positionData = reinterpret_cast<const float*>(positionBuffer.data.data() + positionView.byteOffset + positionAccessor.byteOffset);
-            const float* texCoordData = reinterpret_cast<const float*>(texCoordBuffer.data.data() + texCoordView.byteOffset + texCoordAccessor.byteOffset);
+            const float *positionData = reinterpret_cast<const float *>(positionBuffer.data.data() + positionView.byteOffset + positionAccessor.byteOffset);
+            const float *texCoordData = reinterpret_cast<const float *>(texCoordBuffer.data.data() + texCoordView.byteOffset + texCoordAccessor.byteOffset);
 
-            for (size_t i = 0; i < positionAccessor.count; ++i) {
+            for (size_t i = 0; i < positionAccessor.count; ++i)
+            {
                 Vertex vertex;
 
                 vertex.pos.x = positionData[i * 3 + 0];
@@ -1557,23 +1585,26 @@ bool loadModel(const std::string &filename, _Object *object)
                 object->vertices.push_back(vertex);
             }
 
-            if (primitive.indices >= 0) {
-                const tinygltf::Accessor& indexAccessor = model.accessors[primitive.indices];
-                const tinygltf::BufferView& indexView = model.bufferViews[indexAccessor.bufferView];
-                const tinygltf::Buffer& indexBuffer = model.buffers[indexView.buffer];
-                
+            if (primitive.indices >= 0)
+            {
+                const tinygltf::Accessor &indexAccessor = model.accessors[primitive.indices];
+                const tinygltf::BufferView &indexView = model.bufferViews[indexAccessor.bufferView];
+                const tinygltf::Buffer &indexBuffer = model.buffers[indexView.buffer];
+
                 if (indexAccessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT)
                 {
-                    const uint16_t* indexData = reinterpret_cast<const uint16_t*>(indexBuffer.data.data() + indexView.byteOffset + indexAccessor.byteOffset);
-                    for (size_t i = 0; i < indexAccessor.count; ++i) {
+                    const uint16_t *indexData = reinterpret_cast<const uint16_t *>(indexBuffer.data.data() + indexView.byteOffset + indexAccessor.byteOffset);
+                    for (size_t i = 0; i < indexAccessor.count; ++i)
+                    {
                         uint16_t index = indexData[i];
                         object->indices.push_back(index);
                     }
                 }
                 else if (indexAccessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT)
                 {
-                    const uint32_t* indexData = reinterpret_cast<const uint32_t*>(indexBuffer.data.data() + indexView.byteOffset + indexAccessor.byteOffset);
-                    for (size_t i = 0; i < indexAccessor.count; ++i) {
+                    const uint32_t *indexData = reinterpret_cast<const uint32_t *>(indexBuffer.data.data() + indexView.byteOffset + indexAccessor.byteOffset);
+                    for (size_t i = 0; i < indexAccessor.count; ++i)
+                    {
                         uint32_t index = indexData[i];
                         object->indices.push_back(index);
                     }
