@@ -79,14 +79,18 @@ private:
     VkSwapchainKHR m_swap_chain;
     VkFormat m_swap_chain_image_format;
     VkExtent2D m_swap_chain_extent;
-
+    
     VkSampler m_sampler;
+    
+    VkSampleCountFlagBits m_msaa_samples = VK_SAMPLE_COUNT_1_BIT;
 
     VkImage m_depth_image;
     VmaAllocation m_depth_image_memory;
     VkImageView m_depth_image_view;
 
     uint32_t current_frame = 0;
+
+
 
     // я хз как эта магия работает и если ты шакал захочешь это изменить то тебе п***а (10 вроде норм тк у меня еще многопоточка и получаеться что колчиество cmd buffers 10*numThread)
     const int MAX_FRAMES_IN_FLIGHT = 10;
@@ -116,4 +120,4 @@ private:
         VK_DYNAMIC_STATE_SCISSOR};
 };
 
-#endif
+#endif 

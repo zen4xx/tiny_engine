@@ -25,7 +25,8 @@ Renderer::Renderer(const char *app_name, bool is_debug)
 
     createInstance(app_name, &m_instance, debugCallback, validationLayers, isDebug);
     if (isDebug)
-        setupDebugMessenger(m_instance, &m_debugMessenger, debugCallback); // validation layers and debug output
+    setupDebugMessenger(m_instance, &m_debugMessenger, debugCallback); // validation layers and debug output
+
 }
 
 Renderer::~Renderer()
@@ -109,7 +110,7 @@ bool Renderer::checkValidationLayerSupport()
                 break;
             }
         }
-
+        
         if (!layerFound)
         {
             return false;
@@ -139,6 +140,8 @@ void Renderer::setWindow(GLFWwindow *window)
     createFramebuffers(m_swap_chain_frame_buffers, m_swap_chain_image_views, m_render_pass, m_swap_chain_extent, m_depth_image_view, m_device);
     createCommandBuffers(m_command_buffers, m_command_pool, MAX_FRAMES_IN_FLIGHT, m_device);
     createTextureSampler(&m_sampler, m_physical_device, m_device);
+
+    m_msaa_samples = getMaxUsableSampleCount(m_physical_device);
 
     m_threads.resize(m_thread_count);
     for (int i = 0; i < m_thread_count; ++i)

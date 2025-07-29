@@ -152,5 +152,8 @@ void createTextureImage(const char *texture_path, VkImage &image, VmaAllocation 
 void createTextureImageView(VkImageView *texture_image_view, VkImage image, VkDevice device);
 void createTextureSampler(VkSampler *texture_sampler, VkPhysicalDevice physical_device, VkDevice device);
 void createDepthResources(VkImage &depth_image, VmaAllocation &depth_image_memory, VkImageView &depth_image_view, VmaAllocator allocator, VkExtent2D swap_chain_extent, VkQueue graphics_queue, VkCommandPool command_pool, VkPhysicalDevice physical_device, VkDevice device);
+
+VkSampleCountFlagBits getMaxUsableSampleCount(VkPhysicalDevice physical_device);
+
 static std::vector<char> readFile(const std::string &filename);
 #endif
