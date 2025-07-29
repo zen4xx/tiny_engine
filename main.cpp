@@ -64,8 +64,7 @@ int main()
             isMainScene ? isMainScene = 0 : isMainScene = 1;
         if (engine.isKeyPressed(GLFW_KEY_Z))
         {
-        for(int i = 0; i < 500; ++i)
-            engine.addObject("main", "grid" + std::to_string(++cnt) + std::to_string(i), "damaged_helmet/DamagedHelmet.gltf", glm::translate(glm::mat4(1), glm::vec3(distribution(gen), distribution(gen), distribution(gen))), "dasd");
+            engine.addObject("main", "grid" + std::to_string(++cnt), vertices, indices, glm::translate(glm::mat4(1), glm::vec3(distribution(gen), distribution(gen), distribution(gen))));
             engine.updateScene("main");
         }
         if (engine.isKeyPressed(GLFW_KEY_C))
