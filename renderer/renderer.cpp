@@ -33,11 +33,13 @@ Renderer::~Renderer()
 
     vkDeviceWaitIdle(m_device);
 
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)    
+        vkDestroyFence(m_device, m_in_flight_fences[i], nullptr);
+
+    for(int i = 0; i < m_swap_chain_images.size(); ++i)
     {
         vkDestroySemaphore(m_device, m_render_finished_semaphores[i], nullptr);
         vkDestroySemaphore(m_device, m_image_available_semaphores[i], nullptr);
-        vkDestroyFence(m_device, m_in_flight_fences[i], nullptr);
     }
 
     vkDestroyCommandPool(m_device, m_command_pool, nullptr);
@@ -148,16 +150,15 @@ void Renderer::setWindow(GLFWwindow *window)
         createSecondaryCommandBuffers(m_threads[i].command_buffers, m_threads[i].command_pool, MAX_FRAMES_IN_FLIGHT, m_device);
     }
 
-    createSyncObjects(m_image_available_semaphores, m_render_finished_semaphores, m_in_flight_fences, MAX_FRAMES_IN_FLIGHT, m_device);
+    createSyncObjects(m_image_available_semaphores, m_render_finished_semaphores, m_in_flight_fences, MAX_FRAMES_IN_FLIGHT, m_swap_chain_images.size(), m_device);
 }
-
 void Renderer::drawScene(const std::string &scene_name)
 {
 
 #ifndef TINY_ENGINE_MAX_PERFORMANCE
     if (!m_scenes[scene_name]->isDescriptorSetsCreated)
         m_scenes[scene_name]->createDescriptorSetsForScene(m_swap_chain_extent, m_allocator, m_descriptor_set_layout, m_device);
-#endif 
+#endif
 
     static double lastTime = glfwGetTime();
 
@@ -171,7 +172,7 @@ void Renderer::drawScene(const std::string &scene_name)
 
     uint32_t imageIndex;
     VkResult res = vkAcquireNextImageKHR(m_device, m_swap_chain, UINT64_MAX, m_image_available_semaphores[current_frame], VK_NULL_HANDLE, &imageIndex);
-
+    
     if (res == VK_ERROR_OUT_OF_DATE_KHR)
     {
         vkDeviceWaitIdle(m_device);
@@ -181,24 +182,24 @@ void Renderer::drawScene(const std::string &scene_name)
         recreateSwapChain(&m_swap_chain, m_render_pass, m_swap_chain_frame_buffers, m_window, m_surface, m_swap_chain_images, m_swap_chain_image_views, &m_swap_chain_image_format, &m_swap_chain_extent, m_depth_image_view, m_physical_device, m_device);
         return;
     }
-
+    
     vkResetFences(m_device, 1, &m_in_flight_fences[current_frame]);
     vkResetCommandBuffer(m_command_buffers[current_frame], 0);
     recordCommandBuffer(m_command_buffers[current_frame], m_threads, m_scenes[scene_name]->objects, imageIndex, m_swap_chain_extent, m_render_pass, m_swap_chain_frame_buffers, m_graphics_pipeline, m_pipeline_layout, current_frame, m_scenes[scene_name]->view, m_scenes[scene_name]->proj, m_device);
-
+    
     VkSubmitInfo submitInfo = {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-
+    
     VkSemaphore waitSemaphores[] = {m_image_available_semaphores[current_frame]};
     VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
     submitInfo.waitSemaphoreCount = 1;
     submitInfo.pWaitSemaphores = waitSemaphores;
     submitInfo.pWaitDstStageMask = waitStages;
-
+    
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &m_command_buffers[current_frame];
 
-    VkSemaphore signalSemaphore[] = {m_render_finished_semaphores[current_frame]};
+    VkSemaphore signalSemaphore[] = {m_render_finished_semaphores[imageIndex]};
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphore;
 
