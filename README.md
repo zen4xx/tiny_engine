@@ -17,6 +17,7 @@ Features
     Scene and object system
     Texture and shader support
     Loading 3D models in glTF format
+    Multithreaded rendering
 
 
 Download
