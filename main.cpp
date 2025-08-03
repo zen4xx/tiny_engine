@@ -25,10 +25,17 @@ int main()
     engine.setView("main", view);
     engine.setView("secondary", view2);
 
-    engine.addObject("main", "helmet", "damaged_helmet/DamagedHelmet.gltf", glm::translate(glm::mat4(1), glm::vec3(0, 0, 0)), "damaged_helmet/Default_albedo.jpg");
-    engine.addObject("secondary", "monkey", "suzanne/Suzanne.gltf", glm::translate(glm::mat4(1), glm::vec3(0, 0, 0)), "suzanne/Suzanne_BaseColor.png");
+    tiny_engine::Object suzanne;
+    suzanne.scene_name = "secondary";
+    suzanne.obj_name = "monkey";
+    suzanne.gltf_model_path = "suzanne/Suzanne.gltf";
+    suzanne.pos = glm::translate(glm::mat4(1), glm::vec3(0,0,0));
+    suzanne.texture_path = "suzanne/Suzanne_BaseColor.png";
 
-    glm::vec3 pos(0.0f);
+    engine.addObject("main", "helmet", "damaged_helmet/DamagedHelmet.gltf", glm::translate(glm::mat4(1), glm::vec3(0, 0, 0)), "damaged_helmet/Default_albedo.jpg");
+    engine.addObject(suzanne);
+   
+     glm::vec3 pos(0.0f);
     float angle = 0.0f;
     float speed = 3.0f;
 

@@ -8,15 +8,15 @@ namespace tiny_engine
 {
     struct Object
     {
-        const std::string &scene_name;
-        const std::string &obj_name;
+        std::string scene_name;
+        std::string obj_name;
 
-        const std::vector<Vertex> &vertices;
-        const std::vector<uint32_t> &indices;
+        const std::vector<Vertex> &vertices = {};
+        const std::vector<uint32_t> &indices = {};
 
-        const std::string &gltf_model_path;
+        std::string gltf_model_path = "_null";
 
-        const std::string &texture_path = "_default";
+        std::string texture_path = "_default";
 
         glm::mat4 pos;
     };    
