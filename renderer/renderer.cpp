@@ -229,7 +229,7 @@ void Renderer::drawScene(const std::string &scene_name)
     current_frame = (current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-void Renderer::addObject(std::string scene_name, std::string name, std::vector<Vertex> vertices, std::vector<uint32_t> indices, glm::mat4 pos, std::string texture_path)
+void Renderer::addObject(const std::string &scene_name, const std::string &name, const std::vector<Vertex> &vertices, const std::vector<uint32_t> &indices, glm::mat4 pos, const std::string &texture_path)
 {
     auto object = std::make_unique<_Object>();
     object->vertices = vertices;
@@ -254,7 +254,7 @@ void Renderer::addObject(std::string scene_name, std::string name, std::vector<V
     m_scenes[scene_name]->objects[name] = std::move(object);
 }
 
-void Renderer::addObject(std::string scene_name, std::string name, const std::string &gltf_model_path, glm::mat4 pos, std::string texture_path)
+void Renderer::addObject(const std::string &scene_name, const std::string &name, const std::string &gltf_model_path, glm::mat4 pos, const std::string &texture_path)
 {
     auto object = std::make_unique<_Object>();
     object->pos = pos;
@@ -277,3 +277,4 @@ void Renderer::addObject(std::string scene_name, std::string name, const std::st
     // moves object to scene
     m_scenes[scene_name]->objects[name] = std::move(object);
 }
+

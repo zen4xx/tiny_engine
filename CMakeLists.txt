@@ -57,12 +57,6 @@ list(APPEND SOURCE_FILES ${SCENE})
 file(GLOB ERR_HANDLER "error_handler/error_handler.cpp")
 list(APPEND SOURCE_FILES ${ERR_HANDLER})
 
-#add_executable(${PROJECT_NAME} main.cpp
-#    window/window.cpp
-#    core/core.cpp
-#    renderer/renderer.cpp
-#)
-
 set(SOURCE_FILES ${SOURCE_FILES} ${CORE} ${WINDOW} ${RENDERER} ${SCENE} ${ERR_HANDLER}) 
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})

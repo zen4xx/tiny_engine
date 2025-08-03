@@ -1,4 +1,4 @@
-#include "core/core.h"
+#include "tiny_engine.h"
 #include <bits/stdc++.h>
 
 int main()
