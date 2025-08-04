@@ -17,8 +17,9 @@ public:
     inline void addObject(const std::string &scene_name, const std::string &obj_name, const std::vector<Vertex> &vertices, const std::vector<uint32_t> &indices, glm::mat4 pos, const std::string &texture_path="_default") { m_renderer->addObject(scene_name, obj_name, vertices, indices, pos, texture_path); };
     inline void addObject(const std::string &scene_name, const std::string &obj_name, const std::string &gltf_model_path, glm::mat4 pos, const std::string &texture_path="_default") { m_renderer->addObject(scene_name, obj_name, gltf_model_path, pos, texture_path); };
     inline void addObject(const tiny_engine::Object &obj) { m_renderer->addObject(obj); };
+
     inline void moveObject(const std::string &scene_name, const std::string &obj_name, glm::mat4 pos) { m_renderer->moveObject(scene_name, obj_name, pos); };
-    
+    inline void moveObject(const tiny_engine::Object &obj, glm::mat4 pos) { m_renderer->moveObject(obj, pos); };
 
     inline void drawScene(const std::string &scene_name) { m_renderer->drawScene(scene_name); };
     inline void createScene(const std::string &scene_name) { m_renderer->createScene(scene_name); };
