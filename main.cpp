@@ -1,5 +1,5 @@
 #include "tiny_engine.h"
-#include <bits/stdc++.h>
+#include <random>
 
 int main()
 {
@@ -31,7 +31,7 @@ int main()
     suzanne.gltf_model_path = "suzanne/Suzanne.gltf";
     suzanne.pos = glm::translate(glm::mat4(1), glm::vec3(0,0,0));
     suzanne.texture_path = "suzanne/Suzanne_BaseColor.png";
-
+    
     engine.addObject("main", "helmet", "damaged_helmet/DamagedHelmet.gltf", glm::translate(glm::mat4(1), glm::vec3(0, 0, 0)), "damaged_helmet/Default_albedo.jpg");
     engine.addObject(suzanne);
    
