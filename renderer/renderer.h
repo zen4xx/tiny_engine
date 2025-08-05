@@ -42,8 +42,11 @@ public:
 
     inline void setView(const std::string &scene_name, glm::mat4 view) { m_scenes[scene_name]->view = view; };
     inline void setDrawDistance(const std::string &scene_name, float distance) { m_scenes[scene_name]->setDrawDistance(distance); };
+    
     // Must be called before setWindow
     inline void setThreadCount(uint8_t count) { m_thread_count = count; };
+    inline void setMsaaQuality(uint8_t quality) { m_msaa_samples = static_cast<VkSampleCountFlagBits>(quality); };
+
     inline float getFPSCount() { return fps; };
     inline float getDeltaTime() { return m_delta_time; };
 

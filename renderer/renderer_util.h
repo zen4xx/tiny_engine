@@ -29,6 +29,8 @@
 #include "../include/tiny_gltf.h"
 #include "vk_mem_alloc.h"
 
+#define TINY_ENGINE_DEFAULT_MSAA_QUALITY 255
+
 struct QueueFamilyIndices
 {
     std::optional<uint32_t> graphicsFamily;

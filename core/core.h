@@ -5,7 +5,7 @@
 class Tiny_engine
 {
 public:
-    Tiny_engine(const char *application_name, int width, int height, const char *title, uint8_t thread_count = 6, bool is_debug = false, GLFWmonitor *monitor = nullptr, GLFWwindow *share = nullptr);
+    Tiny_engine(const char *application_name, int width, int height, const char *title, uint8_t msaa_quality = TINY_ENGINE_DEFAULT_MSAA_QUALITY, uint8_t thread_count = 6, bool is_debug = false, GLFWmonitor *monitor = nullptr, GLFWwindow *share = nullptr);
     ~Tiny_engine();
 
 public:

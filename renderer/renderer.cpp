@@ -132,7 +132,10 @@ void Renderer::setWindow(GLFWwindow *window)
 
     
     pickPhysicalDevice(&m_instance, &m_physical_device, m_surface, isDebug);
-    m_msaa_samples = getMaxUsableSampleCount(m_physical_device);
+
+    if (m_msaa_samples == TINY_ENGINE_DEFAULT_MSAA_QUALITY)
+        m_msaa_samples = getMaxUsableSampleCount(m_physical_device);
+
     createLogicalDevice(&m_graphics_queue, &m_present_queue, &m_device, &m_physical_device, validationLayers, m_surface, isDebug);
     createAllocator(&m_allocator, m_instance, m_physical_device, m_device);
     createSwapChain(m_device, m_physical_device, m_window, m_surface, &m_swap_chain, m_swap_chain_images, &m_swap_chain_image_format, &m_swap_chain_extent);
