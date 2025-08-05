@@ -18,6 +18,7 @@ Features
     Texture and shader support
     Loading 3D models in glTF format
     Multithreaded rendering
+    MSAA
 
 
 Download
