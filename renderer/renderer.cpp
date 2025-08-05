@@ -55,6 +55,9 @@ Renderer::~Renderer()
     vkDestroyImageView(m_device, m_depth_image_view, nullptr);
     vmaDestroyImage(m_allocator, m_depth_image, m_depth_image_memory);
 
+    vkDestroyImageView(m_device, m_color_image_view, nullptr);
+    vmaDestroyImage(m_allocator, m_color_image, m_color_image_memory);
+
     vkDestroyPipeline(m_device, m_graphics_pipeline, nullptr);
     vkDestroyPipelineLayout(m_device, m_pipeline_layout, nullptr);
     vkDestroyRenderPass(m_device, m_render_pass, nullptr);
@@ -127,21 +130,26 @@ void Renderer::setWindow(GLFWwindow *window)
     if (glfwCreateWindowSurface(m_instance, m_window, nullptr, &m_surface) != VK_SUCCESS)
         err("Failed to create a surface", 1);
 
+    
     pickPhysicalDevice(&m_instance, &m_physical_device, m_surface, isDebug);
+    m_msaa_samples = getMaxUsableSampleCount(m_physical_device);
     createLogicalDevice(&m_graphics_queue, &m_present_queue, &m_device, &m_physical_device, validationLayers, m_surface, isDebug);
     createAllocator(&m_allocator, m_instance, m_physical_device, m_device);
     createSwapChain(m_device, m_physical_device, m_window, m_surface, &m_swap_chain, m_swap_chain_images, &m_swap_chain_image_format, &m_swap_chain_extent);
     createImageViews(m_swap_chain_image_views, m_swap_chain_images, m_swap_chain_image_format, m_device);
-    createRenderPass(&m_render_pass, &m_pipeline_layout, m_swap_chain_image_format, m_physical_device, m_device);
+    createRenderPass(&m_render_pass, &m_pipeline_layout, m_swap_chain_image_format, m_msaa_samples, m_physical_device, m_device);
     createDescriptorSetLayout(&m_descriptor_set_layout, m_device);
-    createGraphicsPipeline("renderer/shaders/vert.spv", "renderer/shaders/frag.spv", &m_vert_shader_module, &m_frag_shader_module, &m_descriptor_set_layout, m_dynamic_states, &m_viewport, &m_scissor, m_swap_chain_extent, &m_render_pass, &m_pipeline_layout, &m_graphics_pipeline, m_device);
+    createGraphicsPipeline("renderer/shaders/vert.spv", "renderer/shaders/frag.spv", &m_vert_shader_module, &m_frag_shader_module, &m_descriptor_set_layout, m_dynamic_states, &m_viewport, &m_scissor, m_swap_chain_extent, &m_render_pass, &m_pipeline_layout, &m_graphics_pipeline, m_msaa_samples, m_device);
     createCommandPool(&m_command_pool, m_surface, m_physical_device, m_device);
-    createDepthResources(m_depth_image, m_depth_image_memory, m_depth_image_view, m_allocator, m_swap_chain_extent, m_graphics_queue, m_command_pool, m_physical_device, m_device);
-    createFramebuffers(m_swap_chain_frame_buffers, m_swap_chain_image_views, m_render_pass, m_swap_chain_extent, m_depth_image_view, m_device);
+    
+    createDepthResources(m_depth_image, m_depth_image_memory, m_depth_image_view, m_allocator, m_swap_chain_extent, m_graphics_queue, m_command_pool, m_msaa_samples, m_physical_device, m_device);
+    createColorResources(m_color_image, m_color_image_memory, m_color_image_view, m_allocator, m_swap_chain_extent, m_swap_chain_image_format, m_graphics_queue, m_command_pool, m_msaa_samples, m_device);
+    
+
+    createFramebuffers(m_swap_chain_frame_buffers, m_swap_chain_image_views, m_render_pass, m_swap_chain_extent, m_color_image_view, m_depth_image_view, m_device);
     createCommandBuffers(m_command_buffers, m_command_pool, MAX_FRAMES_IN_FLIGHT, m_device);
     createTextureSampler(&m_sampler, m_physical_device, m_device);
 
-    m_msaa_samples = getMaxUsableSampleCount(m_physical_device);
 
     m_threads.resize(m_thread_count);
     for (int i = 0; i < m_thread_count; ++i)
@@ -176,10 +184,15 @@ void Renderer::drawScene(const std::string &scene_name)
     if (res == VK_ERROR_OUT_OF_DATE_KHR)
     {
         vkDeviceWaitIdle(m_device);
+
         vkDestroyImageView(m_device, m_depth_image_view, nullptr);
         vmaDestroyImage(m_allocator, m_depth_image, m_depth_image_memory);
-        createDepthResources(m_depth_image, m_depth_image_memory, m_depth_image_view, m_allocator, m_swap_chain_extent, m_graphics_queue, m_command_pool, m_physical_device, m_device);
-        recreateSwapChain(&m_swap_chain, m_render_pass, m_swap_chain_frame_buffers, m_window, m_surface, m_swap_chain_images, m_swap_chain_image_views, &m_swap_chain_image_format, &m_swap_chain_extent, m_depth_image_view, m_physical_device, m_device);
+
+        vkDestroyImageView(m_device, m_color_image_view, nullptr);
+        vmaDestroyImage(m_allocator, m_color_image, m_color_image_memory);
+
+        createDepthResources(m_depth_image, m_depth_image_memory, m_depth_image_view, m_allocator, m_swap_chain_extent, m_graphics_queue, m_command_pool, m_msaa_samples, m_physical_device, m_device);
+        recreateSwapChain(&m_swap_chain, m_render_pass, m_swap_chain_frame_buffers, m_window, m_surface, m_swap_chain_images, m_swap_chain_image_views, &m_swap_chain_image_format, &m_swap_chain_extent, m_color_image_view, m_depth_image_view, m_physical_device, m_device);
         return;
     }
     
@@ -220,10 +233,15 @@ void Renderer::drawScene(const std::string &scene_name)
     if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
     {
         vkDeviceWaitIdle(m_device);
+
         vkDestroyImageView(m_device, m_depth_image_view, nullptr);
         vmaDestroyImage(m_allocator, m_depth_image, m_depth_image_memory);
-        createDepthResources(m_depth_image, m_depth_image_memory, m_depth_image_view, m_allocator, m_swap_chain_extent, m_graphics_queue, m_command_pool, m_physical_device, m_device);
-        recreateSwapChain(&m_swap_chain, m_render_pass, m_swap_chain_frame_buffers, m_window, m_surface, m_swap_chain_images, m_swap_chain_image_views, &m_swap_chain_image_format, &m_swap_chain_extent, m_depth_image_view, m_physical_device, m_device);
+
+        vkDestroyImageView(m_device, m_color_image_view, nullptr);
+        vmaDestroyImage(m_allocator, m_color_image, m_color_image_memory);
+
+        createDepthResources(m_depth_image, m_depth_image_memory, m_depth_image_view, m_allocator, m_swap_chain_extent, m_graphics_queue, m_command_pool, m_msaa_samples, m_physical_device, m_device);
+        recreateSwapChain(&m_swap_chain, m_render_pass, m_swap_chain_frame_buffers, m_window, m_surface, m_swap_chain_images, m_swap_chain_image_views, &m_swap_chain_image_format, &m_swap_chain_extent, m_color_image_view, m_depth_image_view, m_physical_device, m_device);
     }
 
     current_frame = (current_frame + 1) % MAX_FRAMES_IN_FLIGHT;

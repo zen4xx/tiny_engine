@@ -109,6 +109,10 @@ private:
     VmaAllocation m_depth_image_memory;
     VkImageView m_depth_image_view;
 
+    VkImage m_color_image;
+    VmaAllocation m_color_image_memory;
+    VkImageView m_color_image_view;
+
     uint32_t current_frame = 0;
 
     const int MAX_FRAMES_IN_FLIGHT = 2;
