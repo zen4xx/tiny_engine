@@ -1602,9 +1602,10 @@ bool loadModel(const std::string &filename, _Object *object)
         {
 
             if (primitive.attributes.find("POSITION") == primitive.attributes.end() ||
-                primitive.attributes.find("TEXCOORD_0") == primitive.attributes.end())
+                primitive.attributes.find("TEXCOORD_0") == primitive.attributes.end()||
+                primitive.attributes.find("NORMAL") == primitive.attributes.end())
             {
-                std::cerr << "Missing POSITION or TEXCOORD_0 attribute in primitive." << std::endl;
+                err("Missing POSITION, TEXCOORD_0 or NORMAL attribute in primitive", 1);
                 continue;
             }
 
@@ -1616,8 +1617,13 @@ bool loadModel(const std::string &filename, _Object *object)
             const tinygltf::BufferView &texCoordView = model.bufferViews[texCoordAccessor.bufferView];
             const tinygltf::Buffer &texCoordBuffer = model.buffers[texCoordView.buffer];
 
+            const tinygltf::Accessor &normalAccessor = model.accessors[primitive.attributes.at("NORMAL")];
+            const tinygltf::BufferView &normalView = model.bufferViews[normalAccessor.bufferView];
+            const tinygltf::Buffer &normalBuffer = model.buffers[normalView.buffer];
+
             const float *positionData = reinterpret_cast<const float *>(positionBuffer.data.data() + positionView.byteOffset + positionAccessor.byteOffset);
             const float *texCoordData = reinterpret_cast<const float *>(texCoordBuffer.data.data() + texCoordView.byteOffset + texCoordAccessor.byteOffset);
+            const float *normalData = reinterpret_cast<const float *>(normalBuffer.data.data() + normalView.byteOffset + normalAccessor.byteOffset);
 
             for (size_t i = 0; i < positionAccessor.count; ++i)
             {
@@ -1629,6 +1635,10 @@ bool loadModel(const std::string &filename, _Object *object)
 
                 vertex.texCoord.x = texCoordData[i * 2 + 0];
                 vertex.texCoord.y = texCoordData[i * 2 + 1];
+
+                vertex.normal.x = normalData[i * 3 + 0]; 
+                vertex.normal.y = normalData[i * 3 + 1]; 
+                vertex.normal.z = normalData[i * 3 + 2]; 
 
                 object->vertices.push_back(vertex);
             }

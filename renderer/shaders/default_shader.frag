@@ -2,10 +2,20 @@
 
 layout(location = 0) in vec3 fragColor;
 layout(location = 1) in vec2 fragTexCoord;
+layout(location = 2) in vec3 fragNormal;
 
 layout(location = 0) out vec4 outColor;
 layout(binding = 1) uniform sampler2D texSampler;
 
 void main(){
-    outColor = texture(texSampler, fragTexCoord);
+    vec3 ambient = vec3(0.1);
+    vec3 norm = normalize(fragNormal);
+    vec3 lightPos = vec3(2.0f, 0.0f, -2.0f);
+    vec3 lightDir = normalize(lightPos - fragColor);
+    float diff = max(dot(norm, lightDir), 0.0);
+    vec3 diffuse = diff * vec3(1.0);
+
+    vec3 result = ambient + diffuse;
+
+    outColor = texture(texSampler, fragTexCoord) * vec4(result, 1.0f);
 }

@@ -3,13 +3,10 @@
 
 int main()
 {
-    auto engine = Tiny_engine("app", 800, 600, "test", TINY_ENGINE_MAX_MSAA_QUALITY, 8, true);
 
-    const std::vector<Vertex> vertices = {
-        {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f}},
-        {{0.5f, -0.5f, 0.0f}, {0.0f, 0.0f}},
-        {{0.5f, 0.5f, 0.0f}, {0.0f, 1.0f}},
-        {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f}}};
+    uint8_t thread_count = std::thread::hardware_concurrency(); 
+
+    auto engine = Tiny_engine("app", 800, 600, "test", TINY_ENGINE_MAX_MSAA_QUALITY, thread_count, true);
 
     std::vector<uint32_t> indices = {
         0, 1, 2, 2, 3, 0};
@@ -40,7 +37,6 @@ int main()
     float speed = 3.0f;
 
     bool isMainScene = 1;
-    int cnt = 1;
 
     // For random generation triangles
     std::default_random_engine gen;
@@ -68,13 +64,6 @@ int main()
             std::cout << engine.getFPSCount() << std::endl;
         if (engine.isKeyPressed(GLFW_KEY_X))
             isMainScene ? isMainScene = 0 : isMainScene = 1;
-        if (engine.isKeyPressed(GLFW_KEY_Z))
-        {
-            engine.addObject("main", "grid" + std::to_string(++cnt), vertices, indices, glm::translate(glm::mat4(1), glm::vec3(distribution(gen), distribution(gen), distribution(gen))));
-            engine.updateScene("main");
-        }
-        if (engine.isKeyPressed(GLFW_KEY_C))
-            std::cout << cnt << std::endl;
 
         glm::mat4 model = glm::mat4(1.0f);
 

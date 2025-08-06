@@ -60,6 +60,7 @@ struct ThreadData
 struct Vertex
 {
     glm::vec3 pos;
+    glm::vec3 normal;
     glm::vec2 texCoord;
 
     static VkVertexInputBindingDescription getBindingDescription()
@@ -72,9 +73,9 @@ struct Vertex
         return description;
     }
 
-    static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions()
+    static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions()
     {
-        std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
+        std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
 
         attributeDescriptions[0].binding = 0;
         attributeDescriptions[0].location = 0;
@@ -85,6 +86,11 @@ struct Vertex
         attributeDescriptions[1].location = 1;
         attributeDescriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
         attributeDescriptions[1].offset = offsetof(Vertex, texCoord);
+
+        attributeDescriptions[2].binding = 0;
+        attributeDescriptions[2].location = 2;
+        attributeDescriptions[2].format = VK_FORMAT_R32G32B32_SFLOAT;
+        attributeDescriptions[2].offset = offsetof(Vertex, normal);
 
         return attributeDescriptions;
     }
@@ -97,8 +103,10 @@ struct alignas(16) _UniformBufferObject
     glm::mat4 model;
     glm::mat4 view;
     glm::mat4 proj;
-};
 
+    glm::vec3 dirLight;
+    float ambient;
+};
 struct _Object
 {
     glm::mat4 pos;
