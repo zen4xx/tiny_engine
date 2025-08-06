@@ -1088,7 +1088,7 @@ void createSecondaryCommandBuffers(std::vector<VkCommandBuffer> &command_buffers
         err("Failed to allocate command buffers", res);
     }
 }
-void recordSecondary(ThreadData *thread, std::unordered_map<std::string, std::unique_ptr<_Object>> &objects, VkExtent2D extent, VkRenderPass render_pass, VkFramebuffer framebuffer, VkPipeline graphics_pipeline, VkPipelineLayout pipeline_layout, uint32_t current_frame, glm::mat4 view, glm::mat4 proj, VkDevice device, typename std::unordered_map<std::string, std::unique_ptr<_Object>>::const_iterator start, typename std::unordered_map<std::string, std::unique_ptr<_Object>>::const_iterator end)
+void recordSecondary(ThreadData *thread, std::unordered_map<std::string, std::unique_ptr<_Object>> &objects, VkExtent2D extent, VkRenderPass render_pass, VkFramebuffer framebuffer, VkPipeline graphics_pipeline, VkPipelineLayout pipeline_layout, uint32_t current_frame, glm::mat4 view, glm::mat4 proj, glm::vec3 dir_light, glm::vec3 ambient, VkDevice device, typename std::unordered_map<std::string, std::unique_ptr<_Object>>::const_iterator start, typename std::unordered_map<std::string, std::unique_ptr<_Object>>::const_iterator end)
 {
     VkCommandBuffer cmd = thread->command_buffers[current_frame];
 
@@ -1125,6 +1125,8 @@ void recordSecondary(ThreadData *thread, std::unordered_map<std::string, std::un
     _UniformBufferObject ubo;
     ubo.view = view;
     ubo.proj = proj;
+    ubo.dirLight = dir_light;
+    ubo.ambient = ambient;
 
     for (auto it = start; it != end; ++it)
     {
@@ -1145,7 +1147,7 @@ void recordSecondary(ThreadData *thread, std::unordered_map<std::string, std::un
     thread->is_cmd_buffer_recorded = 1;
 }
 
-void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData> &threads, std::unordered_map<std::string, std::unique_ptr<_Object>> &objects, uint32_t image_index, VkExtent2D extent, VkRenderPass render_pass, std::vector<VkFramebuffer> &framebuffers, VkPipeline graphics_pipeline, VkPipelineLayout pipeline_layout, uint32_t current_frame, glm::mat4 view, glm::mat4 proj, VkDevice device)
+void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData> &threads, std::unordered_map<std::string, std::unique_ptr<_Object>> &objects, uint32_t image_index, VkExtent2D extent, VkRenderPass render_pass, std::vector<VkFramebuffer> &framebuffers, VkPipeline graphics_pipeline, VkPipelineLayout pipeline_layout, uint32_t current_frame, glm::mat4 view, glm::mat4 proj, glm::vec3 dir_light, glm::vec3 ambient, VkDevice device)
 {
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -1188,7 +1190,7 @@ void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData>
         {
             ++it;
         }
-        local_threads.emplace_back(recordSecondary, &threads[i], std::ref(objects), extent, render_pass, framebuffers[image_index], graphics_pipeline, pipeline_layout, current_frame, view, proj, device, start, it);
+        local_threads.emplace_back(recordSecondary, &threads[i], std::ref(objects), extent, render_pass, framebuffers[image_index], graphics_pipeline, pipeline_layout, current_frame, view, proj, dir_light, ambient, device, start, it);
     }
 
     int i = 0;

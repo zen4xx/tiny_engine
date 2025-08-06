@@ -28,6 +28,9 @@ public:
 
     inline void setView(const std::string &scene_name, glm::mat4 view) { m_renderer->setView(scene_name, view); };
     inline void setDrawDistance(const std::string &scene_name, float distance) { m_renderer->setDrawDistance(scene_name, distance); };
+
+    inline void setAmbient(const std::string &scene_name, glm::vec3 ambient) {m_renderer->setAmbient(scene_name, ambient); };
+    inline void setDirLight(const std::string &scene_name, glm::vec3 dir) { m_renderer->setDirLight(scene_name, dir); };
     
     inline bool isKeyPressed(int key) { return glfwGetKey(m_window->GetWindow(), key); };
 

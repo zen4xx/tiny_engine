@@ -27,6 +27,10 @@ public:
     std::unordered_map<std::string, std::unique_ptr<_Object>> objects;
     glm::mat4 view = {0};
     glm::mat4 proj = {0};
+
+    glm::vec3 dir_light = {0.0f, 0.0f, 0.0f};
+    glm::vec3 ambient = {0.1f, 0.1f, 0.1f};
+
     float draw_distance = 10;
 
     VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;

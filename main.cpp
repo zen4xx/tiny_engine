@@ -3,19 +3,18 @@
 
 int main()
 {
-
     uint8_t thread_count = std::thread::hardware_concurrency(); 
 
     auto engine = Tiny_engine("app", 800, 600, "test", TINY_ENGINE_MAX_MSAA_QUALITY, thread_count, true);
-
-    std::vector<uint32_t> indices = {
-        0, 1, 2, 2, 3, 0};
 
     glm::mat4 view = glm::lookAt(glm::vec3(0.0f, -4.0f, -2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     glm::mat4 view2 = glm::lookAt(glm::vec3(0.0f, -5.0f, -3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
     engine.createScene("main");
     engine.createScene("secondary");
+
+    engine.setDirLight("main", glm::vec3(2.0f, 0.0f, -2.0f));
+    engine.setDirLight("secondary", glm::vec3(2.0f, 0.0f, -2.0f));
 
     engine.setDrawDistance("main", 50.f);
 
@@ -37,10 +36,6 @@ int main()
     float speed = 3.0f;
 
     bool isMainScene = 1;
-
-    // For random generation triangles
-    std::default_random_engine gen;
-    std::uniform_real_distribution<double> distribution(-10.f, 10.f);
 
     while (engine.isWindowOpen())
     {
@@ -66,10 +61,13 @@ int main()
             isMainScene ? isMainScene = 0 : isMainScene = 1;
 
         glm::mat4 model = glm::mat4(1.0f);
-
         model = glm::translate(model, pos);
         model = glm::rotate(model, angle, glm::vec3(0.0f, 0.0f, 1.0f));
+
+        engine.setDirLight("main", glm::vec3(sin(glfwGetTime()) * 3.0f, 0.0f, -2.0f));
+
         engine.update();
+        
 
         if (isMainScene)
         {
