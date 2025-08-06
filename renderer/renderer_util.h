@@ -103,9 +103,6 @@ struct alignas(16) _UniformBufferObject
     glm::mat4 model;
     glm::mat4 view;
     glm::mat4 proj;
-
-    glm::vec3 dirLight;
-    float ambient;
 };
 struct _Object
 {

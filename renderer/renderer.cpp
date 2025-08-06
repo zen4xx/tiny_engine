@@ -308,8 +308,8 @@ void Renderer::addObject(const tiny_engine::Object &obj)
         loadModel(obj.gltf_model_path, object.get());
     else
     {
-        object->vertices = obj.vertices;
-        object->indices = obj.indices;
+        object->vertices = *obj.vertices;
+        object->indices = *obj.indices;
     }
 
     createVertexBuffer(&object->vertexBuffer, object->vertices, &object->vertexBufferMemory, m_command_pool, m_graphics_queue, m_allocator, m_physical_device, m_device);
