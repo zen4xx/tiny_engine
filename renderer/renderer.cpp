@@ -133,7 +133,7 @@ void Renderer::setWindow(GLFWwindow *window)
     
     pickPhysicalDevice(&m_instance, &m_physical_device, m_surface, isDebug);
 
-    if (m_msaa_samples == TINY_ENGINE_DEFAULT_MSAA_QUALITY)
+    if (m_msaa_samples == TINY_ENGINE_MAX_MSAA_QUALITY)
         m_msaa_samples = getMaxUsableSampleCount(m_physical_device);
 
     createLogicalDevice(&m_graphics_queue, &m_present_queue, &m_device, &m_physical_device, validationLayers, m_surface, isDebug);
