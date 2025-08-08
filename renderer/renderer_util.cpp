@@ -1088,7 +1088,7 @@ void createSecondaryCommandBuffers(std::vector<VkCommandBuffer> &command_buffers
         err("Failed to allocate command buffers", res);
     }
 }
-void recordSecondary(ThreadData *thread, std::unordered_map<std::string, std::unique_ptr<_Object>> &objects, VkExtent2D extent, VkRenderPass render_pass, VkFramebuffer framebuffer, VkPipeline graphics_pipeline, VkPipelineLayout pipeline_layout, uint32_t current_frame, glm::mat4 view, glm::mat4 proj, glm::vec3 dir_light, glm::vec3 ambient, VkDevice device, typename std::unordered_map<std::string, std::unique_ptr<_Object>>::const_iterator start, typename std::unordered_map<std::string, std::unique_ptr<_Object>>::const_iterator end)
+void recordSecondary(ThreadData *thread, const std::unordered_map<std::string, std::unique_ptr<_Object>> &objects, const VkExtent2D *extent, const VkRenderPass *render_pass, const VkFramebuffer *framebuffer, const VkPipeline *graphics_pipeline, const VkPipelineLayout *pipeline_layout, uint32_t current_frame, const glm::mat4 *view, const glm::mat4 *proj, const glm::vec3 *dir_light, const glm::vec3 *ambient, VkDevice device, typename std::unordered_map<std::string, std::unique_ptr<_Object>>::const_iterator start, typename std::unordered_map<std::string, std::unique_ptr<_Object>>::const_iterator end)
 {
     VkCommandBuffer cmd = thread->command_buffers[current_frame];
 
@@ -1098,35 +1098,35 @@ void recordSecondary(ThreadData *thread, std::unordered_map<std::string, std::un
 
     VkCommandBufferInheritanceInfo inheritanceInfo{};
     inheritanceInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
-    inheritanceInfo.renderPass = render_pass;
-    inheritanceInfo.framebuffer = framebuffer;
+    inheritanceInfo.renderPass = *render_pass;
+    inheritanceInfo.framebuffer = *framebuffer;
 
     beginInfo.pInheritanceInfo = &inheritanceInfo;
 
     vkResetCommandBuffer(cmd, 0);
     vkBeginCommandBuffer(cmd, &beginInfo);
 
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline);
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, *graphics_pipeline);
 
     VkViewport viewport{};
     viewport.x = 0.f;
     viewport.y = 0.f;
-    viewport.width = static_cast<float>(extent.width);
-    viewport.height = static_cast<float>(extent.height);
+    viewport.width = static_cast<float>((*extent).width);
+    viewport.height = static_cast<float>((*extent).height);
     viewport.minDepth = 0.f;
     viewport.maxDepth = 1.f;
     vkCmdSetViewport(cmd, 0, 1, &viewport);
 
     VkRect2D scissor{};
     scissor.offset = {0, 0};
-    scissor.extent = extent;
+    scissor.extent = *extent;
     vkCmdSetScissor(cmd, 0, 1, &scissor);
 
     _UniformBufferObject ubo;
-    ubo.view = view;
-    ubo.proj = proj;
-    ubo.dirLight = dir_light;
-    ubo.ambient = ambient;
+    ubo.view = *view;
+    ubo.proj = *proj;
+    ubo.dirLight = *dir_light;
+    ubo.ambient = *ambient;
 
     for (auto it = start; it != end; ++it)
     {
@@ -1137,7 +1137,7 @@ void recordSecondary(ThreadData *thread, std::unordered_map<std::string, std::un
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(cmd, 0, 1, vertexBuffers, offsets);
         vkCmdBindIndexBuffer(cmd, it->second->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, it->second->descriptorSet, 0, nullptr);
+        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, *pipeline_layout, 0, 1, it->second->descriptorSet, 0, nullptr);
 
         vkCmdDrawIndexed(cmd, static_cast<uint32_t>(it->second->indices.size()), 1, 0, 0, 0);
     }
@@ -1146,8 +1146,7 @@ void recordSecondary(ThreadData *thread, std::unordered_map<std::string, std::un
 
     thread->is_cmd_buffer_recorded = 1;
 }
-
-void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData> &threads, std::unordered_map<std::string, std::unique_ptr<_Object>> &objects, uint32_t image_index, VkExtent2D extent, VkRenderPass render_pass, std::vector<VkFramebuffer> &framebuffers, VkPipeline graphics_pipeline, VkPipelineLayout pipeline_layout, uint32_t current_frame, glm::mat4 view, glm::mat4 proj, glm::vec3 dir_light, glm::vec3 ambient, VkDevice device)
+void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData> &threads, const std::unordered_map<std::string, std::unique_ptr<_Object>> &objects, uint32_t image_index, const VkExtent2D *extent, const VkRenderPass *render_pass, const std::vector<VkFramebuffer> &framebuffers, const VkPipeline *graphics_pipeline, const VkPipelineLayout *pipeline_layout, uint32_t current_frame, const glm::mat4 *view, const glm::mat4 *proj, const glm::vec3 *dir_light, const glm::vec3 *ambient, VkDevice device)
 {
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -1160,10 +1159,10 @@ void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData>
 
     VkRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = render_pass;
+    renderPassInfo.renderPass = *render_pass;
     renderPassInfo.framebuffer = framebuffers[image_index];
     renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent = extent;
+    renderPassInfo.renderArea.extent = *extent;
 
     std::array<VkClearValue, 2> clearValues{};
     clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
@@ -1173,7 +1172,7 @@ void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData>
     renderPassInfo.pClearValues = clearValues.data();
 
     vkCmdBeginRenderPass(command_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_KHR);
-    vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline);
+    vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *graphics_pipeline);
 
     size_t numThreads = threads.size();
 
@@ -1190,7 +1189,7 @@ void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData>
         {
             ++it;
         }
-        local_threads.emplace_back(recordSecondary, &threads[i], std::ref(objects), extent, render_pass, framebuffers[image_index], graphics_pipeline, pipeline_layout, current_frame, view, proj, dir_light, ambient, device, start, it);
+        local_threads.emplace_back(recordSecondary, &threads[i], std::ref(objects), extent, render_pass, &framebuffers[image_index], graphics_pipeline, pipeline_layout, current_frame, view, proj, dir_light, ambient, device, start, it);
     }
 
     int i = 0;

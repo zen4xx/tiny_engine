@@ -201,7 +201,7 @@ void Renderer::drawScene(const std::string &scene_name)
     
     vkResetFences(m_device, 1, &m_in_flight_fences[current_frame]);
     vkResetCommandBuffer(m_command_buffers[current_frame], 0);
-    recordCommandBuffer(m_command_buffers[current_frame], m_threads, m_scenes[scene_name]->objects, imageIndex, m_swap_chain_extent, m_render_pass, m_swap_chain_frame_buffers, m_graphics_pipeline, m_pipeline_layout, current_frame, m_scenes[scene_name]->view, m_scenes[scene_name]->proj, m_scenes[scene_name]->dir_light, m_scenes[scene_name]->ambient, m_device);
+    recordCommandBuffer(m_command_buffers[current_frame], m_threads, m_scenes[scene_name]->objects, imageIndex, &m_swap_chain_extent, &m_render_pass, m_swap_chain_frame_buffers, &m_graphics_pipeline, &m_pipeline_layout, current_frame, &m_scenes[scene_name]->view, &m_scenes[scene_name]->proj, &m_scenes[scene_name]->dir_light, &m_scenes[scene_name]->ambient, m_device);
     
     VkSubmitInfo submitInfo = {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
