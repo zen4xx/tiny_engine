@@ -308,9 +308,6 @@ int rateDeviceSuitablity(VkPhysicalDevice device, VkSurfaceKHR surface)
     vkGetPhysicalDeviceProperties(device, &deviceProperties);
     vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
-    if (!deviceFeatures.geometryShader)
-        return 0;
-
     QueueFamilyIndices indices = findQueueFamilies(device, surface);
 
     auto missing = checkDeviceExtensionSupport(device);
