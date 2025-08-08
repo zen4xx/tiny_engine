@@ -5,5 +5,7 @@ Makefile
 /.vscode
 /build
 /_deps
+/.cache
 log
+compile_commands.json
 Tiny_engine
