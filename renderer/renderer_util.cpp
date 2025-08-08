@@ -1209,7 +1209,7 @@ void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData>
         err("Failed to record command buffer", res);
 }
 
-void createSyncObjects(std::vector<VkSemaphore> &imageAvailableSemaphores, std::vector<VkSemaphore> &renderFinishedSemaphores, std::vector<VkFence> &inFlightFences, int MAX_FRAMES_IN_FLIGHT, int swap_chain_image_count, VkDevice device)
+void createSyncObjects(std::vector<VkSemaphore> &imageAvailableSemaphores, std::vector<VkSemaphore> &renderFinishedSemaphores, std::vector<VkFence> &inFlightFences, int MAX_FRAMES_IN_FLIGHT, size_t swap_chain_image_count, VkDevice device)
 {
     imageAvailableSemaphores.resize(swap_chain_image_count);
     renderFinishedSemaphores.resize(swap_chain_image_count);
@@ -1230,7 +1230,7 @@ void createSyncObjects(std::vector<VkSemaphore> &imageAvailableSemaphores, std::
         }
     }
 
-    for(int i = 0; i < swap_chain_image_count; ++i)
+    for(size_t i = 0; i < swap_chain_image_count; ++i)
     {
         if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
             vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS)
@@ -1403,13 +1403,13 @@ void createDescriptorPool(VkDescriptorPool *descriptor_pool, uint32_t descriptor
         err("Failed to create descriptor pool", res);
 }
 
-void createDescriptorSets(std::vector<VkDescriptorSet> &descriptor_sets, VkDescriptorSetLayout descriptor_set_layout, int count, VkDescriptorPool descriptor_pool, VkDevice device)
+void createDescriptorSets(std::vector<VkDescriptorSet> &descriptor_sets, VkDescriptorSetLayout descriptor_set_layout, uint32_t count, VkDescriptorPool descriptor_pool, VkDevice device)
 {
     std::vector<VkDescriptorSetLayout> layouts(count, descriptor_set_layout);
     VkDescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     allocInfo.descriptorPool = descriptor_pool;
-    allocInfo.descriptorSetCount = static_cast<uint32_t>(count);
+    allocInfo.descriptorSetCount = count;
     allocInfo.pSetLayouts = layouts.data();
 
     descriptor_sets.resize(count);

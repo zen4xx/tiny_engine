@@ -155,7 +155,7 @@ void Renderer::setWindow(GLFWwindow *window)
 
 
     m_threads.resize(m_thread_count);
-    for (int i = 0; i < m_thread_count; ++i)
+    for (unsigned int i = 0; i < m_thread_count; ++i)
     {
         createCommandPool(&m_threads[i].command_pool, m_surface, m_physical_device, m_device);
         createSecondaryCommandBuffers(m_threads[i].command_buffers, m_threads[i].command_pool, MAX_FRAMES_IN_FLIGHT, m_device);

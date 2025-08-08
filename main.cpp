@@ -1,5 +1,4 @@
 #include "tiny_engine.h"
-#include <random>
 
 int main()
 {
@@ -16,8 +15,8 @@ int main()
     engine.setDirLight("main", glm::vec3(2.0f, 0.0f, -2.0f));
     engine.setDirLight("secondary", glm::vec3(2.0f, 0.0f, -2.0f));
 
-    engine.setDirLightColor("secondary", glm::vec3(1.0f, 0.5f, 0.5f));
-    engine.setAmbient("secondary", glm::vec3(0.05f, 0.05f, 0.3f));
+    engine.setDirLightColor("secondary", glm::vec3(1.0f, 0.0f, 0.0f));
+    engine.setAmbient("secondary", glm::vec3(0.0f, 0.0f, 0.3f));
 
     engine.setDrawDistance("main", 50.f);
 

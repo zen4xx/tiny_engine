@@ -4,8 +4,8 @@ void _Scene::createDescriptorSetsForScene(VkExtent2D extent, VmaAllocator alloca
 {
     proj = glm::perspective(glm::radians(45.0f), extent.width / (float)extent.height, 0.1f, draw_distance);
 
-    createDescriptorPool(&descriptor_pool, objects.size(), allocator, device);
-    createDescriptorSets(descriptor_sets, descriptor_set_layout, objects.size(), descriptor_pool, device);
+    createDescriptorPool(&descriptor_pool, static_cast<uint32_t>(objects.size()), allocator, device);
+    createDescriptorSets(descriptor_sets, descriptor_set_layout, static_cast<uint32_t>(objects.size()), descriptor_pool, device);
     int i = 0;
     for (auto it = objects.begin(); it != objects.end(); ++it)
     {
