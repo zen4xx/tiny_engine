@@ -31,6 +31,7 @@ public:
 
     inline void setAmbient(const std::string &scene_name, glm::vec3 ambient) {m_renderer->setAmbient(scene_name, ambient); };
     inline void setDirLight(const std::string &scene_name, glm::vec3 dir) { m_renderer->setDirLight(scene_name, dir); };
+    inline void setDirLightColor(const std::string &scene_name, glm::vec3 color) { m_renderer->setDirLightColor(scene_name, color); };
     
     inline bool isKeyPressed(int key) { return glfwGetKey(m_window->GetWindow(), key); };
 

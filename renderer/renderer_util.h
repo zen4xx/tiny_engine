@@ -98,14 +98,15 @@ struct Vertex
 
 // _StructName or _ClassName means that a local object
 
-struct alignas(16) _UniformBufferObject
+struct _UniformBufferObject
 {
-    glm::mat4 model;
-    glm::mat4 view;
-    glm::mat4 proj;
+    alignas(16) glm::mat4 model;
+    alignas(16) glm::mat4 view;
+    alignas(16) glm::mat4 proj;
 
-    glm::vec3 dirLight;
-    glm::vec3 ambient;
+    alignas(16) glm::vec3 dirLight;
+    alignas(16) glm::vec3 dirLightColor;
+    alignas(16) glm::vec3 ambient;
 };
 struct _Object
 {
@@ -148,7 +149,7 @@ void createCommandPool(VkCommandPool *command_pool, VkSurfaceKHR surface, VkPhys
 void createCommandBuffers(std::vector<VkCommandBuffer> &command_buffers, VkCommandPool command_pool, int count, VkDevice device);
 void createSecondaryCommandBuffers(std::vector<VkCommandBuffer> &command_buffers, VkCommandPool command_pool, int count, VkDevice device);
 void createSyncObjects(std::vector<VkSemaphore> &imageAvailableSemaphores, std::vector<VkSemaphore> &renderFinishedSemaphores, std::vector<VkFence> &inFlightFences, int MAX_FRAMES_IN_FLIGHT, int swap_chain_image_count, VkDevice device);
-void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData> &threads, const std::unordered_map<std::string, std::unique_ptr<_Object>> &objects, uint32_t image_index, const VkExtent2D &extent, const VkRenderPass &render_pass, const std::vector<VkFramebuffer> &framebuffers, const VkPipeline &graphics_pipeline, const VkPipelineLayout &pipeline_layout, uint32_t current_frame, const glm::mat4 &view, const glm::mat4 &proj, const glm::vec3 &dir_light, const glm::vec3 &ambient, VkDevice device);
+void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData> &threads, const std::unordered_map<std::string, std::unique_ptr<_Object>> &objects, uint32_t image_index, const VkExtent2D &extent, const VkRenderPass &render_pass, const std::vector<VkFramebuffer> &framebuffers, const VkPipeline &graphics_pipeline, const VkPipelineLayout &pipeline_layout, uint32_t current_frame, const glm::mat4 &view, const glm::mat4 &proj, const glm::vec3 &dir_light, const glm::vec3 &dir_light_color, const glm::vec3 &ambient, VkDevice device);
 void recreateSwapChain(VkSwapchainKHR *swap_chain, VkRenderPass render_pass, std::vector<VkFramebuffer> &framebuffers, GLFWwindow *window, VkSurfaceKHR surface, std::vector<VkImage> &images, std::vector<VkImageView> &image_views, VkFormat *format, VkExtent2D *extent, VkImageView color_image_view, VkImageView depth_image_view, VkPhysicalDevice physical_device, VkDevice device);
 void createVertexBuffer(VkBuffer *vertex_buffer, std::vector<Vertex> vertices, VmaAllocation *vertex_buffer_memory, VkCommandPool command_pool, VkQueue graphics_queue, VmaAllocator allocator, VkPhysicalDevice physical_device, VkDevice device);
 void createAllocator(VmaAllocator *allocator, VkInstance instance, VkPhysicalDevice physical_device, VkDevice device);

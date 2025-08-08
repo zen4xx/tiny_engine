@@ -44,6 +44,7 @@ public:
     inline void setDrawDistance(const std::string &scene_name, float distance) { m_scenes[scene_name]->setDrawDistance(distance); };
     inline void setAmbient(const std::string &scene_name, glm::vec3 ambient) { m_scenes[scene_name]->ambient = ambient; };
     inline void setDirLight(const std::string &scene_name, glm::vec3 dir) { m_scenes[scene_name]->dir_light = dir; };
+    inline void setDirLightColor(const std::string &scene_name, glm::vec3 color) { m_scenes[scene_name]->dir_light_color = color; };
     
     // Must be called before setWindow
     inline void setThreadCount(uint8_t count) { m_thread_count = count; };

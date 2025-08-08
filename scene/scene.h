@@ -29,6 +29,7 @@ public:
     glm::mat4 proj = {0};
 
     glm::vec3 dir_light = {0.0f, 0.0f, 0.0f};
+    glm::vec3 dir_light_color = {1.0f, 1.0f, 1.0f};
     glm::vec3 ambient = {0.1f, 0.1f, 0.1f};
 
     float draw_distance = 10;
