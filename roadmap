@@ -1,5 +1,6 @@
 multithreaded rendering - done!
 textures - done!
 model loading - done!
-light
+directional light - done!
+point lights
 shadows
