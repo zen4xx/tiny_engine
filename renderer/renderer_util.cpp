@@ -1230,7 +1230,7 @@ void createSyncObjects(std::vector<VkSemaphore> &imageAvailableSemaphores, std::
         }
     }
 
-    for(size_t i = 0; i < swap_chain_image_count; ++i)
+    for(int i = 0; i < swap_chain_image_count; ++i)
     {
         if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
             vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS)
@@ -1409,7 +1409,7 @@ void createDescriptorSets(std::vector<VkDescriptorSet> &descriptor_sets, VkDescr
     VkDescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     allocInfo.descriptorPool = descriptor_pool;
-    allocInfo.descriptorSetCount = count;
+    allocInfo.descriptorSetCount = static_cast<uint32_t>(count);
     allocInfo.pSetLayouts = layouts.data();
 
     descriptor_sets.resize(count);
