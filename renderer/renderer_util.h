@@ -100,7 +100,6 @@ struct Vertex
 
 struct _UniformBufferObject
 {
-    alignas(16) glm::mat4 model;
     alignas(16) glm::mat4 view;
     alignas(16) glm::mat4 proj;
 
@@ -108,9 +107,15 @@ struct _UniformBufferObject
     alignas(16) glm::vec3 dirLightColor;
     alignas(16) glm::vec3 ambient;
 };
+
+struct _PushConstantsData
+{
+    glm::mat4 model;
+};
+
 struct _Object
 {
-    glm::mat4 pos;
+    _PushConstantsData pc_data;
 
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
@@ -121,16 +126,29 @@ struct _Object
     VkBuffer indexBuffer;
     VmaAllocation indexBufferMemory;
 
-    VkBuffer uniformBuffer;
-    VmaAllocation uniformBufferMemory;
-    void *uniformBufferMapped;
-
     VkImage textureImage;
     VkImageView textureImageView;
     VmaAllocation textureImageMemory;
     VkSampler *sampler;
 
-    VkDescriptorSet *descriptorSet;
+    int dc_index; //descriptor set index (FIXME)
+};
+
+struct _SceneData
+{
+    glm::vec3 dirLight = {0.0f, 0.0f, 0.0f};
+    glm::vec3 dirLightColor = {1.0f, 1.0f, 1.0f};
+    glm::vec3 ambient = {0.1f, 0.1f, 0.1f};
+
+    glm::mat4 view;
+    glm::mat4 proj;
+
+    VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
+    std::vector<VkDescriptorSet> descriptorSets;
+
+    VkBuffer uniformBuffer;
+    VmaAllocation uniformBufferMemory;
+    void *uniformBufferMapped;
 };
 
 bool loadModel(const std::string &filename, _Object *object);
@@ -149,7 +167,7 @@ void createCommandPool(VkCommandPool *command_pool, VkSurfaceKHR surface, VkPhys
 void createCommandBuffers(std::vector<VkCommandBuffer> &command_buffers, VkCommandPool command_pool, int count, VkDevice device);
 void createSecondaryCommandBuffers(std::vector<VkCommandBuffer> &command_buffers, VkCommandPool command_pool, int count, VkDevice device);
 void createSyncObjects(std::vector<VkSemaphore> &imageAvailableSemaphores, std::vector<VkSemaphore> &renderFinishedSemaphores, std::vector<VkFence> &inFlightFences, int MAX_FRAMES_IN_FLIGHT, size_t swap_chain_image_count, VkDevice device);
-void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData> &threads, const std::unordered_map<std::string, std::unique_ptr<_Object>> &objects, uint32_t image_index, const VkExtent2D &extent, const VkRenderPass &render_pass, const std::vector<VkFramebuffer> &framebuffers, const VkPipeline &graphics_pipeline, const VkPipelineLayout &pipeline_layout, uint32_t current_frame, const glm::mat4 &view, const glm::mat4 &proj, const glm::vec3 &dir_light, const glm::vec3 &dir_light_color, const glm::vec3 &ambient, VkDevice device);
+void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData> &threads, const std::unordered_map<std::string, std::unique_ptr<_Object>> &objects, uint32_t image_index, const VkExtent2D &extent, const VkRenderPass &render_pass, const std::vector<VkFramebuffer> &framebuffers, const VkPipeline &graphics_pipeline, const VkPipelineLayout &pipeline_layout, uint32_t current_frame, const _SceneData& scene_data, VkDevice device);
 void recreateSwapChain(VkSwapchainKHR *swap_chain, VkRenderPass render_pass, std::vector<VkFramebuffer> &framebuffers, GLFWwindow *window, VkSurfaceKHR surface, std::vector<VkImage> &images, std::vector<VkImageView> &image_views, VkFormat *format, VkExtent2D *extent, VkImageView color_image_view, VkImageView depth_image_view, VkPhysicalDevice physical_device, VkDevice device);
 void createVertexBuffer(VkBuffer *vertex_buffer, std::vector<Vertex> vertices, VmaAllocation *vertex_buffer_memory, VkCommandPool command_pool, VkQueue graphics_queue, VmaAllocator allocator, VkPhysicalDevice physical_device, VkDevice device);
 void createAllocator(VmaAllocator *allocator, VkInstance instance, VkPhysicalDevice physical_device, VkDevice device);

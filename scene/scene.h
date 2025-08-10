@@ -13,6 +13,12 @@
 class _Scene
 {
 public:
+    _Scene(VmaAllocator allocator)
+    {
+        createUniformBuffer(&scene_data.uniformBuffer, &scene_data.uniformBufferMemory, &scene_data.uniformBufferMapped, allocator);
+    }
+
+public:
     void createDescriptorSetsForScene(VkExtent2D extent, VmaAllocator allocator, VkDescriptorSetLayout descriptor_set_layout, VkDevice device);
 
     void destroyDescriptorPool(VkDevice device);
@@ -25,17 +31,9 @@ public:
     bool isDeleted = 0;
 
     std::unordered_map<std::string, std::unique_ptr<_Object>> objects;
-    glm::mat4 view = {0};
-    glm::mat4 proj = {0};
-
-    glm::vec3 dir_light = {0.0f, 0.0f, 0.0f};
-    glm::vec3 dir_light_color = {1.0f, 1.0f, 1.0f};
-    glm::vec3 ambient = {0.1f, 0.1f, 0.1f};
-
     float draw_distance = 10;
 
-    VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
-    std::vector<VkDescriptorSet> descriptor_sets;
+    _SceneData scene_data;
 };
 
 #endif

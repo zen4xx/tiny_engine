@@ -37,14 +37,14 @@ public:
     void addObject(const std::string &scene_name, const std::string& obj_name, const std::string &gltf_model_path, glm::mat4 pos, const std::string &texture_path = "_default");
     void addObject(const tiny_engine::Object &obj);
 
-    inline void moveObject(const std::string &scene_name, const std::string &obj_name, glm::mat4 pos) { m_scenes[scene_name]->objects[obj_name]->pos = pos; };
-    inline void moveObject(const tiny_engine::Object &obj, glm::mat4 pos) { m_scenes[obj.scene_name]->objects[obj.obj_name]->pos = pos; };
+    inline void moveObject(const std::string &scene_name, const std::string &obj_name, glm::mat4 pos) { m_scenes[scene_name]->objects[obj_name]->pc_data.model = pos; };
+    inline void moveObject(const tiny_engine::Object &obj, glm::mat4 pos) { m_scenes[obj.scene_name]->objects[obj.obj_name]->pc_data.model = pos; };
 
-    inline void setView(const std::string &scene_name, glm::mat4 view) { m_scenes[scene_name]->view = view; };
+    inline void setView(const std::string &scene_name, glm::mat4 view) { m_scenes[scene_name]->scene_data.view = view; };
     inline void setDrawDistance(const std::string &scene_name, float distance) { m_scenes[scene_name]->setDrawDistance(distance); };
-    inline void setAmbient(const std::string &scene_name, glm::vec3 ambient) { m_scenes[scene_name]->ambient = ambient; };
-    inline void setDirLight(const std::string &scene_name, glm::vec3 dir) { m_scenes[scene_name]->dir_light = dir; };
-    inline void setDirLightColor(const std::string &scene_name, glm::vec3 color) { m_scenes[scene_name]->dir_light_color = color; };
+    inline void setAmbient(const std::string &scene_name, glm::vec3 ambient) { m_scenes[scene_name]->scene_data.ambient = ambient; };
+    inline void setDirLight(const std::string &scene_name, glm::vec3 dir) { m_scenes[scene_name]->scene_data.dirLight = dir; };
+    inline void setDirLightColor(const std::string &scene_name, glm::vec3 color) { m_scenes[scene_name]->scene_data.dirLightColor = color; };
     
     // Must be called before setWindow
     inline void setThreadCount(uint8_t count) { m_thread_count = count; };
@@ -53,7 +53,7 @@ public:
     inline float getFPSCount() { return fps; };
     inline float getDeltaTime() { return m_delta_time; };
 
-    inline void createScene(const std::string &scene_name) { m_scenes[scene_name] = std::move(std::make_unique<_Scene>()); };
+    inline void createScene(const std::string &scene_name) { m_scenes[scene_name] = std::move(std::make_unique<_Scene>(m_allocator)); };
     inline void deleteScene(const std::string &scene_name)
     {
         m_scenes[scene_name]->deleteScene(m_allocator, m_device);

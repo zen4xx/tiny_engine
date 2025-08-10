@@ -871,12 +871,17 @@ void createGraphicsPipeline(const std::string vertex_shader_path, const std::str
     colorBlending.blendConstants[2] = 0.0f;
     colorBlending.blendConstants[3] = 0.0f;
 
+    VkPushConstantRange range = {};
+    range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    range.offset = 0;
+    range.size = sizeof(_PushConstantsData);
+
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutInfo.setLayoutCount = 1;
     pipelineLayoutInfo.pSetLayouts = descriptor_set_layout;
-    pipelineLayoutInfo.pushConstantRangeCount = 0;
-    pipelineLayoutInfo.pPushConstantRanges = nullptr;
+    pipelineLayoutInfo.pushConstantRangeCount = 1;
+    pipelineLayoutInfo.pPushConstantRanges = &range;
 
     VkPipelineDepthStencilStateCreateInfo depthStencil{};
     depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
@@ -889,6 +894,7 @@ void createGraphicsPipeline(const std::string vertex_shader_path, const std::str
     depthStencil.stencilTestEnable = VK_FALSE;
     depthStencil.front = {};
     depthStencil.back = {};
+
 
     VkResult res = vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, pipeline_layout);
     if (res != VK_SUCCESS)
@@ -1085,7 +1091,7 @@ void createSecondaryCommandBuffers(std::vector<VkCommandBuffer> &command_buffers
         err("Failed to allocate command buffers", res);
     }
 }
-void recordSecondary(ThreadData *thread, const std::unordered_map<std::string, std::unique_ptr<_Object>> &objects, const VkExtent2D &extent, const VkRenderPass &render_pass, const VkFramebuffer &framebuffer, const VkPipeline &graphics_pipeline, const VkPipelineLayout &pipeline_layout, uint32_t current_frame, const glm::mat4 &view, const glm::mat4 &proj, const glm::vec3 &dir_light, const glm::vec3 &dir_light_color, const glm::vec3 &ambient, VkDevice device, typename std::unordered_map<std::string, std::unique_ptr<_Object>>::const_iterator start, typename std::unordered_map<std::string, std::unique_ptr<_Object>>::const_iterator end)
+void recordSecondary(ThreadData *thread, const std::unordered_map<std::string, std::unique_ptr<_Object>> &objects, const VkExtent2D &extent, const VkRenderPass &render_pass, const VkFramebuffer &framebuffer, const VkPipeline &graphics_pipeline, const VkPipelineLayout &pipeline_layout, uint32_t current_frame, const _SceneData &scene_data, VkDevice device, typename std::unordered_map<std::string, std::unique_ptr<_Object>>::const_iterator start, typename std::unordered_map<std::string, std::unique_ptr<_Object>>::const_iterator end)
 {
     VkCommandBuffer cmd = thread->command_buffers[current_frame];
 
@@ -1120,22 +1126,24 @@ void recordSecondary(ThreadData *thread, const std::unordered_map<std::string, s
     vkCmdSetScissor(cmd, 0, 1, &scissor);
 
     _UniformBufferObject ubo;
-    ubo.view = view;
-    ubo.proj = proj;
-    ubo.dirLight = dir_light;
-    ubo.ambient = ambient;
-    ubo.dirLightColor = dir_light_color;
+    ubo.view = scene_data.view;
+    ubo.proj = scene_data.proj;
+    ubo.dirLight = scene_data.dirLight;
+    ubo.ambient = scene_data.ambient;
+    ubo.dirLightColor = scene_data.dirLightColor;
 
+    memcpy(scene_data.uniformBufferMapped, &ubo, sizeof(ubo));
+    
     for (auto it = start; it != end; ++it)
     {
-        ubo.model = it->second->pos;
-        memcpy(it->second->uniformBufferMapped, &ubo, sizeof(ubo));
-        VkBuffer vertexBuffers[] = {it->second->vertexBuffer};
+        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &scene_data.descriptorSets[it->second->dc_index], 0, nullptr); //FIXME
 
+        vkCmdPushConstants(cmd, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(it->second->pc_data), &it->second->pc_data);
+        VkBuffer vertexBuffers[] = {it->second->vertexBuffer};
+        
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(cmd, 0, 1, vertexBuffers, offsets);
         vkCmdBindIndexBuffer(cmd, it->second->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, it->second->descriptorSet, 0, nullptr);
 
         vkCmdDrawIndexed(cmd, static_cast<uint32_t>(it->second->indices.size()), 1, 0, 0, 0);
     }
@@ -1144,7 +1152,7 @@ void recordSecondary(ThreadData *thread, const std::unordered_map<std::string, s
 
     thread->is_cmd_buffer_recorded = 1;
 }
-void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData> &threads, const std::unordered_map<std::string, std::unique_ptr<_Object>> &objects, uint32_t image_index, const VkExtent2D &extent, const VkRenderPass &render_pass, const std::vector<VkFramebuffer> &framebuffers, const VkPipeline &graphics_pipeline, const VkPipelineLayout &pipeline_layout, uint32_t current_frame, const glm::mat4 &view, const glm::mat4 &proj, const glm::vec3 &dir_light, const glm::vec3 &dir_light_color, const glm::vec3 &ambient, VkDevice device)
+void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData> &threads, const std::unordered_map<std::string, std::unique_ptr<_Object>> &objects, uint32_t image_index, const VkExtent2D &extent, const VkRenderPass &render_pass, const std::vector<VkFramebuffer> &framebuffers, const VkPipeline &graphics_pipeline, const VkPipelineLayout &pipeline_layout, uint32_t current_frame, const _SceneData &scene_data, VkDevice device)
 {
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -1187,7 +1195,7 @@ void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData>
         {
             ++it;
         }
-        local_threads.emplace_back(recordSecondary, &threads[i], std::ref(objects), extent, render_pass, framebuffers[image_index], graphics_pipeline, pipeline_layout, current_frame, view, proj, dir_light, dir_light_color, ambient, device, start, it);
+        local_threads.emplace_back(recordSecondary, &threads[i], std::ref(objects), extent, render_pass, framebuffers[image_index], graphics_pipeline, pipeline_layout, current_frame, scene_data, device, start, it);
     }
 
     int i = 0;
