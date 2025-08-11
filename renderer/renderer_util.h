@@ -131,7 +131,7 @@ struct _Object
     VmaAllocation textureImageMemory;
     VkSampler *sampler;
 
-    int dc_index; //descriptor set index (FIXME)
+    int dc_index; //descriptor set index 
 };
 
 struct _SceneData

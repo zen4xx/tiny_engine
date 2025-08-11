@@ -10,7 +10,7 @@ void _Scene::createDescriptorSetsForScene(VkExtent2D extent, VmaAllocator alloca
     for (auto it = objects.begin(); it != objects.end(); ++it)
     {
         addDescriptorSet(scene_data.descriptorSets[i], scene_data.uniformBuffer, it->second->textureImageView, *it->second->sampler, device);
-        it->second->dc_index = i; //FIXME
+        it->second->dc_index = i;
         ++i;
     }
     isDescriptorSetsCreated = 1;
