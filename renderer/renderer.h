@@ -16,7 +16,9 @@ namespace tiny_engine
 
         std::string gltf_model_path = "_null";
 
-        std::string texture_path = "_default";
+        std::string albedo_path = "_default";
+        std::string mr_path = "_default";
+        std::string normal_path = "_default";
 
         glm::mat4 pos;
     };    
@@ -33,8 +35,8 @@ public:
     void setWindow(GLFWwindow *window);
     void drawScene(const std::string &scene_name);
     // Must be called before drawScene
-    void addObject(const std::string& scene_name, const std::string& obj_name, const std::vector<Vertex> &vertices, const std::vector<uint32_t> &indices, glm::mat4 pos, const std::string &texture_path = "_default");
-    void addObject(const std::string &scene_name, const std::string& obj_name, const std::string &gltf_model_path, glm::mat4 pos, const std::string &texture_path = "_default");
+    void addObject(const std::string &scene_name, const std::string& obj_name, const std::vector<Vertex> &vertices, const std::vector<uint32_t> &indices, glm::mat4 pos, const std::string &albedo_path = "_default", const std::string &mr_path = "_default", const std::string &normal_path = "_default");
+    void addObject(const std::string &scene_name, const std::string& obj_name, const std::string &gltf_model_path, glm::mat4 pos, const std::string &albedo_path = "_default", const std::string &mr_path = "_default", const std::string &normal_path = "_default");
     void addObject(const tiny_engine::Object &obj);
 
     inline void moveObject(const std::string &scene_name, const std::string &obj_name, glm::mat4 pos) { m_scenes[scene_name]->objects[obj_name]->pc_data.model = pos; };

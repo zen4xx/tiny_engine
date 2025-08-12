@@ -1,5 +1,6 @@
 #ifndef RENDERER_UTIL
 #define RENDERER_UTIL
+#include <vulkan/vulkan_core.h>
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
@@ -62,6 +63,7 @@ struct Vertex
     glm::vec3 pos;
     glm::vec3 normal;
     glm::vec2 texCoord;
+    glm::vec4 tangent;
 
     static VkVertexInputBindingDescription getBindingDescription()
     {
@@ -73,9 +75,9 @@ struct Vertex
         return description;
     }
 
-    static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions()
+    static std::array<VkVertexInputAttributeDescription, 4> getAttributeDescriptions()
     {
-        std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
+        std::array<VkVertexInputAttributeDescription, 4> attributeDescriptions{};
 
         attributeDescriptions[0].binding = 0;
         attributeDescriptions[0].location = 0;
@@ -91,6 +93,11 @@ struct Vertex
         attributeDescriptions[2].location = 2;
         attributeDescriptions[2].format = VK_FORMAT_R32G32B32_SFLOAT;
         attributeDescriptions[2].offset = offsetof(Vertex, normal);
+
+        attributeDescriptions[3].binding = 0;
+        attributeDescriptions[3].location = 3;
+        attributeDescriptions[3].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+        attributeDescriptions[3].offset = offsetof(Vertex, tangent);
 
         return attributeDescriptions;
     }
@@ -109,29 +116,38 @@ struct _UniformBufferObject
 };
 
 struct _PushConstantsData
-{
+{ 
     glm::mat4 model;
 };
 
 struct _Object
 {
+    int dc_index; //descriptor set index 
+    
     _PushConstantsData pc_data;
-
-    std::vector<Vertex> vertices;
-    std::vector<uint32_t> indices;
-
+    
     VkBuffer vertexBuffer;
     VmaAllocation vertexBufferMemory;
-
+    
     VkBuffer indexBuffer;
     VmaAllocation indexBufferMemory;
-
+    
     VkImage textureImage;
     VkImageView textureImageView;
     VmaAllocation textureImageMemory;
-    VkSampler *sampler;
 
-    int dc_index; //descriptor set index 
+    VkImage metalRoughnessImage;
+    VkImageView metalRoughnessImageView;
+    VmaAllocation metalRoughnessImageMemory;
+
+    VkImage normalImage;
+    VkImageView normalImageView;
+    VmaAllocation normalImageMemory;
+
+    VkSampler *sampler;
+    
+    std::vector<Vertex> vertices;
+    std::vector<uint32_t> indices;
 };
 
 struct _SceneData
@@ -175,7 +191,7 @@ void createIndexBuffer(std::vector<uint32_t> indices, VkBuffer *index_buffer, Vm
 void createDescriptorSetLayout(VkDescriptorSetLayout *descriptor_set_layout, VkDevice device);
 void createUniformBuffer(VkBuffer *uniform_buffer, VmaAllocation *uniform_buffer_memory, void **uniform_buffer_mapped, VmaAllocator allocator);
 void createDescriptorPool(VkDescriptorPool *descriptor_pool, uint32_t descriptor_count, VmaAllocator allocator, VkDevice device);
-void addDescriptorSet(VkDescriptorSet descriptor_set, VkBuffer uniform_buffer, VkImageView texture_image_view, VkSampler texture_sampler, VkDevice device);
+void addDescriptorSet(VkDescriptorSet descriptor_set, VkBuffer uniform_buffer, VkImageView texture_image_view, VkImageView mr_image_view, VkImageView normal_image_view, VkSampler texture_sampler, VkDevice device);
 void createDescriptorSets(std::vector<VkDescriptorSet> &descriptor_sets, VkDescriptorSetLayout descriptor_set_layout, uint32_t count, VkDescriptorPool descriptor_pool, VkDevice device);
 void createTextureImage(const char *texture_path, VkImage &image, VmaAllocation &image_memory, VmaAllocator allocator, VkCommandPool command_pool, VkQueue graphics_queue, VkDevice device);
 void createTextureImageView(VkImageView *texture_image_view, VkImage image, VkDevice device);

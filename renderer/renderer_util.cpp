@@ -1,3 +1,4 @@
+#include <vulkan/vulkan_core.h>
 #define VMA_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
 #define TINYGLTF_IMPLEMENTATION
@@ -1136,7 +1137,7 @@ void recordSecondary(ThreadData *thread, const std::unordered_map<std::string, s
     
     for (auto it = start; it != end; ++it)
     {
-        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &scene_data.descriptorSets[it->second->dc_index], 0, nullptr); //FIXME
+        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &scene_data.descriptorSets[it->second->dc_index], 0, nullptr); 
 
         vkCmdPushConstants(cmd, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(it->second->pc_data), &it->second->pc_data);
         VkBuffer vertexBuffers[] = {it->second->vertexBuffer};
@@ -1364,13 +1365,27 @@ void createDescriptorSetLayout(VkDescriptorSetLayout *descriptor_set_layout, VkD
     uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
     VkDescriptorSetLayoutBinding samplerLayoutBinding{};
-    samplerLayoutBinding.binding = 1;
+    samplerLayoutBinding.binding = 1; 
     samplerLayoutBinding.descriptorCount = 1;
     samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     samplerLayoutBinding.pImmutableSamplers = nullptr;
     samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-    std::array<VkDescriptorSetLayoutBinding, 2> bindings = {uboLayoutBinding, samplerLayoutBinding};
+    VkDescriptorSetLayoutBinding normalLayoutBinding{};
+    normalLayoutBinding.binding = 2; 
+    normalLayoutBinding.descriptorCount = 1;
+    normalLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    normalLayoutBinding.pImmutableSamplers = nullptr;
+    normalLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    VkDescriptorSetLayoutBinding mrLayoutBinding{};
+    mrLayoutBinding.binding = 3; 
+    mrLayoutBinding.descriptorCount = 1;
+    mrLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    mrLayoutBinding.pImmutableSamplers = nullptr;
+    mrLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    std::array<VkDescriptorSetLayoutBinding, 4> bindings = {uboLayoutBinding, samplerLayoutBinding, normalLayoutBinding, mrLayoutBinding};
 
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -1380,6 +1395,7 @@ void createDescriptorSetLayout(VkDescriptorSetLayout *descriptor_set_layout, VkD
     VkResult res = vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, descriptor_set_layout);
     if (res != VK_SUCCESS)
         err("Failed to create descriptor set layout", res);
+
 }
 
 void createUniformBuffer(VkBuffer *uniform_buffer, VmaAllocation *uniform_buffer_memory, void **uniform_buffer_mapped, VmaAllocator allocator)
@@ -1392,13 +1408,19 @@ void createUniformBuffer(VkBuffer *uniform_buffer, VmaAllocation *uniform_buffer
 void createDescriptorPool(VkDescriptorPool *descriptor_pool, uint32_t descriptor_count, VmaAllocator allocator, VkDevice device)
 {
 
-    std::array<VkDescriptorPoolSize, 2> poolSizes{};
+    std::array<VkDescriptorPoolSize, 4> poolSizes{};
 
     poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     poolSizes[0].descriptorCount = descriptor_count;
 
     poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     poolSizes[1].descriptorCount = descriptor_count;
+
+    poolSizes[2].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    poolSizes[2].descriptorCount = descriptor_count;
+
+    poolSizes[3].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    poolSizes[3].descriptorCount = descriptor_count;
 
     VkDescriptorPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -1426,7 +1448,7 @@ void createDescriptorSets(std::vector<VkDescriptorSet> &descriptor_sets, VkDescr
         err("Failed to allocate descriptor sets", res);
 }
 
-void addDescriptorSet(VkDescriptorSet descriptor_set, VkBuffer uniform_buffer, VkImageView texture_image_view, VkSampler texture_sampler, VkDevice device)
+void addDescriptorSet(VkDescriptorSet descriptor_set, VkBuffer uniform_buffer, VkImageView texture_image_view, VkImageView mr_image_view, VkImageView normal_image_view, VkSampler texture_sampler, VkDevice device)
 {
     VkDescriptorBufferInfo bufferInfo{};
     bufferInfo.buffer = uniform_buffer;
@@ -1438,7 +1460,17 @@ void addDescriptorSet(VkDescriptorSet descriptor_set, VkBuffer uniform_buffer, V
     imageInfo.imageView = texture_image_view;
     imageInfo.sampler = texture_sampler;
 
-    std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
+    VkDescriptorImageInfo mrInfo{};
+    mrInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    mrInfo.imageView = mr_image_view;
+    mrInfo.sampler = texture_sampler;
+
+    VkDescriptorImageInfo normalInfo{};
+    normalInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    normalInfo.imageView = normal_image_view;
+    normalInfo.sampler = texture_sampler;
+
+    std::array<VkWriteDescriptorSet, 4> descriptorWrites{};
 
     descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     descriptorWrites[0].dstSet = descriptor_set;
@@ -1455,6 +1487,22 @@ void addDescriptorSet(VkDescriptorSet descriptor_set, VkBuffer uniform_buffer, V
     descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     descriptorWrites[1].descriptorCount = 1;
     descriptorWrites[1].pImageInfo = &imageInfo;
+
+    descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrites[2].dstSet = descriptor_set;
+    descriptorWrites[2].dstBinding = 2;
+    descriptorWrites[2].dstArrayElement = 0;
+    descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptorWrites[2].descriptorCount = 1;
+    descriptorWrites[2].pImageInfo = &mrInfo;
+
+    descriptorWrites[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrites[3].dstSet = descriptor_set;
+    descriptorWrites[3].dstBinding = 3;
+    descriptorWrites[3].dstArrayElement = 0;
+    descriptorWrites[3].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptorWrites[3].descriptorCount = 1;
+    descriptorWrites[3].pImageInfo = &normalInfo;
 
     vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 }
@@ -1632,6 +1680,15 @@ bool loadModel(const std::string &filename, _Object *object)
             const float *texCoordData = reinterpret_cast<const float *>(texCoordBuffer.data.data() + texCoordView.byteOffset + texCoordAccessor.byteOffset);
             const float *normalData = reinterpret_cast<const float *>(normalBuffer.data.data() + normalView.byteOffset + normalAccessor.byteOffset);
 
+            const float *tangentData = nullptr;
+            if (primitive.attributes.find("TANGENT") != primitive.attributes.end()) {
+                const tinygltf::Accessor &tangentAccessor = model.accessors[primitive.attributes.at("TANGENT")];
+                const tinygltf::BufferView &tangentView = model.bufferViews[tangentAccessor.bufferView];
+                const tinygltf::Buffer &tangentBuffer = model.buffers[tangentView.buffer];
+                tangentData = reinterpret_cast<const float*>(tangentBuffer.data.data() + tangentView.byteOffset + tangentAccessor.byteOffset);
+            }
+
+
             for (size_t i = 0; i < positionAccessor.count; ++i)
             {
                 Vertex vertex;
@@ -1646,6 +1703,18 @@ bool loadModel(const std::string &filename, _Object *object)
                 vertex.normal.x = normalData[i * 3 + 0]; 
                 vertex.normal.y = normalData[i * 3 + 1]; 
                 vertex.normal.z = normalData[i * 3 + 2]; 
+
+                if (tangentData) {
+                    vertex.tangent = glm::vec4(
+                        tangentData[i*4 + 0],
+                        tangentData[i*4 + 1],
+                        tangentData[i*4 + 2],
+                        tangentData[i*4 + 3]   
+                    );
+                } 
+                else {
+                    vertex.tangent = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+                }
 
                 object->vertices.push_back(vertex);
             }

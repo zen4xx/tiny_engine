@@ -250,7 +250,7 @@ void Renderer::drawScene(const std::string &scene_name)
     current_frame = (current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-void Renderer::addObject(const std::string &scene_name, const std::string &name, const std::vector<Vertex> &vertices, const std::vector<uint32_t> &indices, glm::mat4 pos, const std::string &texture_path)
+void Renderer::addObject(const std::string &scene_name, const std::string &name, const std::vector<Vertex> &vertices, const std::vector<uint32_t> &indices, glm::mat4 pos, const std::string &albedo_path, const std::string &mr_path, const std::string &normal_path)
 {
     auto object = std::make_unique<_Object>();
     object->vertices = vertices;
@@ -260,21 +260,39 @@ void Renderer::addObject(const std::string &scene_name, const std::string &name,
     createVertexBuffer(&object->vertexBuffer, object->vertices, &object->vertexBufferMemory, m_command_pool, m_graphics_queue, m_allocator, m_physical_device, m_device);
     createIndexBuffer(object->indices, &object->indexBuffer, &object->indexBufferMemory, m_command_pool, m_graphics_queue, m_allocator, m_device);
 
-    if (texture_path != "_default" && std::ifstream(texture_path).is_open())
-        createTextureImage(texture_path.c_str(), object->textureImage, object->textureImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
-    else if (texture_path == "_default")
+    // default albedo
+    if (albedo_path != "_default" && std::ifstream(albedo_path).is_open())
+        createTextureImage(albedo_path.c_str(), object->textureImage, object->textureImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
+    else if (albedo_path == "_default")
         createTextureImage("core/default_assets/textures/white.png", object->textureImage, object->textureImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
     else
         createTextureImage("core/default_assets/textures/black_purple_grid.png", object->textureImage, object->textureImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
 
     createTextureImageView(&object->textureImageView, object->textureImage, m_device);
+
+    // metalRoughness
+    if (mr_path != "_default" && std::ifstream(mr_path).is_open())
+        createTextureImage(mr_path.c_str(), object->metalRoughnessImage, object->metalRoughnessImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
+    else 
+        createTextureImage("core/default_assets/textures/black.jpg", object->metalRoughnessImage, object->metalRoughnessImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
+
+    createTextureImageView(&object->metalRoughnessImageView, object->metalRoughnessImage, m_device);
+
+    // normal
+    if (normal_path != "_default" && std::ifstream(normal_path).is_open())
+        createTextureImage(normal_path.c_str(), object->normalImage, object->normalImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
+    else 
+        createTextureImage("core/default_assets/textures/black.jpg", object->normalImage, object->normalImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
+
+    createTextureImageView(&object->normalImageView, object->normalImage, m_device);
+
     object->sampler = &m_sampler;
 
     // moves object to scene
     m_scenes[scene_name]->objects[name] = std::move(object);
 }
 
-void Renderer::addObject(const std::string &scene_name, const std::string &name, const std::string &gltf_model_path, glm::mat4 pos, const std::string &texture_path)
+void Renderer::addObject(const std::string &scene_name, const std::string &name, const std::string &gltf_model_path, glm::mat4 pos, const std::string &albedo_path, const std::string &mr_path, const std::string &normal_path)
 {
     auto object = std::make_unique<_Object>();
     object->pc_data.model = pos;
@@ -283,14 +301,32 @@ void Renderer::addObject(const std::string &scene_name, const std::string &name,
     createVertexBuffer(&object->vertexBuffer, object->vertices, &object->vertexBufferMemory, m_command_pool, m_graphics_queue, m_allocator, m_physical_device, m_device);
     createIndexBuffer(object->indices, &object->indexBuffer, &object->indexBufferMemory, m_command_pool, m_graphics_queue, m_allocator, m_device);
 
-    if (texture_path != "_default" && std::ifstream(texture_path).is_open())
-        createTextureImage(texture_path.c_str(), object->textureImage, object->textureImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
-    else if (texture_path == "_default")
+    // default albedo
+    if (albedo_path != "_default" && std::ifstream(albedo_path).is_open())
+        createTextureImage(albedo_path.c_str(), object->textureImage, object->textureImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
+    else if (albedo_path == "_default")
         createTextureImage("core/default_assets/textures/white.png", object->textureImage, object->textureImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
     else
         createTextureImage("core/default_assets/textures/black_purple_grid.png", object->textureImage, object->textureImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
 
     createTextureImageView(&object->textureImageView, object->textureImage, m_device);
+
+    // metalRoughness
+    if (mr_path != "_default" && std::ifstream(mr_path).is_open())
+        createTextureImage(mr_path.c_str(), object->metalRoughnessImage, object->metalRoughnessImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
+    else 
+        createTextureImage("core/default_assets/textures/black.jpg", object->metalRoughnessImage, object->metalRoughnessImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
+
+    createTextureImageView(&object->metalRoughnessImageView, object->metalRoughnessImage, m_device);
+
+    // normal
+    if (normal_path != "_default" && std::ifstream(normal_path).is_open())
+        createTextureImage(normal_path.c_str(), object->normalImage, object->normalImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
+    else 
+        createTextureImage("core/default_assets/textures/black.jpg", object->normalImage, object->normalImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
+
+    createTextureImageView(&object->normalImageView, object->normalImage, m_device);
+
     object->sampler = &m_sampler;
 
     // moves object to scene
@@ -313,16 +349,37 @@ void Renderer::addObject(const tiny_engine::Object &obj)
     createVertexBuffer(&object->vertexBuffer, object->vertices, &object->vertexBufferMemory, m_command_pool, m_graphics_queue, m_allocator, m_physical_device, m_device);
     createIndexBuffer(object->indices, &object->indexBuffer, &object->indexBufferMemory, m_command_pool, m_graphics_queue, m_allocator, m_device);
 
-    std::string texture_path = obj.texture_path;
+    std::string albedo_path = obj.albedo_path;
+    std::string mr_path = obj.mr_path;
+    std::string normal_path = obj.normal_path;
 
-    if (texture_path != "_default" && std::ifstream(texture_path).is_open())
-        createTextureImage(texture_path.c_str(), object->textureImage, object->textureImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
-    else if (texture_path == "_default")
+    // default albedo
+
+    if (albedo_path != "_default" && std::ifstream(albedo_path).is_open())
+        createTextureImage(albedo_path.c_str(), object->textureImage, object->textureImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
+    else if (albedo_path == "_default")
         createTextureImage("core/default_assets/textures/white.png", object->textureImage, object->textureImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
     else
         createTextureImage("core/default_assets/textures/black_purple_grid.png", object->textureImage, object->textureImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
 
     createTextureImageView(&object->textureImageView, object->textureImage, m_device);
+
+    // metalRoughness
+    if (mr_path != "_default" && std::ifstream(mr_path).is_open())
+        createTextureImage(mr_path.c_str(), object->metalRoughnessImage, object->metalRoughnessImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
+    else 
+        createTextureImage("core/default_assets/textures/black.jpg", object->metalRoughnessImage, object->metalRoughnessImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
+
+    createTextureImageView(&object->metalRoughnessImageView, object->metalRoughnessImage, m_device);
+
+    // normal
+    if (normal_path != "_default" && std::ifstream(normal_path).is_open())
+        createTextureImage(normal_path.c_str(), object->normalImage, object->normalImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
+    else 
+        createTextureImage("core/default_assets/textures/black.jpg", object->normalImage, object->normalImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
+
+    createTextureImageView(&object->normalImageView, object->normalImage, m_device);
+
     object->sampler = &m_sampler;
 
     // moves object to scene

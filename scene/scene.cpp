@@ -1,4 +1,5 @@
 #include "scene.h"
+#include <vulkan/vulkan_core.h>
 
 void _Scene::createDescriptorSetsForScene(VkExtent2D extent, VmaAllocator allocator, VkDescriptorSetLayout descriptor_set_layout, VkDevice device)
 {
@@ -9,7 +10,7 @@ void _Scene::createDescriptorSetsForScene(VkExtent2D extent, VmaAllocator alloca
     int i = 0;
     for (auto it = objects.begin(); it != objects.end(); ++it)
     {
-        addDescriptorSet(scene_data.descriptorSets[i], scene_data.uniformBuffer, it->second->textureImageView, *it->second->sampler, device);
+        addDescriptorSet(scene_data.descriptorSets[i], scene_data.uniformBuffer, it->second->textureImageView, it->second->metalRoughnessImageView, it->second->normalImageView, *it->second->sampler, device);
         it->second->dc_index = i;
         ++i;
     }
@@ -48,7 +49,18 @@ void _Scene::deleteScene(VmaAllocator allocator, VkDevice device)
             vkDestroyImageView(device, obj->textureImageView, nullptr);
             vmaDestroyImage(allocator, obj->textureImage, obj->textureImageMemory);
         }
-                
+        
+        if (obj->normalImage != VK_NULL_HANDLE)
+        {
+            vkDestroyImageView(device, obj->normalImageView, nullptr);
+            vmaDestroyImage(allocator, obj->normalImage, obj->normalImageMemory);
+        }
+
+        if (obj->metalRoughnessImage != VK_NULL_HANDLE)
+        {
+            vkDestroyImageView(device, obj->metalRoughnessImageView, nullptr);
+            vmaDestroyImage(allocator, obj->metalRoughnessImage, obj->metalRoughnessImageMemory);
+        }
     }
 
     if (scene_data.uniformBufferMemory != VK_NULL_HANDLE && scene_data.uniformBufferMapped != nullptr)

@@ -4,7 +4,7 @@ int main()
 {
     uint8_t thread_count = std::thread::hardware_concurrency(); 
 
-    auto engine = Tiny_engine("app", 800, 600, "test", TINY_ENGINE_MAX_MSAA_QUALITY, thread_count, true);
+    auto engine = Tiny_engine("myapp", 1920, 1080, "test", TINY_ENGINE_MAX_MSAA_QUALITY, thread_count, true);
 
     glm::mat4 view = glm::lookAt(glm::vec3(0.0f, -4.0f, -2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     glm::mat4 view2 = glm::lookAt(glm::vec3(0.0f, -5.0f, -3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
@@ -15,8 +15,11 @@ int main()
     engine.setDirLight("main", glm::vec3(2.0f, 0.0f, -2.0f));
     engine.setDirLight("secondary", glm::vec3(2.0f, 0.0f, -2.0f));
 
-    engine.setDirLightColor("secondary", glm::vec3(1.0f, 0.0f, 0.0f));
-    engine.setAmbient("secondary", glm::vec3(0.0f, 0.0f, 0.3f));
+    engine.setDirLightColor("secondary", glm::vec3(20.0f, 20.0f, 20.0f));
+    engine.setAmbient("secondary", glm::vec3(5.0f, 10.0f, 10.0f));
+
+    engine.setDirLightColor("main", glm::vec3(4.0f, 3.0f, 2.0f));
+    engine.setAmbient("main", glm::vec3(0.1f, 0.1f, 0.2f));
 
     engine.setDrawDistance("main", 50.f);
 
@@ -28,9 +31,10 @@ int main()
     suzanne.obj_name = "monkey";
     suzanne.gltf_model_path = "suzanne/Suzanne.gltf";
     suzanne.pos = glm::translate(glm::mat4(1), glm::vec3(0,0,0));
-    suzanne.texture_path = "suzanne/Suzanne_BaseColor.png";
+    suzanne.albedo_path = "suzanne/Suzanne_BaseColor.png";
+    suzanne.mr_path = "suzanne/Suzanne_MetallicRoughness.png";
     
-    engine.addObject("main", "helmet", "damaged_helmet/DamagedHelmet.gltf", glm::translate(glm::mat4(1), glm::vec3(0, 0, 0)), "damaged_helmet/Default_albedo.jpg");
+    engine.addObject("main", "helmet", "damaged_helmet/DamagedHelmet.gltf", glm::translate(glm::mat4(1), glm::vec3(0, 0, 0)), "damaged_helmet/Default_albedo.jpg", "damaged_helmet/Default_metalRoughness.jpg", "damaged_helmet/Default_normal.jpg");
     engine.addObject(suzanne);
    
      glm::vec3 pos(0.0f);
@@ -66,7 +70,9 @@ int main()
         model = glm::translate(model, pos);
         model = glm::rotate(model, angle, glm::vec3(0.0f, 0.0f, 1.0f));
 
-        engine.setDirLight("main", glm::vec3(sin(glfwGetTime()) * 3.0f, 0.0f, -2.0f));
+        float t = glfwGetTime();
+        glm::vec3 dir = glm::normalize(glm::vec3(cos(t), 0.5f, sin(t)));
+        engine.setDirLight("main", dir);
 
         engine.update();
         
