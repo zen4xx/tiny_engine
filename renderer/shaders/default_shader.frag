@@ -2,13 +2,10 @@
 
 layout(location = 0) in vec2  fragTexCoord;
 layout(location = 1) in vec3  fragNormal;
-layout(location = 2) in vec3  fragDirLight;
-layout(location = 3) in vec3  fragAmbient;
-layout(location = 4) in vec3  fragDirLightColor;
-layout(location = 5) in vec3  fragCameraPos;
-layout(location = 6) in vec3  fragPos;
-layout(location = 7) in vec3  fragTangent;
-layout(location = 8) in vec3  fragBitangent;
+layout(location = 2) in vec3  fragCameraPos;
+layout(location = 3) in vec3  fragPos;
+layout(location = 4) in vec3  fragTangent;
+layout(location = 5) in vec3  fragBitangent;
 
 layout(location = 0) out vec4 outColor;
 
@@ -17,6 +14,14 @@ layout(binding = 2) uniform sampler2D mrSampler;
 layout(binding = 3) uniform sampler2D normalSampler;  
 
 const float PI = 3.14159265359;
+
+layout(binding = 0) uniform UniformBufferObject {
+    mat4 view;
+    mat4 proj;
+    vec3 dirLight;
+    vec3 dirLightColor;
+    vec3 ambient;
+} ubo;
 
 // ----------------------------------------------------------------------------
 // PBR helper functions
@@ -56,7 +61,7 @@ void main() {
 
     vec3 N = getNormalTangentSpace();
     vec3 V = normalize(fragCameraPos - fragPos);
-    vec3 L = normalize(-fragDirLight);
+    vec3 L = normalize(-ubo.dirLight);
     vec3 H = normalize(V + L);
 
     vec3 F0 = mix(vec3(0.04), albedo, metalness);
@@ -70,7 +75,7 @@ void main() {
 
     vec3 kD = (vec3(1.0) - F) * (1.0 - metalness);
     float NdotL = max(dot(N, L), 0.0);
-    vec3 irradiance = fragAmbient + fragDirLightColor * NdotL;
+    vec3 irradiance = ubo.ambient + ubo.dirLightColor * NdotL;
 
     kD += 0.05; 
 

@@ -19,13 +19,10 @@ layout(location = 3) in vec4 inTangent;
 
 layout(location = 0) out vec2  fragTexCoord;
 layout(location = 1) out vec3  fragNormal;
-layout(location = 2) out vec3  fragDirLight;
-layout(location = 3) out vec3  fragAmbient;
-layout(location = 4) out vec3  fragDirLightColor;
-layout(location = 5) out vec3  fragCameraPos;
-layout(location = 6) out vec3  fragPos;
-layout(location = 7) out vec3  fragTangent;
-layout(location = 8) out vec3  fragBitangent;
+layout(location = 2) out vec3  fragCameraPos;
+layout(location = 3) out vec3  fragPos;
+layout(location = 4) out vec3  fragTangent;
+layout(location = 5) out vec3  fragBitangent;
 
 void main() {
     mat3 normalMatrix = mat3(transpose(inverse(model)));
@@ -39,9 +36,6 @@ void main() {
     fragBitangent = B;
 
     fragTexCoord      = inTexCoord;
-    fragAmbient       = ubo.ambient;
-    fragDirLight      = normalize(ubo.dirLight);
-    fragDirLightColor = ubo.dirLightColor;
     fragPos           = vec3(model * vec4(inPosition, 1.0));
     fragCameraPos     = vec3(inverse(ubo.view) * vec4(0.0, 0.0, 0.0, 1.0));
 
