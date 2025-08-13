@@ -24,33 +24,24 @@ const float PI = 3.14159265359;
 
 vec3 getNormalTangentSpace() {
     vec3 n = texture(normalSampler, fragTexCoord).xyz * 2.0 - 1.0;
-    mat3 TBN = mat3(normalize(fragTangent),
-                    normalize(fragBitangent),
-                    normalize(fragNormal));
-    return normalize(TBN * n);
+    return normalize(mat3(normalize(fragTangent), normalize(fragBitangent), normalize(fragNormal)) * n);
 }
 
 float DistributionGGX(vec3 N, vec3 H, float roughness) {
-    float a      = roughness * roughness;
-    float a2     = a * a;
-    float NdotH  = max(dot(N, H), 0.0);
+    float a2 = roughness * roughness;
+    float NdotH = max(dot(N, H), 0.0);
     float NdotH2 = NdotH * NdotH;
-
-    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
-    denom = PI * denom * denom;
+    float denom = PI * (NdotH2 * (a2 - 1.0) + 1.0) * (NdotH2 * (a2 - 1.0) + 1.0);
     return a2 / denom;
 }
 
 float GeometrySchlickGGX(float NdotV, float roughness) {
-    float r = roughness + 1.0;
-    float k = (r * r) / 8.0;
+    float k = (roughness + 1.0) * (roughness + 1.0) / 8.0;
     return NdotV / (NdotV * (1.0 - k) + k);
 }
 
 float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
-    float ggx1 = GeometrySchlickGGX(max(dot(N, V), 0.0), roughness);
-    float ggx2 = GeometrySchlickGGX(max(dot(N, L), 0.0), roughness);
-    return ggx1 * ggx2;
+    return GeometrySchlickGGX(max(dot(N, V), 0.0), roughness) * GeometrySchlickGGX(max(dot(N, L), 0.0), roughness);
 }
 
 vec3 fresnelSchlick(float cosTheta, vec3 F0) {
@@ -58,8 +49,8 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0) {
 }
 
 void main() {
-    vec3 albedo     = pow(texture(texSampler, fragTexCoord).rgb, vec3(2.2)); 
-    vec2 mr         = texture(mrSampler, fragTexCoord).bg;
+    vec3 albedo = pow(texture(texSampler, fragTexCoord).rgb, vec3(2.2)); 
+    vec2 mr = texture(mrSampler, fragTexCoord).bg;
     float metalness = mr.r;
     float roughness = mr.g;
 
@@ -69,23 +60,19 @@ void main() {
     vec3 H = normalize(V + L);
 
     vec3 F0 = mix(vec3(0.04), albedo, metalness);
-
     float NDF = DistributionGGX(N, H, roughness);
-    float G   = GeometrySmith(N, V, L, roughness);
-    vec3  F   = fresnelSchlick(max(dot(H, V), 0.0), F0);
+    float G = GeometrySmith(N, V, L, roughness);
+    vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
 
-    vec3 nominator    = NDF * G * F;
+    vec3 nominator = NDF * G * F;
     float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
-    vec3 specular     = nominator / denominator;
+    vec3 specular = nominator / denominator;
 
-    vec3 kS = F;
-    vec3 kD = (vec3(1.0) - kS) * (1.0 - metalness);
-
+    vec3 kD = (vec3(1.0) - F) * (1.0 - metalness);
     float NdotL = max(dot(N, L), 0.0);
-
     vec3 irradiance = fragAmbient + fragDirLightColor * NdotL;
 
-    kD += 0.05;
+    kD += 0.05; 
 
     vec3 Lo = (kD * albedo + specular) * irradiance;
     
