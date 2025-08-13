@@ -1,5 +1,6 @@
 #include "../renderer/renderer.h"
 #include "../window/window.h"
+#include "GLFW/glfw3.h"
 #include <memory>
 
 class Tiny_engine
@@ -37,7 +38,7 @@ public:
 
     inline float getDeltaTime() { return m_renderer->getDeltaTime(); };
     inline float getFPSCount() { return m_renderer->getFPSCount(); };
-
+    inline GLFWwindow* getWindow() { return m_window->GetWindow(); };
 private:
     std::unique_ptr<Renderer> m_renderer;
     std::unique_ptr<Window> m_window;

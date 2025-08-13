@@ -1,10 +1,41 @@
 #include "tiny_engine.h"
+#include "camera.h"
+
+Camera camera;
+
+double lastX = 400, lastY = 300;
+bool firstMouse = true;
+
+void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
+    if (firstMouse) {
+        lastX = xpos;
+        lastY = ypos;
+        firstMouse = false;
+    }
+    float xoffset = xpos - lastX;
+    float yoffset = lastY - ypos; 
+
+    lastX = xpos;
+    lastY = ypos;
+
+    camera.ProcessMouseMovement(xoffset, yoffset);
+}
+
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
+    camera.ProcessMouseScroll(static_cast<float>(yoffset));
+}
+
 
 int main()
 {
     uint8_t thread_count = std::thread::hardware_concurrency(); 
-
+    
     auto engine = Tiny_engine("myapp", 1920, 1080, "test", TINY_ENGINE_MAX_MSAA_QUALITY, thread_count, true);
+    
+    glfwSetCursorPosCallback(engine.getWindow(), mouse_callback);
+    glfwSetInputMode(engine.getWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    if (glfwRawMouseMotionSupported())
+        glfwSetInputMode(engine.getWindow(), GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 
     glm::mat4 view = glm::lookAt(glm::vec3(0.0f, -4.0f, -2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     glm::mat4 view2 = glm::lookAt(glm::vec3(0.0f, -5.0f, -3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
@@ -34,52 +65,40 @@ int main()
     suzanne.albedo_path = "suzanne/Suzanne_BaseColor.png";
     suzanne.mr_path = "suzanne/Suzanne_MetallicRoughness.png";
     
-    engine.addObject("main", "helmet", "damaged_helmet/DamagedHelmet.gltf", glm::translate(glm::mat4(1), glm::vec3(0, 0, 0)), "damaged_helmet/Default_albedo.jpg", "damaged_helmet/Default_metalRoughness.jpg", "damaged_helmet/Default_normal.jpg");
     engine.addObject(suzanne);
+    engine.addObject("main", "helmet", "damaged_helmet/DamagedHelmet.gltf", glm::rotate(glm::mat4(1), glm::radians(-90.f), glm::vec3(1, 0, 0)), "damaged_helmet/Default_albedo.jpg", "damaged_helmet/Default_metalRoughness.jpg", "damaged_helmet/Default_normal.jpg");
    
      glm::vec3 pos(0.0f);
     float angle = 0.0f;
     float speed = 3.0f;
 
     bool isMainScene = 1;
-
+ int cnt = 0;
     while (engine.isWindowOpen())
     {
         if (engine.isKeyPressed(GLFW_KEY_W))
-            pos.y += speed * engine.getDeltaTime();
+            camera.ProcessKeyboard(GLFW_KEY_W, engine.getDeltaTime());
         if (engine.isKeyPressed(GLFW_KEY_S))
-            pos.y -= speed * engine.getDeltaTime();
+            camera.ProcessKeyboard(GLFW_KEY_S, engine.getDeltaTime());
         if (engine.isKeyPressed(GLFW_KEY_D))
-            pos.x += speed * engine.getDeltaTime();
+            camera.ProcessKeyboard(GLFW_KEY_D, engine.getDeltaTime());
         if (engine.isKeyPressed(GLFW_KEY_A))
-            pos.x -= speed * engine.getDeltaTime();
-        if (engine.isKeyPressed(GLFW_KEY_SPACE))
-            pos.z += speed * engine.getDeltaTime();
-        if (engine.isKeyPressed(GLFW_KEY_LEFT_CONTROL))
-            pos.z -= speed * engine.getDeltaTime();
-        if (engine.isKeyPressed(GLFW_KEY_Q))
-            angle += speed * engine.getDeltaTime();
-        if (engine.isKeyPressed(GLFW_KEY_E))
-            angle -= speed * engine.getDeltaTime();
+            camera.ProcessKeyboard(GLFW_KEY_A, engine.getDeltaTime());
         if (engine.isKeyPressed(GLFW_KEY_F))
             std::cout << engine.getFPSCount() << std::endl;
         if (engine.isKeyPressed(GLFW_KEY_X))
             isMainScene ? isMainScene = 0 : isMainScene = 1;
-
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, pos);
-        model = glm::rotate(model, angle, glm::vec3(0.0f, 0.0f, 1.0f));
-
+        
         float t = glfwGetTime();
         glm::vec3 dir = glm::normalize(glm::vec3(cos(t), 0.5f, sin(t)));
         engine.setDirLight("main", dir);
 
-        engine.update();
+        engine.setView("main", camera.GetViewMatrix());
         
+        engine.update();
 
         if (isMainScene)
         {
-            engine.moveObject("main", "helmet", model);
             engine.drawScene("main");
         }
         else
