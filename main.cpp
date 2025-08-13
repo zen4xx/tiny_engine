@@ -21,11 +21,6 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
     camera.ProcessMouseMovement(xoffset, yoffset);
 }
 
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
-    camera.ProcessMouseScroll(static_cast<float>(yoffset));
-}
-
-
 int main()
 {
     uint8_t thread_count = std::thread::hardware_concurrency(); 
@@ -49,7 +44,7 @@ int main()
     engine.setDirLightColor("secondary", glm::vec3(20.0f, 20.0f, 20.0f));
     engine.setAmbient("secondary", glm::vec3(5.0f, 10.0f, 10.0f));
 
-    engine.setDirLightColor("main", glm::vec3(4.0f, 3.0f, 2.0f));
+    engine.setDirLightColor("main", glm::vec3(5.0f, 3.0f, 2.0f));
     engine.setAmbient("main", glm::vec3(0.1f, 0.1f, 0.2f));
 
     engine.setDrawDistance("main", 50.f);

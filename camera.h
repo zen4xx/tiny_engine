@@ -4,30 +4,26 @@
 
 class Camera {
 public:
-    // Параметры камеры
     glm::vec3 Position;
     glm::vec3 Front;
     glm::vec3 Up;
     glm::vec3 Right;
     glm::vec3 WorldUp;
 
-    // Углы Эйлера
     float Yaw;
     float Pitch;
 
-    // Настройки движения
     float MovementSpeed;
     float MouseSensitivity;
     float Zoom;
 
-    // Конструктор
     Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 3.0f),
            glm::vec3 up       = glm::vec3(0.0f, 1.0f, 0.0f),
            float yaw          = -90.0f,
            float pitch        =  0.0f)
         : Front(glm::vec3(0.0f, 0.0f, -1.0f)),
-          MovementSpeed(5.0f),
-          MouseSensitivity(0.1f),
+          MovementSpeed(3.0f),
+          MouseSensitivity(0.03f),
           Zoom(45.0f)
     {
         Position = position;
@@ -37,12 +33,10 @@ public:
         updateCameraVectors();
     }
 
-    // Возвращает матрицу вида
     glm::mat4 GetViewMatrix() const {
         return glm::lookAt(Position, Position + Front, Up);
     }
 
-    // Обработка клавиатуры
     void ProcessKeyboard(int key, float deltaTime) {
         float velocity = MovementSpeed * deltaTime;
         if (key == GLFW_KEY_W)
@@ -59,13 +53,12 @@ public:
             Position -= WorldUp * velocity;
     }
 
-    // Обработка движения мыши
     void ProcessMouseMovement(float xoffset, float yoffset, bool constrainPitch = true) {
         xoffset *= MouseSensitivity;
         yoffset *= MouseSensitivity;
 
         Yaw   += xoffset;
-        Pitch += yoffset;
+        Pitch -= yoffset;
 
         if (constrainPitch) {
             if (Pitch > 89.0f)  Pitch = 89.0f;
@@ -74,7 +67,6 @@ public:
         updateCameraVectors();
     }
 
-    // Обработка прокрутки колеса мыши
     void ProcessMouseScroll(float yoffset) {
         Zoom -= yoffset;
         if (Zoom < 1.0f)   Zoom = 1.0f;
@@ -82,7 +74,6 @@ public:
     }
 
 private:
-    // Пересчитывает векторы направления на основе углов Эйлера
     void updateCameraVectors() {
         glm::vec3 front;
         front.x = cos(glm::radians(Yaw)) * cos(glm::radians(Pitch));
