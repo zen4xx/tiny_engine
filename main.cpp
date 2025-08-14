@@ -72,7 +72,7 @@ int main()
     bool isMainScene = 1;
 
     glm::vec3 hpos(3.0f, 0.0f, 0.0f);
-    float speed = 0.001;
+    float speed = 3.0f;
     
     while (engine.isWindowOpen())
     {
@@ -98,13 +98,13 @@ int main()
         engine.setPointLight("main", pos2, 1);
 
         if(engine.isKeyPressed(GLFW_KEY_LEFT))
-            hpos.x -= speed;
+            hpos.x -= speed * engine.getDeltaTime();
         if(engine.isKeyPressed(GLFW_KEY_RIGHT))
-            hpos.x += speed;
+            hpos.x += speed * engine.getDeltaTime();
         if(engine.isKeyPressed(GLFW_KEY_DOWN))
-            hpos.z += speed;
+            hpos.z += speed * engine.getDeltaTime();
         if(engine.isKeyPressed(GLFW_KEY_UP))
-            hpos.z -= speed;
+            hpos.z -= speed * engine.getDeltaTime();
         
         glm::mat4 model(1.0f);
         model = glm::translate(model, hpos);
