@@ -1,8 +1,5 @@
-#include "GLFW/glfw3.h"
-#include "glm/ext/matrix_transform.hpp"
 #include "tiny_engine.h"
 #include "camera.h"
-#include <filesystem>
 
 Camera camera;
 
