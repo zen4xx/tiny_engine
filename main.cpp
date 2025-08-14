@@ -1,6 +1,8 @@
 #include "GLFW/glfw3.h"
+#include "glm/ext/matrix_transform.hpp"
 #include "tiny_engine.h"
 #include "camera.h"
+#include <filesystem>
 
 Camera camera;
 
@@ -63,13 +65,17 @@ int main()
     
     engine.addObject(suzanne);
     engine.addObject("main", "helmet", "damaged_helmet/DamagedHelmet.gltf", glm::rotate(glm::mat4(1), glm::radians(-90.f), glm::vec3(1, 0, 0)), "damaged_helmet/Default_albedo.jpg", "damaged_helmet/Default_metalRoughness.jpg", "damaged_helmet/Default_normal.jpg");
-    
+    engine.addObject("main", "helmet2", "damaged_helmet/DamagedHelmet.gltf", glm::rotate(glm::mat4(1), glm::radians(-90.f), glm::vec3(1, 0, 0)), "damaged_helmet/Default_albedo.jpg", "damaged_helmet/Default_metalRoughness.jpg", "damaged_helmet/Default_normal.jpg");
+
     engine.setPointLightsCount("main", 2);
     engine.setPointLight("main", glm::vec3(2.0f, 0.0f, 0.0f), 0);
     engine.setPointLightColor("main", glm::vec3(2.0f, 0.0f, 0.0f), 0);
     engine.setPointLightColor("main", glm::vec3(0.0f, 2.0f, 0.0f), 1);
     
     bool isMainScene = 1;
+
+    glm::vec3 hpos(3.0f, 0.0f, 0.0f);
+    float speed = 0.001;
     
     while (engine.isWindowOpen())
     {
@@ -93,7 +99,21 @@ int main()
         glm::vec3 pos2(cos(t) * 2 , -1, sin(t) * 2);
         engine.setPointLight("main", pos, 0);
         engine.setPointLight("main", pos2, 1);
+
+        if(engine.isKeyPressed(GLFW_KEY_LEFT))
+            hpos.x -= speed;
+        if(engine.isKeyPressed(GLFW_KEY_RIGHT))
+            hpos.x += speed;
+        if(engine.isKeyPressed(GLFW_KEY_DOWN))
+            hpos.z += speed;
+        if(engine.isKeyPressed(GLFW_KEY_UP))
+            hpos.z -= speed;
         
+        glm::mat4 model(1.0f);
+        model = glm::translate(model, hpos);
+        model = glm::rotate(model, glm::radians(-90.f), glm::vec3(1, 0, 0));
+        engine.moveObject("main", "helmet2", model);
+
         engine.update();
 
         if (isMainScene)
