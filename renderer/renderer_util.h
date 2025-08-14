@@ -154,25 +154,29 @@ struct _Object
     
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
+
+    glm::vec3 aabbMin;
+    glm::vec3 aabbMax;
 };
+
 
 struct _SceneData
 {
     glm::vec3 dirLight = {0.0f, 0.0f, 0.0f};
     glm::vec3 dirLightColor = {1.0f, 1.0f, 1.0f};
     glm::vec3 ambient = {0.1f, 0.1f, 0.1f};
-
+    
     int pointLightsCount = 0;
-
+    
     glm::vec4 pointLightColors[MAX_POINT_LIGHTS_COUNT] = {};
     glm::vec4 pointLightPos[MAX_POINT_LIGHTS_COUNT] = {};
-
+    
     glm::mat4 view;
     glm::mat4 proj;
-
+    
     VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
     std::vector<VkDescriptorSet> descriptorSets;
-
+    
     VkBuffer uniformBuffer;
     VmaAllocation uniformBufferMemory;
     void *uniformBufferMapped;
@@ -209,6 +213,7 @@ void createTextureImageView(VkImageView *texture_image_view, VkImage image, VkDe
 void createTextureSampler(VkSampler *texture_sampler, VkPhysicalDevice physical_device, VkDevice device);
 void createDepthResources(VkImage &depth_image, VmaAllocation &depth_image_memory, VkImageView &depth_image_view, VmaAllocator allocator, VkExtent2D swap_chain_extent, VkQueue graphics_queue, VkCommandPool command_pool, VkSampleCountFlagBits msaa_samples, VkPhysicalDevice physical_device, VkDevice device);
 void createColorResources(VkImage &color_image, VmaAllocation &color_image_memory, VkImageView &color_image_view, VmaAllocator allocator, VkExtent2D swap_chain_extent, VkFormat swap_chain_image_format, VkQueue graphics_queue, VkCommandPool command_pool, VkSampleCountFlagBits msaa_samples, VkDevice device);
+void computeAABB(_Object& obj);
 
 VkSampleCountFlagBits getMaxUsableSampleCount(VkPhysicalDevice physical_device);
 

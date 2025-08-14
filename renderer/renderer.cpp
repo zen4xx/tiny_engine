@@ -1,4 +1,5 @@
 #include "renderer.h"
+#include "renderer_util.h"
 
 /*INITIALIZATION VULKAN*/
 
@@ -288,6 +289,8 @@ void Renderer::addObject(const std::string &scene_name, const std::string &name,
 
     object->sampler = &m_sampler;
 
+    computeAABB(*object);
+
     // moves object to scene
     m_scenes[scene_name]->objects[name] = std::move(object);
 }
@@ -328,6 +331,8 @@ void Renderer::addObject(const std::string &scene_name, const std::string &name,
     createTextureImageView(&object->normalImageView, object->normalImage, m_device);
 
     object->sampler = &m_sampler;
+
+    computeAABB(*object);
 
     // moves object to scene
     m_scenes[scene_name]->objects[name] = std::move(object);
@@ -381,6 +386,8 @@ void Renderer::addObject(const tiny_engine::Object &obj)
     createTextureImageView(&object->normalImageView, object->normalImage, m_device);
 
     object->sampler = &m_sampler;
+
+    computeAABB(*object);
 
     // moves object to scene
     m_scenes[obj.scene_name]->objects[obj.obj_name] = std::move(object);

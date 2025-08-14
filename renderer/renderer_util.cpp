@@ -1092,6 +1092,23 @@ void createSecondaryCommandBuffers(std::vector<VkCommandBuffer> &command_buffers
         err("Failed to allocate command buffers", res);
     }
 }
+
+bool isAABBVisible(const std::array<glm::vec4, 6>& planes,
+                   const glm::vec3& min, const glm::vec3& max)
+{
+    for (const auto& p : planes) {
+ 
+        glm::vec3 ext;
+        ext.x = (p.x > 0.0f) ? max.x : min.x;
+        ext.y = (p.y > 0.0f) ? max.y : min.y;
+        ext.z = (p.z > 0.0f) ? max.z : min.z;
+ 
+        if (glm::dot(glm::vec3(p), ext) + p.w < 0.0f)
+            return false;
+    }
+    return true;
+}
+
 void recordSecondary(ThreadData *thread, const std::unordered_map<std::string, std::unique_ptr<_Object>> &objects, const VkExtent2D &extent, const VkRenderPass &render_pass, const VkFramebuffer &framebuffer, const VkPipeline &graphics_pipeline, const VkPipelineLayout &pipeline_layout, uint32_t current_frame, const _SceneData &scene_data, VkDevice device, typename std::unordered_map<std::string, std::unique_ptr<_Object>>::const_iterator start, typename std::unordered_map<std::string, std::unique_ptr<_Object>>::const_iterator end)
 {
     VkCommandBuffer cmd = thread->command_buffers[current_frame];
@@ -1137,9 +1154,29 @@ void recordSecondary(ThreadData *thread, const std::unordered_map<std::string, s
     memcpy(ubo.point_light_pos, scene_data.pointLightPos, sizeof(scene_data.pointLightPos));
 
     memcpy(scene_data.uniformBufferMapped, &ubo, sizeof(ubo));
+
+    glm::mat4 vp = scene_data.proj * scene_data.view;
+
+    std::array<glm::vec4, 6> frustumPlanes;
+
+    frustumPlanes[0] = vp[3] + vp[0];
+    frustumPlanes[1] = vp[3] - vp[0];
+    frustumPlanes[2] = vp[3] + vp[1];
+    frustumPlanes[3] = vp[3] - vp[1];
+    frustumPlanes[4] = vp[3] + vp[2];
+    frustumPlanes[5] = vp[3] - vp[2];
+
+    for (auto& p : frustumPlanes) {
+        float length = glm::length(glm::vec3(p));
+        p /= length;
+    }
     
     for (auto it = start; it != end; ++it)
     {
+
+        if(!isAABBVisible(frustumPlanes, it->second->aabbMin, it->second->aabbMax))
+            continue;
+
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &scene_data.descriptorSets[it->second->dc_index], 0, nullptr); 
 
         vkCmdPushConstants(cmd, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(it->second->pc_data), &it->second->pc_data);
@@ -1751,4 +1788,24 @@ bool loadModel(const std::string &filename, _Object *object)
     }
     std::reverse(object->indices.begin(), object->indices.end()); // to CCW
     return true;
+}
+
+
+void computeAABB(_Object& obj) {
+    if (obj.vertices.empty()) return;
+
+    glm::vec3 min = obj.vertices[0].pos;
+    glm::vec3 max = obj.vertices[0].pos;
+
+    for (const auto& v : obj.vertices) {
+        min.x = std::min(min.x, v.pos.x);
+        min.y = std::min(min.y, v.pos.y);
+        min.z = std::min(min.z, v.pos.z);
+        max.x = std::max(max.x, v.pos.x);
+        max.y = std::max(max.y, v.pos.y);
+        max.z = std::max(max.z, v.pos.z);
+    }
+
+    obj.aabbMin = min;  
+    obj.aabbMax = max;  
 }
