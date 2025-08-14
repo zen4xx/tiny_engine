@@ -1132,6 +1132,9 @@ void recordSecondary(ThreadData *thread, const std::unordered_map<std::string, s
     ubo.dirLight = scene_data.dirLight;
     ubo.ambient = scene_data.ambient;
     ubo.dirLightColor = scene_data.dirLightColor;
+    ubo.point_lights_count = scene_data.pointLightsCount;
+    memcpy(ubo.point_light_colors, scene_data.pointLightColors, sizeof(scene_data.pointLightColors));
+    memcpy(ubo.point_light_pos, scene_data.pointLightPos, sizeof(scene_data.pointLightPos));
 
     memcpy(scene_data.uniformBufferMapped, &ubo, sizeof(ubo));
     

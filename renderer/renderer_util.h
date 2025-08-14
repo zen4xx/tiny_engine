@@ -31,6 +31,7 @@
 #include "vk_mem_alloc.h"
 
 #define TINY_ENGINE_MAX_MSAA_QUALITY 255
+#define MAX_POINT_LIGHTS_COUNT 16
 
 struct QueueFamilyIndices
 {
@@ -109,10 +110,15 @@ struct _UniformBufferObject
 {
     alignas(16) glm::mat4 view;
     alignas(16) glm::mat4 proj;
-
+    
     alignas(16) glm::vec3 dirLight;
-    alignas(16) glm::vec3 dirLightColor;
-    alignas(16) glm::vec3 ambient;
+    alignas(16) glm::vec3 dirLightColor; 
+    alignas(16) glm::vec3 ambient; 
+    
+    alignas(16) glm::vec4 point_light_colors[MAX_POINT_LIGHTS_COUNT]; // w for padding
+    alignas(16) glm::vec4 point_light_pos[MAX_POINT_LIGHTS_COUNT]; // w for padding
+
+    alignas(4) int point_lights_count;
 };
 
 struct _PushConstantsData
@@ -155,6 +161,11 @@ struct _SceneData
     glm::vec3 dirLight = {0.0f, 0.0f, 0.0f};
     glm::vec3 dirLightColor = {1.0f, 1.0f, 1.0f};
     glm::vec3 ambient = {0.1f, 0.1f, 0.1f};
+
+    int pointLightsCount = 0;
+
+    glm::vec4 pointLightColors[MAX_POINT_LIGHTS_COUNT] = {};
+    glm::vec4 pointLightPos[MAX_POINT_LIGHTS_COUNT] = {};
 
     glm::mat4 view;
     glm::mat4 proj;

@@ -1,4 +1,5 @@
 #version 450
+#define MAX_POINT_LIGHTS_COUNT 16
 
 layout(location = 0) in vec2  fragTexCoord;
 layout(location = 1) in vec3  fragNormal;
@@ -21,6 +22,11 @@ layout(binding = 0) uniform UniformBufferObject {
     vec3 dirLight;
     vec3 dirLightColor;
     vec3 ambient;
+
+    vec4 point_light_colors[MAX_POINT_LIGHTS_COUNT];
+    vec4 point_light_pos[MAX_POINT_LIGHTS_COUNT];
+
+    int point_light_count;
 } ubo;
 
 // ----------------------------------------------------------------------------
@@ -54,32 +60,49 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0) {
 }
 
 void main() {
-    vec3 albedo = pow(texture(texSampler, fragTexCoord).rgb, vec3(2.2)); 
-    vec2 mr = texture(mrSampler, fragTexCoord).bg;
+    vec3 albedo    = pow(texture(texSampler,     fragTexCoord).rgb, vec3(2.2));
+    vec2 mr        = texture(mrSampler, fragTexCoord).bg;
     float metalness = mr.r;
     float roughness = mr.g;
 
     vec3 N = getNormalTangentSpace();
     vec3 V = normalize(fragCameraPos - fragPos);
-    vec3 L = normalize(-ubo.dirLight);
-    vec3 H = normalize(V + L);
-
     vec3 F0 = mix(vec3(0.04), albedo, metalness);
-    float NDF = DistributionGGX(N, H, roughness);
-    float G = GeometrySmith(N, V, L, roughness);
-    vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
 
-    vec3 nominator = NDF * G * F;
-    float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
-    vec3 specular = nominator / denominator;
+    vec3 Ld = normalize(-ubo.dirLight);
+    vec3 Hd = normalize(V + Ld);
+    float NDFd = DistributionGGX(N, Hd, roughness);
+    float Gd   = GeometrySmith(N, V, Ld, roughness);
+    vec3  Fd   = fresnelSchlick(max(dot(Hd, V), 0.0), F0);
+    vec3  specular_d = NDFd * Gd * Fd
+                      / (4.0 * max(dot(N, V), 0.0) * max(dot(N, Ld), 0.0) + 0.0001);
+    vec3 kD_d = (vec3(1.0) - Fd) * (1.0 - metalness) + vec3(0.05);
+    float NdotLd = max(dot(N, Ld), 0.0);
+    vec3 irradiance_d = ubo.ambient + ubo.dirLightColor * NdotLd;
 
-    vec3 kD = (vec3(1.0) - F) * (1.0 - metalness);
-    float NdotL = max(dot(N, L), 0.0);
-    vec3 irradiance = ubo.ambient + ubo.dirLightColor * NdotL;
+    vec3 Lo = (kD_d * albedo + specular_d) * irradiance_d;
 
-    kD += 0.05; 
+    for(int i = 0; i < ubo.point_light_count; ++i) {
+        vec3 lightPos   = ubo.point_light_pos[i].xyz;
+        vec3 lightColor = ubo.point_light_colors[i].xyz;
 
-    vec3 Lo = (kD * albedo + specular) * irradiance;
-    
+        vec3 Lp = normalize(lightPos - fragPos);
+        float dist = length(lightPos - fragPos);
+        float attenuation = 1.0 / (dist * dist);
+        vec3 radiance = lightColor * attenuation;
+
+
+        vec3 Hp = normalize(V + Lp);
+        float NDFp = DistributionGGX(N, Hp, roughness);
+        float Gp   = GeometrySmith(N, V, Lp, roughness);
+        vec3  Fp   = fresnelSchlick(max(dot(Hp, V), 0.0), F0);
+        vec3  specular_p = NDFp * Gp * Fp
+                          / (4.0 * max(dot(N, V), 0.0) * max(dot(N, Lp), 0.0) + 0.0001);
+        vec3 kD_p = (vec3(1.0) - Fp) * (1.0 - metalness) + vec3(0.05);
+        float NdotLp = max(dot(N, Lp), 0.0);
+
+        Lo += (kD_p * albedo + specular_p) * radiance * NdotLp;
+    }
+
     outColor = vec4(Lo, 1.0);
 }

@@ -1,4 +1,5 @@
 #version 450
+#define MAX_POINT_LIGHTS_COUNT 16
 
 layout(binding = 0) uniform UniformBufferObject {
     mat4 view;
@@ -6,6 +7,11 @@ layout(binding = 0) uniform UniformBufferObject {
     vec3 dirLight;
     vec3 dirLightColor;
     vec3 ambient;
+
+    vec4 point_light_colors[MAX_POINT_LIGHTS_COUNT];
+    vec4 point_light_pos[MAX_POINT_LIGHTS_COUNT];
+
+    int point_light_count;
 } ubo;
 
 layout(push_constant, std430) uniform pc {

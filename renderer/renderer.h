@@ -3,6 +3,7 @@
 
 #include "renderer_util.h"
 #include "../scene/scene.h"
+#include <cstdint>
 
 namespace tiny_engine
 {
@@ -47,7 +48,10 @@ public:
     inline void setAmbient(const std::string &scene_name, glm::vec3 ambient) { m_scenes[scene_name]->scene_data.ambient = ambient; };
     inline void setDirLight(const std::string &scene_name, glm::vec3 dir) { m_scenes[scene_name]->scene_data.dirLight = dir; };
     inline void setDirLightColor(const std::string &scene_name, glm::vec3 color) { m_scenes[scene_name]->scene_data.dirLightColor = color; };
-    
+    inline void setPointLight(const std::string &scene_name, glm::vec3 pos, uint8_t index) { m_scenes[scene_name]->scene_data.pointLightPos[index] = glm::vec4(pos.x, pos.y, pos.z, 0.0f); };
+    inline void setPointLightColor(const std::string &scene_name, glm::vec3 color, uint8_t index) { m_scenes[scene_name]->scene_data.pointLightColors[index] = glm::vec4(color.x, color.y, color.z, 0.0f); };
+    inline void setPointLightsCount(const std::string &scene_name, int count) { m_scenes[scene_name]->scene_data.pointLightsCount = count; };
+
     // Must be called before setWindow
     inline void setThreadCount(uint8_t count) { m_thread_count = count; };
     inline void setMsaaQuality(uint8_t quality) { m_msaa_samples = static_cast<VkSampleCountFlagBits>(quality); };

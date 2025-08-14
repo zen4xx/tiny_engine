@@ -1,3 +1,4 @@
+#include "GLFW/glfw3.h"
 #include "tiny_engine.h"
 #include "camera.h"
 
@@ -38,20 +39,20 @@ int main()
     engine.createScene("main");
     engine.createScene("secondary");
 
-    engine.setDirLight("main", glm::vec3(2.0f, 0.0f, -2.0f));
+    engine.setDirLight("main", glm::vec3(2.0f, 0.5f, 2.0f));
     engine.setDirLight("secondary", glm::vec3(2.0f, 0.0f, -2.0f));
-
+    
     engine.setDirLightColor("secondary", glm::vec3(20.0f, 20.0f, 20.0f));
     engine.setAmbient("secondary", glm::vec3(5.0f, 10.0f, 10.0f));
-
-    engine.setDirLightColor("main", glm::vec3(5.0f, 3.0f, 2.0f));
+    
+    engine.setDirLightColor("main", glm::vec3(2.0f, 1.0f, 0.5f));
     engine.setAmbient("main", glm::vec3(0.1f, 0.1f, 0.2f));
-
+    
     engine.setDrawDistance("main", 50.f);
-
+    
     engine.setView("main", view);
     engine.setView("secondary", view2);
-
+    
     tiny_engine::Object suzanne;
     suzanne.scene_name = "secondary";
     suzanne.obj_name = "monkey";
@@ -62,13 +63,14 @@ int main()
     
     engine.addObject(suzanne);
     engine.addObject("main", "helmet", "damaged_helmet/DamagedHelmet.gltf", glm::rotate(glm::mat4(1), glm::radians(-90.f), glm::vec3(1, 0, 0)), "damaged_helmet/Default_albedo.jpg", "damaged_helmet/Default_metalRoughness.jpg", "damaged_helmet/Default_normal.jpg");
-   
-     glm::vec3 pos(0.0f);
-    float angle = 0.0f;
-    float speed = 3.0f;
-
+    
+    engine.setPointLightsCount("main", 2);
+    engine.setPointLight("main", glm::vec3(2.0f, 0.0f, 0.0f), 0);
+    engine.setPointLightColor("main", glm::vec3(2.0f, 0.0f, 0.0f), 0);
+    engine.setPointLightColor("main", glm::vec3(0.0f, 2.0f, 0.0f), 1);
+    
     bool isMainScene = 1;
- int cnt = 0;
+    
     while (engine.isWindowOpen())
     {
         if (engine.isKeyPressed(GLFW_KEY_W))
@@ -83,12 +85,14 @@ int main()
             std::cout << engine.getFPSCount() << std::endl;
         if (engine.isKeyPressed(GLFW_KEY_X))
             isMainScene ? isMainScene = 0 : isMainScene = 1;
-        
-        float t = glfwGetTime();
-        glm::vec3 dir = glm::normalize(glm::vec3(cos(t), 0.5f, sin(t)));
-        engine.setDirLight("main", dir);
 
         engine.setView("main", camera.GetViewMatrix());
+
+        double t = glfwGetTime();
+        glm::vec3 pos(sin(t) * 2 , -1, cos(t) * 2);
+        glm::vec3 pos2(cos(t) * 2 , -1, sin(t) * 2);
+        engine.setPointLight("main", pos, 0);
+        engine.setPointLight("main", pos2, 1);
         
         engine.update();
 
