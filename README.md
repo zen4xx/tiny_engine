@@ -19,6 +19,7 @@ Features
     Loading 3D models in glTF format
     Multithreaded rendering
     MSAA
+    PBR
 
 
 Download
