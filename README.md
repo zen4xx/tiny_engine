@@ -1,37 +1,40 @@
-Tiny Engine 🎮 
-
-Tiny Engine  — simple and compact cross-platform game engine for 3D games.
-
-About
-
-    Written in C++
-    Lightweight and easy to understand
-    Suitable for learning and medium projects
-    Works on Windows, Linux and macOS
-     
-
-Features
-
-    Vulkan graphics subsystem
-    Keyboard and mouse input processing
-    Scene and object system
-    Texture and shader support
-    Loading 3D models in glTF format
-    Multithreaded rendering
-    Frustum culling
-    MSAA
-    PBR 
-    Normal mapping
-    Metallic-roughness mapping
+# Tiny Engine 🎮
+**A lightweight, cross-platform 3D game engine in C++**
 
 
-Download
+## About
+Tiny Engine is **designed for medium-scale projects**. It’s written in modern C++ and keeps dependencies minimal so you can easily explore engine internals and customize subsystems. Supported platforms include **Windows**, **Linux**, and **macOS**.
 
-    git clone https://github.com/zen4xx/tiny_engine.git
-    cd tiny_engine
+---
 
+## Features
 
-Build
+### Graphics
+- **Vulkan** graphics subsystem for low-level control and performance  
+- **Physically Based Rendering (PBR)** with metallic-roughness workflow  
+- **Normal mapping** to simulate surface detail  
+- **Multisample anti-aliasing (MSAA)** for smoother edges  
 
-    cmake CMakeLists.txt
-    make
+### Scene and Culling
+- **Scene graph** and object hierarchy  
+- **Frustum culling** to skip rendering off-camera objects  
+- **Multithreaded rendering** to leverage multi-core CPUs  
+
+### Assets
+- **glTF** model loader (including textures)  
+- Texture formats: PNG, JPEG
+
+### Input and Interaction
+- **Keyboard and mouse** input processing  
+
+## Screenshots
+/screenshots/screenshots1.png
+/screenshots/screenshots2.png
+
+## Download & Build
+
+1. **Clone the repository**  
+   ```bash
+   git clone https://github.com/zen4xx/tiny_engine.git
+   cd tiny_engine
+
