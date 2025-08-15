@@ -29,7 +29,7 @@ Tiny Engine is **designed for medium-scale projects**. It’s written in modern 
 
 ## Screenshots
 
-| ![Demo](screenshots/screenshot1.png){width=500px} | ![Demo](screenshots/screenshot2.png){width=500px} |
+| ![Demo](screenshots/screenshot1.png) | ![Demo](screenshots/screenshot2.png) |
 | --------------------------------------- | --------------------------------------- |
 
 ## Download & Build
