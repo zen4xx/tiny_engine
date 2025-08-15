@@ -18,8 +18,11 @@ Features
     Texture and shader support
     Loading 3D models in glTF format
     Multithreaded rendering
+    Frustum culling
     MSAA
-    PBR
+    PBR 
+    Normal mapping
+    Metallic-roughness mapping
 
 
 Download
