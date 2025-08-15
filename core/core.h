@@ -35,7 +35,7 @@ public:
     inline void setDirLightColor(const std::string &scene_name, glm::vec3 color) { m_renderer->setDirLightColor(scene_name, color); };
     inline void setPointLight(const std::string &scene_name, glm::vec3 pos, uint8_t index) { m_renderer->setPointLight(scene_name, pos, index); };
     inline void setPointLightColor(const std::string &scene_name, glm::vec3 color, uint8_t index) { m_renderer->setPointLightColor(scene_name, color, index); };
-    inline void setPointLightsCount(const std::string &scene_name, uint count) { m_renderer->setPointLightsCount(scene_name, count); }
+    inline void setPointLightsCount(const std::string &scene_name, uint8_t count) { m_renderer->setPointLightsCount(scene_name, count); }
 
     inline bool isKeyPressed(int key) { return glfwGetKey(m_window->GetWindow(), key); };
 
