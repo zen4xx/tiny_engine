@@ -3,7 +3,7 @@
 
 
 ## About
-Tiny Engine is **designed for medium-scale projects**. It’s written in modern C++ and keeps dependencies minimal so you can easily explore engine internals and customize subsystems. Supported platforms include **Windows**, **Linux**, and **macOS**.
+Tiny Engine is **designed for medium-scale and high-scale projects**. It’s written in modern C++ and keeps dependencies minimal so you can easily explore engine internals and customize subsystems. Supported platforms include **Windows**, **Linux**, and **macOS**.
 
 ---
 
