@@ -28,8 +28,8 @@ Tiny Engine is **designed for medium-scale projects**. It’s written in modern 
 - **Keyboard and mouse** input processing  
 
 ## Screenshots
-/screenshots/screenshots1.png
-/screenshots/screenshots2.png
+![Demo Screenshot](screenshots/screenshot1.png "Tiny Engine Demo")
+![Demo Screenshot](screenshots/screenshot2.png "Tiny Engine Demo")
 
 ## Download & Build
 
