@@ -38,4 +38,10 @@ Tiny Engine is **designed for medium-scale and high-scale projects**. It’s wri
    ```bash
    git clone https://github.com/zen4xx/tiny_engine.git
    cd tiny_engine
+   ```
 
+2. **Build**  
+   ```bash
+   cmake CMakeLists.txt
+   make
+   ```
