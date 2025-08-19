@@ -143,6 +143,7 @@ std::vector<const char *> getRequiredExtensions(bool isDebug)
         extensions.push_back("VK_KHR_xcb_surface");
 #elif __APPLE__
     extensions.push_back("VK_MVK_macos_surface");
+    extensions.push_back("VK_KHR_portability_subset");
 #endif
 
     extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
