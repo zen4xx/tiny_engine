@@ -45,3 +45,5 @@ Tiny Engine is **designed for medium-scale and high-scale projects**. It’s wri
    cmake CMakeLists.txt
    make
    ```
+
+## Wiki: https://github.com/tiny_engine/wiki

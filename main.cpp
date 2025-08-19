@@ -88,6 +88,14 @@ int main()
             std::cout << engine.getFPSCount() << std::endl;
         if (engine.isKeyPressed(GLFW_KEY_X))
             isMainScene ? isMainScene = 0 : isMainScene = 1;
+        if(engine.isKeyPressed(GLFW_KEY_LEFT))
+            hpos.x -= speed * engine.getDeltaTime();
+        if(engine.isKeyPressed(GLFW_KEY_RIGHT))
+            hpos.x += speed * engine.getDeltaTime();
+        if(engine.isKeyPressed(GLFW_KEY_DOWN))
+            hpos.z += speed * engine.getDeltaTime();
+        if(engine.isKeyPressed(GLFW_KEY_UP))
+            hpos.z -= speed * engine.getDeltaTime();
 
         engine.setView("main", camera.GetViewMatrix());
 
@@ -97,14 +105,6 @@ int main()
         engine.setPointLight("main", pos, 0);
         engine.setPointLight("main", pos2, 1);
 
-        if(engine.isKeyPressed(GLFW_KEY_LEFT))
-            hpos.x -= speed * engine.getDeltaTime();
-        if(engine.isKeyPressed(GLFW_KEY_RIGHT))
-            hpos.x += speed * engine.getDeltaTime();
-        if(engine.isKeyPressed(GLFW_KEY_DOWN))
-            hpos.z += speed * engine.getDeltaTime();
-        if(engine.isKeyPressed(GLFW_KEY_UP))
-            hpos.z -= speed * engine.getDeltaTime();
         
         glm::mat4 model(1.0f);
         model = glm::translate(model, hpos);
