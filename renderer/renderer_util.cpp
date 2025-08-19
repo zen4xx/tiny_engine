@@ -7,9 +7,18 @@
 std::vector<const char *> getRequiredExtensions(bool isDebug);
 
 std::vector<const char *> required_extensions;
+#ifndef __APPLE__
 const std::vector<const char *> deviceExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-    VK_EXT_NESTED_COMMAND_BUFFER_EXTENSION_NAME};
+    VK_EXT_NESTED_COMMAND_BUFFER_EXTENSION_NAME
+};
+#endif
+
+#ifdef __APPLE__
+const std::vector<const char *> deviceExtensions = {
+    VK_KHR_SWAPCHAIN_EXTENSION_NAME
+};
+#endif
 
 void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo, PFN_vkDebugUtilsMessengerCallbackEXT debugCallback)
 {
@@ -1109,6 +1118,8 @@ bool isAABBVisible(const std::array<glm::vec4, 6>& planes,
     return true;
 }
 
+#ifndef __APPLE__
+
 void recordSecondary(ThreadData *thread, const std::unordered_map<std::string, std::unique_ptr<_Object>> &objects, const VkExtent2D &extent, const VkRenderPass &render_pass, const VkFramebuffer &framebuffer, const VkPipeline &graphics_pipeline, const VkPipelineLayout &pipeline_layout, uint32_t current_frame, const _SceneData &scene_data, VkDevice device, typename std::unordered_map<std::string, std::unique_ptr<_Object>>::const_iterator start, typename std::unordered_map<std::string, std::unique_ptr<_Object>>::const_iterator end)
 {
     VkCommandBuffer cmd = thread->command_buffers[current_frame];
@@ -1257,6 +1268,102 @@ void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData>
     if (res != VK_SUCCESS)
         err("Failed to record command buffer", res);
 }
+
+#endif
+
+#ifdef __APPLE__
+void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData> &threads, const std::unordered_map<std::string, std::unique_ptr<_Object>> &objects, uint32_t image_index, const VkExtent2D &extent, const VkRenderPass &render_pass, const std::vector<VkFramebuffer> &framebuffers, const VkPipeline &graphics_pipeline, const VkPipelineLayout &pipeline_layout, uint32_t current_frame, const _SceneData &scene_data, VkDevice device)
+{
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = 0;
+    beginInfo.pInheritanceInfo = nullptr;
+
+    VkResult res = vkBeginCommandBuffer(command_buffer, &beginInfo);
+    if (res != VK_SUCCESS)
+        err("Failed to begin recording command buffer", res);
+
+    VkRenderPassBeginInfo renderPassInfo{};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassInfo.renderPass = render_pass;
+    renderPassInfo.framebuffer = framebuffers[image_index];
+    renderPassInfo.renderArea.offset = {0, 0};
+    renderPassInfo.renderArea.extent = extent;
+
+    std::array<VkClearValue, 2> clearValues{};
+    clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+    clearValues[1].depthStencil = {1.0f, 0};
+
+    renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+    renderPassInfo.pClearValues = clearValues.data();
+
+    vkCmdBeginRenderPass(command_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_KHR);
+    vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline);
+
+    VkViewport viewport{};
+    viewport.x = 0.f;
+    viewport.y = 0.f;
+    viewport.width = static_cast<float>(extent.width);
+    viewport.height = static_cast<float>(extent.height);
+    viewport.minDepth = 0.f;
+    viewport.maxDepth = 1.f;
+    vkCmdSetViewport(command_buffer, 0, 1, &viewport);
+
+    VkRect2D scissor{};
+    scissor.offset = {0, 0};
+    scissor.extent = extent;
+    vkCmdSetScissor(command_buffer, 0, 1, &scissor);
+
+    _UniformBufferObject ubo;
+    ubo.view = scene_data.view;
+    ubo.proj = scene_data.proj;
+    ubo.dirLight = scene_data.dirLight;
+    ubo.ambient = scene_data.ambient;
+    ubo.dirLightColor = scene_data.dirLightColor;
+    ubo.point_lights_count = scene_data.pointLightsCount;
+    memcpy(ubo.point_light_colors, scene_data.pointLightColors, sizeof(scene_data.pointLightColors));
+    memcpy(ubo.point_light_pos, scene_data.pointLightPos, sizeof(scene_data.pointLightPos));
+
+    memcpy(scene_data.uniformBufferMapped, &ubo, sizeof(ubo));
+
+    glm::mat4 vp = scene_data.proj * scene_data.view;
+
+    std::array<glm::vec4, 6> frustumPlanes;
+
+    frustumPlanes[0] = vp[3] + vp[0];
+    frustumPlanes[1] = vp[3] - vp[0];
+    frustumPlanes[2] = vp[3] + vp[1];
+    frustumPlanes[3] = vp[3] - vp[1];
+    frustumPlanes[4] = vp[3] + vp[2];
+    frustumPlanes[5] = vp[3] - vp[2];
+
+    for (auto& p : frustumPlanes) {
+        float length = glm::length(glm::vec3(p));
+        p /= length;
+    }
+    auto start = objects.begin();
+    auto end = objects.end();
+    for (auto it = start; it != end; ++it)
+    {
+        if(!isAABBVisible(frustumPlanes, it->second->aabbMin, it->second->aabbMax))
+            continue;
+
+        vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &scene_data.descriptorSets[it->second->dc_index], 0, nullptr); 
+
+        vkCmdPushConstants(command_buffer, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(it->second->pc_data), &it->second->pc_data);
+        VkBuffer vertexBuffers[] = {it->second->vertexBuffer};
+        
+        VkDeviceSize offsets[] = {0};
+        vkCmdBindVertexBuffers(command_buffer, 0, 1, vertexBuffers, offsets);
+        vkCmdBindIndexBuffer(command_buffer, it->second->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+
+        vkCmdDrawIndexed(command_buffer, static_cast<uint32_t>(it->second->indices.size()), 1, 0, 0, 0);
+    }
+    vkCmdEndRenderPass(command_buffer);
+
+    vkEndCommandBuffer(command_buffer);
+}
+#endif
 
 void createSyncObjects(std::vector<VkSemaphore> &imageAvailableSemaphores, std::vector<VkSemaphore> &renderFinishedSemaphores, std::vector<VkFence> &inFlightFences, int MAX_FRAMES_IN_FLIGHT, size_t swap_chain_image_count, VkDevice device)
 {
