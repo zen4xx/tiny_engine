@@ -46,4 +46,4 @@ Tiny Engine is **designed for medium-scale and high-scale projects**. It’s wri
    make
    ```
 
-## Wiki: https://github.com/tiny_engine/wiki.md
+## Wiki: https://github.com/zen4xx/tiny_engine/wiki.md
