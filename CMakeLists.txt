@@ -61,7 +61,12 @@ list(APPEND SOURCE_FILES ${ERR_HANDLER})
 
 set(SOURCE_FILES ${SOURCE_FILES} ${CORE} ${WINDOW} ${RENDERER} ${SCENE} ${ERR_HANDLER}) 
 
-add_executable(${PROJECT_NAME} ${SOURCE_FILES})
+if(NOT TINY_ENGINE_NO_EXAMPLES)
+  add_executable(${PROJECT_NAME} ${SOURCE_FILES})
+else()
+  add_library(${PROJECT_NAME} STATIC ${SOURCE_FILES})
+endif()
+
 
 include_directories(${PROJECT_SOURCE_DIR}/external/glm)  # for GLM
 include_directories(${VulkanMemoryAllocator_SOURCE_DIR}/include) # for vma
