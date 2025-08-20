@@ -40,7 +40,9 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(VulkanMemoryAllocator)
 
-set(SOURCE_FILES main.cpp)
+if(NOT TINY_ENGINE_NO_EXAMPLES)
+set(SOURCE_FILES example.cpp)
+endif()
 
 file(GLOB CORE "core/*.cpp")
 list(APPEND SOURCE_FILES ${CORE})
