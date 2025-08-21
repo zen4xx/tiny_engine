@@ -39,9 +39,9 @@ int main()
     engine.createScene("secondary");
 
     engine.setDirLight("main", glm::vec3(2.0f, 0.5f, 2.0f));
-    engine.setDirLight("secondary", glm::vec3(2.0f, 0.0f, -2.0f));
+    engine.setDirLight("secondary", glm::vec3(2.0f, 0.5f, 2.0f));
     
-    engine.setDirLightColor("secondary", glm::vec3(20.0f, 20.0f, 20.0f));
+    engine.setDirLightColor("secondary", glm::vec3(5.0f, 10.0f, 10.0f));
     engine.setAmbient("secondary", glm::vec3(5.0f, 10.0f, 10.0f));
     
     engine.setDirLightColor("main", glm::vec3(2.0f, 1.0f, 0.5f));
@@ -63,7 +63,6 @@ int main()
     engine.addObject(suzanne);
     engine.addObject("main", "helmet", "damaged_helmet/DamagedHelmet.gltf", glm::rotate(glm::mat4(1), glm::radians(-90.f), glm::vec3(1, 0, 0)), "damaged_helmet/Default_albedo.jpg", "damaged_helmet/Default_metalRoughness.jpg", "damaged_helmet/Default_normal.jpg");
     engine.addObject("main", "helmet2", "damaged_helmet/DamagedHelmet.gltf", glm::rotate(glm::mat4(1), glm::radians(-90.f), glm::vec3(1, 0, 0)), "damaged_helmet/Default_albedo.jpg", "damaged_helmet/Default_metalRoughness.jpg", "damaged_helmet/Default_normal.jpg");
-
     engine.setPointLightsCount("main", 2);
     engine.setPointLight("main", glm::vec3(2.0f, 0.0f, 0.0f), 0);
     engine.setPointLightColor("main", glm::vec3(2.0f, 0.0f, 0.0f), 0);

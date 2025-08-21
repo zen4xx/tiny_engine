@@ -276,7 +276,7 @@ void Renderer::addObject(const std::string &scene_name, const std::string &name,
     if (mr_path != "_default" && std::ifstream(mr_path).is_open())
         createTextureImage(mr_path.c_str(), object->metalRoughnessImage, object->metalRoughnessImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
     else 
-        createTextureImage("core/default_assets/textures/black.jpg", object->metalRoughnessImage, object->metalRoughnessImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
+        createTextureImage("core/default_assets/textures/black.png", object->metalRoughnessImage, object->metalRoughnessImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
 
     createTextureImageView(&object->metalRoughnessImageView, object->metalRoughnessImage, m_device);
 
@@ -284,7 +284,7 @@ void Renderer::addObject(const std::string &scene_name, const std::string &name,
     if (normal_path != "_default" && std::ifstream(normal_path).is_open())
         createTextureImage(normal_path.c_str(), object->normalImage, object->normalImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
     else 
-        createTextureImage("core/default_assets/textures/black.jpg", object->normalImage, object->normalImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
+        createTextureImage("core/default_assets/textures/black.png", object->normalImage, object->normalImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
 
     createTextureImageView(&object->normalImageView, object->normalImage, m_device);
 
@@ -319,15 +319,15 @@ void Renderer::addObject(const std::string &scene_name, const std::string &name,
     if (mr_path != "_default" && std::ifstream(mr_path).is_open())
         createTextureImage(mr_path.c_str(), object->metalRoughnessImage, object->metalRoughnessImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
     else 
-        createTextureImage("core/default_assets/textures/black.jpg", object->metalRoughnessImage, object->metalRoughnessImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
+        createTextureImage("core/default_assets/textures/black.png", object->metalRoughnessImage, object->metalRoughnessImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
 
     createTextureImageView(&object->metalRoughnessImageView, object->metalRoughnessImage, m_device);
 
     // normal
     if (normal_path != "_default" && std::ifstream(normal_path).is_open())
         createTextureImage(normal_path.c_str(), object->normalImage, object->normalImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
-    else 
-        createTextureImage("core/default_assets/textures/black.jpg", object->normalImage, object->normalImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
+    else
+        createTextureImage("core/default_assets/textures/black.png", object->normalImage, object->normalImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
 
     createTextureImageView(&object->normalImageView, object->normalImage, m_device);
 
@@ -374,7 +374,7 @@ void Renderer::addObject(const tiny_engine::Object &obj)
     if (mr_path != "_default" && std::ifstream(mr_path).is_open())
         createTextureImage(mr_path.c_str(), object->metalRoughnessImage, object->metalRoughnessImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
     else 
-        createTextureImage("core/default_assets/textures/black.jpg", object->metalRoughnessImage, object->metalRoughnessImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
+        createTextureImage("core/default_assets/textures/black.png", object->metalRoughnessImage, object->metalRoughnessImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
 
     createTextureImageView(&object->metalRoughnessImageView, object->metalRoughnessImage, m_device);
 
@@ -382,7 +382,7 @@ void Renderer::addObject(const tiny_engine::Object &obj)
     if (normal_path != "_default" && std::ifstream(normal_path).is_open())
         createTextureImage(normal_path.c_str(), object->normalImage, object->normalImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
     else 
-        createTextureImage("core/default_assets/textures/black.jpg", object->normalImage, object->normalImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
+        createTextureImage("core/default_assets/textures/black.png", object->normalImage, object->normalImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
 
     createTextureImageView(&object->normalImageView, object->normalImage, m_device);
 
