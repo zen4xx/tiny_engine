@@ -167,10 +167,11 @@ void Renderer::setWindow(GLFWwindow *window)
 void Renderer::drawScene(const std::string &scene_name)
 {
 
-#ifndef TINY_ENGINE_MAX_PERFORMANCE
+    if(m_scenes[scene_name]->objects.empty())
+        return;
+
     if (!m_scenes[scene_name]->isDescriptorSetsCreated)
         m_scenes[scene_name]->createDescriptorSetsForScene(m_swap_chain_extent, m_allocator, m_descriptor_set_layout, m_device);
-#endif
 
     static double lastTime = glfwGetTime();
 
