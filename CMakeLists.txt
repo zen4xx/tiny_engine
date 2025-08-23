@@ -18,13 +18,12 @@ option(BUILD_EXAMPLES "Build examples" OFF)
 
 include(FetchContent)
 
-#GLFW
+message("fetching glfw")
 FetchContent_Declare(
     glfw
     GIT_REPOSITORY https://github.com/glfw/glfw.git
     GIT_TAG 3.4
 )
-message("fetching glfw")
 FetchContent_MakeAvailable(glfw)
 message("fetching glm")
 FetchContent_Declare(
