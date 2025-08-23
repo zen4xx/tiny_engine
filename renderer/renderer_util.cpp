@@ -3,6 +3,15 @@
 #define STB_IMAGE_IMPLEMENTATION
 #define TINYGLTF_IMPLEMENTATION
 #include "renderer_util.h"
+#include "../error_handler/error_handler.h"
+#include <set>
+#include <map>
+#include <limits>
+#include <algorithm>
+#include <fstream>
+#include <thread>
+#include <iostream>
+#include <stdexcept>
 
 std::vector<const char *> getRequiredExtensions(bool isDebug);
 
@@ -1862,7 +1871,6 @@ bool loadModel(const std::string &filename, _Object *object)
                 else {
                     vertex.tangent = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
                 }
-
                 object->vertices.push_back(vertex);
             }
 

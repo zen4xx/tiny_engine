@@ -1,5 +1,9 @@
 #include "renderer.h"
 #include "renderer_util.h"
+#include "../error_handler/error_handler.h"
+
+#include <fstream>
+#include <iostream>
 
 /*INITIALIZATION VULKAN*/
 

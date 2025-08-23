@@ -1,5 +1,7 @@
 #include "tiny_engine.h"
 #include "camera.h"
+#include <thread>
+#include <iostream>
 
 Camera camera;
 

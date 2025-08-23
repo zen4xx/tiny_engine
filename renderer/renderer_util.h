@@ -4,26 +4,16 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-#include <iostream>
-#include <stdexcept>
 #include <vector>
-#include <fstream>
-#include <thread>
 #include <cstring>
 #include <cstdlib>
-#include <chrono>
-#include <limits>
-#include <algorithm>
 #include <optional>
 #include <memory>
-#include <set>
-#include <map>
 #include <unordered_map>
 #include <stb_image.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <array>
-#include "../error_handler/error_handler.h"
 
 #define TINYGLTF_NO_INCLUDE_STB_IMAGE
 #define TINYGLTF_NO_STB_IMAGE_WRITE

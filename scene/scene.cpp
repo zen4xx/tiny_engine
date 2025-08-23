@@ -1,5 +1,6 @@
 #include "scene.h"
 #include <vulkan/vulkan_core.h>
+#include <vector>
 
 void _Scene::createDescriptorSetsForScene(VkExtent2D extent, VmaAllocator allocator, VkDescriptorSetLayout descriptor_set_layout, VkDevice device)
 {
