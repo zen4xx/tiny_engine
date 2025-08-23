@@ -147,7 +147,11 @@ void Renderer::setWindow(GLFWwindow *window)
     createImageViews(m_swap_chain_image_views, m_swap_chain_images, m_swap_chain_image_format, m_device);
     createRenderPass(&m_render_pass, &m_pipeline_layout, m_swap_chain_image_format, m_msaa_samples, m_physical_device, m_device);
     createDescriptorSetLayout(&m_descriptor_set_layout, m_device);
-    createGraphicsPipeline("renderer/shaders/vert.spv", "renderer/shaders/frag.spv", &m_vert_shader_module, &m_frag_shader_module, &m_descriptor_set_layout, m_dynamic_states, &m_viewport, &m_scissor, m_swap_chain_extent, &m_render_pass, &m_pipeline_layout, &m_graphics_pipeline, m_msaa_samples, m_device);
+
+    if(std::ifstream("renderer/shaders/vert.spv"))
+        createGraphicsPipeline("renderer/shaders/vert.spv", "renderer/shaders/frag.spv", &m_vert_shader_module, &m_frag_shader_module, &m_descriptor_set_layout, m_dynamic_states, &m_viewport, &m_scissor, m_swap_chain_extent, &m_render_pass, &m_pipeline_layout, &m_graphics_pipeline, m_msaa_samples, m_device);
+    else 
+        createGraphicsPipeline("assets/shaders/vert.spv", "assets/shaders/frag.spv", &m_vert_shader_module, &m_frag_shader_module, &m_descriptor_set_layout, m_dynamic_states, &m_viewport, &m_scissor, m_swap_chain_extent, &m_render_pass, &m_pipeline_layout, &m_graphics_pipeline, m_msaa_samples, m_device);
     createCommandPool(&m_command_pool, m_surface, m_physical_device, m_device);
     
     createDepthResources(m_depth_image, m_depth_image_memory, m_depth_image_view, m_allocator, m_swap_chain_extent, m_graphics_queue, m_command_pool, m_msaa_samples, m_physical_device, m_device);
@@ -266,13 +270,18 @@ void Renderer::addObject(const std::string &scene_name, const std::string &name,
     createVertexBuffer(&object->vertexBuffer, object->vertices, &object->vertexBufferMemory, m_command_pool, m_graphics_queue, m_allocator, m_physical_device, m_device);
     createIndexBuffer(object->indices, &object->indexBuffer, &object->indexBufferMemory, m_command_pool, m_graphics_queue, m_allocator, m_device);
 
+    std::string default_textures = "core/default_assets/textures";
+
+    if (!std::ifstream("core/default_assets/textures/white.png"))
+        default_textures = "assets/textures";
+
     // default albedo
     if (albedo_path != "_default" && std::ifstream(albedo_path).is_open())
         createTextureImage(albedo_path.c_str(), object->textureImage, object->textureImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
     else if (albedo_path == "_default")
-        createTextureImage("core/default_assets/textures/white.png", object->textureImage, object->textureImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
+        createTextureImage((default_textures + (std::string)"/white.png").c_str(), object->textureImage, object->textureImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
     else
-        createTextureImage("core/default_assets/textures/black_purple_grid.png", object->textureImage, object->textureImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
+        createTextureImage((default_textures + (std::string)"/black_purple_grid.png").c_str(), object->textureImage, object->textureImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
 
     createTextureImageView(&object->textureImageView, object->textureImage, m_device);
 
@@ -280,7 +289,7 @@ void Renderer::addObject(const std::string &scene_name, const std::string &name,
     if (mr_path != "_default" && std::ifstream(mr_path).is_open())
         createTextureImage(mr_path.c_str(), object->metalRoughnessImage, object->metalRoughnessImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
     else 
-        createTextureImage("core/default_assets/textures/black.png", object->metalRoughnessImage, object->metalRoughnessImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
+        createTextureImage((default_textures + (std::string)"/black.png").c_str(), object->metalRoughnessImage, object->metalRoughnessImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
 
     createTextureImageView(&object->metalRoughnessImageView, object->metalRoughnessImage, m_device);
 
@@ -288,7 +297,7 @@ void Renderer::addObject(const std::string &scene_name, const std::string &name,
     if (normal_path != "_default" && std::ifstream(normal_path).is_open())
         createTextureImage(normal_path.c_str(), object->normalImage, object->normalImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
     else 
-        createTextureImage("core/default_assets/textures/black.png", object->normalImage, object->normalImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
+        createTextureImage((default_textures + (std::string)"/black.png").c_str(), object->normalImage, object->normalImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
 
     createTextureImageView(&object->normalImageView, object->normalImage, m_device);
 
@@ -309,13 +318,18 @@ void Renderer::addObject(const std::string &scene_name, const std::string &name,
     createVertexBuffer(&object->vertexBuffer, object->vertices, &object->vertexBufferMemory, m_command_pool, m_graphics_queue, m_allocator, m_physical_device, m_device);
     createIndexBuffer(object->indices, &object->indexBuffer, &object->indexBufferMemory, m_command_pool, m_graphics_queue, m_allocator, m_device);
 
+    std::string default_textures = "core/default_assets/textures";
+
+    if (!std::ifstream("core/default_assets/textures/white.png"))
+        default_textures = "assets/textures";
+
     // default albedo
     if (albedo_path != "_default" && std::ifstream(albedo_path).is_open())
         createTextureImage(albedo_path.c_str(), object->textureImage, object->textureImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
     else if (albedo_path == "_default")
-        createTextureImage("core/default_assets/textures/white.png", object->textureImage, object->textureImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
+        createTextureImage((default_textures + (std::string)"/white.png").c_str(), object->textureImage, object->textureImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
     else
-        createTextureImage("core/default_assets/textures/black_purple_grid.png", object->textureImage, object->textureImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
+        createTextureImage((default_textures + (std::string)"/black_purple_grid.png").c_str(), object->textureImage, object->textureImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
 
     createTextureImageView(&object->textureImageView, object->textureImage, m_device);
 
@@ -323,17 +337,18 @@ void Renderer::addObject(const std::string &scene_name, const std::string &name,
     if (mr_path != "_default" && std::ifstream(mr_path).is_open())
         createTextureImage(mr_path.c_str(), object->metalRoughnessImage, object->metalRoughnessImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
     else 
-        createTextureImage("core/default_assets/textures/black.png", object->metalRoughnessImage, object->metalRoughnessImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
+        createTextureImage((default_textures + (std::string)"/black.png").c_str(), object->metalRoughnessImage, object->metalRoughnessImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
 
     createTextureImageView(&object->metalRoughnessImageView, object->metalRoughnessImage, m_device);
 
     // normal
     if (normal_path != "_default" && std::ifstream(normal_path).is_open())
         createTextureImage(normal_path.c_str(), object->normalImage, object->normalImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
-    else
-        createTextureImage("core/default_assets/textures/black.png", object->normalImage, object->normalImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
+    else 
+        createTextureImage((default_textures + (std::string)"/black.png").c_str(), object->normalImage, object->normalImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
 
     createTextureImageView(&object->normalImageView, object->normalImage, m_device);
+
 
     object->sampler = &m_sampler;
 
@@ -363,14 +378,18 @@ void Renderer::addObject(const tiny_engine::Object &obj)
     std::string mr_path = obj.mr_path;
     std::string normal_path = obj.normal_path;
 
-    // default albedo
+    std::string default_textures = "core/default_assets/textures";
 
+    if (!std::ifstream("core/default_assets/textures/white.png"))
+        default_textures = "assets/textures";
+
+    // default albedo
     if (albedo_path != "_default" && std::ifstream(albedo_path).is_open())
         createTextureImage(albedo_path.c_str(), object->textureImage, object->textureImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
     else if (albedo_path == "_default")
-        createTextureImage("core/default_assets/textures/white.png", object->textureImage, object->textureImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
+        createTextureImage((default_textures + (std::string)"/white.png").c_str(), object->textureImage, object->textureImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
     else
-        createTextureImage("core/default_assets/textures/black_purple_grid.png", object->textureImage, object->textureImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
+        createTextureImage((default_textures + (std::string)"/black_purple_grid.png").c_str(), object->textureImage, object->textureImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
 
     createTextureImageView(&object->textureImageView, object->textureImage, m_device);
 
@@ -378,7 +397,7 @@ void Renderer::addObject(const tiny_engine::Object &obj)
     if (mr_path != "_default" && std::ifstream(mr_path).is_open())
         createTextureImage(mr_path.c_str(), object->metalRoughnessImage, object->metalRoughnessImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
     else 
-        createTextureImage("core/default_assets/textures/black.png", object->metalRoughnessImage, object->metalRoughnessImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
+        createTextureImage((default_textures + (std::string)"/black.png").c_str(), object->metalRoughnessImage, object->metalRoughnessImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
 
     createTextureImageView(&object->metalRoughnessImageView, object->metalRoughnessImage, m_device);
 
@@ -386,9 +405,10 @@ void Renderer::addObject(const tiny_engine::Object &obj)
     if (normal_path != "_default" && std::ifstream(normal_path).is_open())
         createTextureImage(normal_path.c_str(), object->normalImage, object->normalImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
     else 
-        createTextureImage("core/default_assets/textures/black.png", object->normalImage, object->normalImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
+        createTextureImage((default_textures + (std::string)"/black.png").c_str(), object->normalImage, object->normalImageMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
 
     createTextureImageView(&object->normalImageView, object->normalImage, m_device);
+
 
     object->sampler = &m_sampler;
 
