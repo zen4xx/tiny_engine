@@ -18,7 +18,7 @@
 #define TINYGLTF_NO_INCLUDE_STB_IMAGE
 #define TINYGLTF_NO_STB_IMAGE_WRITE
 #include "../include/tiny_gltf.h"
-#include "vk_mem_alloc.h"
+#include "../include/vk_mem_alloc.h"
 
 #define TINY_ENGINE_MAX_MSAA_QUALITY 255
 #define MAX_POINT_LIGHTS_COUNT 16

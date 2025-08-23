@@ -33,13 +33,6 @@ FetchContent_Declare(
     GIT_TAG 1.0.1
 )
 FetchContent_MakeAvailable(glm)
-message("fetching vma")
-FetchContent_Declare(
-    VulkanMemoryAllocator
-    GIT_REPOSITORY https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git 
-    GIT_TAG        v3.3.0
-)
-FetchContent_MakeAvailable(VulkanMemoryAllocator)
 
 if(NOT TINY_ENGINE_NO_EXAMPLES)
 set(SOURCE_FILES example.cpp)
@@ -70,7 +63,6 @@ endif()
 
 
 include_directories(${PROJECT_SOURCE_DIR}/external/glm)  # for GLM
-include_directories(${VulkanMemoryAllocator_SOURCE_DIR}/include) # for vma
 include_directories("${PROJECT_SOURCE_DIR}/include") 
 
 target_include_directories(${PROJECT_NAME} PRIVATE
@@ -85,6 +77,5 @@ target_link_libraries(${PROJECT_NAME}
     Vulkan::Vulkan
     glfw
     glm
-    VulkanMemoryAllocator
 )
 
