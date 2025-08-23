@@ -72,7 +72,7 @@ Tiny Engine is **designed for medium-scale and high-scale projects**. It’s wri
 
    target_include_directories(myApp PRIVATE ${tiny_engine_SOURCE_DIR})
 
-target_link_libraries(myApp PRIVATE Tiny_engine)
+   target_link_libraries(myApp PRIVATE Tiny_engine)
  ```
 
 ## Wiki: https://github.com/zen4xx/tiny_engine/blob/master/wiki.md
