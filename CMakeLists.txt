@@ -10,6 +10,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 find_package(Vulkan REQUIRED)
 message(STATUS "Vulkan SDK: ${Vulkan_LIBRARY}")
 
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE) 
 option(GLFW_BUILD_DOCS "Build documentation" OFF)
 option(GLFW_BUILD_TESTS "Build tests" OFF)
 option(GLFW_BUILD_EXAMPLES "Build examples" OFF)

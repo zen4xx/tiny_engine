@@ -10,7 +10,7 @@
 #include <optional>
 #include <memory>
 #include <unordered_map>
-#include <stb_image.h>
+#include "../include/stb_image.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <array>
