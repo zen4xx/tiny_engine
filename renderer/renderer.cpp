@@ -147,17 +147,12 @@ void Renderer::setWindow(GLFWwindow *window)
     createImageViews(m_swap_chain_image_views, m_swap_chain_images, m_swap_chain_image_format, m_device);
     createRenderPass(&m_render_pass, &m_pipeline_layout, m_swap_chain_image_format, m_msaa_samples, m_physical_device, m_device);
     createDescriptorSetLayout(&m_descriptor_set_layout, m_device);
-
-    if(std::ifstream("renderer/shaders/vert.spv"))
-        createGraphicsPipeline("renderer/shaders/vert.spv", "renderer/shaders/frag.spv", &m_vert_shader_module, &m_frag_shader_module, &m_descriptor_set_layout, m_dynamic_states, &m_viewport, &m_scissor, m_swap_chain_extent, &m_render_pass, &m_pipeline_layout, &m_graphics_pipeline, m_msaa_samples, m_device);
-    else 
-        createGraphicsPipeline("assets/shaders/vert.spv", "assets/shaders/frag.spv", &m_vert_shader_module, &m_frag_shader_module, &m_descriptor_set_layout, m_dynamic_states, &m_viewport, &m_scissor, m_swap_chain_extent, &m_render_pass, &m_pipeline_layout, &m_graphics_pipeline, m_msaa_samples, m_device);
+    createGraphicsPipeline("assets/shaders/vert.spv", "assets/shaders/frag.spv", &m_vert_shader_module, &m_frag_shader_module, &m_descriptor_set_layout, m_dynamic_states, &m_viewport, &m_scissor, m_swap_chain_extent, &m_render_pass, &m_pipeline_layout, &m_graphics_pipeline, m_msaa_samples, m_device);
     createCommandPool(&m_command_pool, m_surface, m_physical_device, m_device);
     
     createDepthResources(m_depth_image, m_depth_image_memory, m_depth_image_view, m_allocator, m_swap_chain_extent, m_graphics_queue, m_command_pool, m_msaa_samples, m_physical_device, m_device);
     createColorResources(m_color_image, m_color_image_memory, m_color_image_view, m_allocator, m_swap_chain_extent, m_swap_chain_image_format, m_graphics_queue, m_command_pool, m_msaa_samples, m_device);
     
-
     createFramebuffers(m_swap_chain_frame_buffers, m_swap_chain_image_views, m_render_pass, m_swap_chain_extent, m_color_image_view, m_depth_image_view, m_device);
     createCommandBuffers(m_command_buffers, m_command_pool, MAX_FRAMES_IN_FLIGHT, m_device);
     createTextureSampler(&m_sampler, m_physical_device, m_device);
@@ -270,10 +265,7 @@ void Renderer::addObject(const std::string &scene_name, const std::string &name,
     createVertexBuffer(&object->vertexBuffer, object->vertices, &object->vertexBufferMemory, m_command_pool, m_graphics_queue, m_allocator, m_physical_device, m_device);
     createIndexBuffer(object->indices, &object->indexBuffer, &object->indexBufferMemory, m_command_pool, m_graphics_queue, m_allocator, m_device);
 
-    std::string default_textures = "core/default_assets/textures";
-
-    if (!std::ifstream("core/default_assets/textures/white.png"))
-        default_textures = "assets/textures";
+    std::string default_textures = "assets/textures";
 
     // default albedo
     if (albedo_path != "_default" && std::ifstream(albedo_path).is_open())
@@ -318,10 +310,7 @@ void Renderer::addObject(const std::string &scene_name, const std::string &name,
     createVertexBuffer(&object->vertexBuffer, object->vertices, &object->vertexBufferMemory, m_command_pool, m_graphics_queue, m_allocator, m_physical_device, m_device);
     createIndexBuffer(object->indices, &object->indexBuffer, &object->indexBufferMemory, m_command_pool, m_graphics_queue, m_allocator, m_device);
 
-    std::string default_textures = "core/default_assets/textures";
-
-    if (!std::ifstream("core/default_assets/textures/white.png"))
-        default_textures = "assets/textures";
+    std::string default_textures = "assets/textures";
 
     // default albedo
     if (albedo_path != "_default" && std::ifstream(albedo_path).is_open())
@@ -378,10 +367,7 @@ void Renderer::addObject(const tiny_engine::Object &obj)
     std::string mr_path = obj.mr_path;
     std::string normal_path = obj.normal_path;
 
-    std::string default_textures = "core/default_assets/textures";
-
-    if (!std::ifstream("core/default_assets/textures/white.png"))
-        default_textures = "assets/textures";
+    std::string default_textures = "assets/textures";
 
     // default albedo
     if (albedo_path != "_default" && std::ifstream(albedo_path).is_open())
