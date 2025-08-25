@@ -35,7 +35,7 @@ layout(binding = 0) uniform UniformBufferObject {
 
 vec3 getNormalTangentSpace() {
     vec3 tex = texture(normalSampler, fragTexCoord).xyz;
-    if(all(greaterThan(tex, vec3(0))))
+    if(tex != vec3(0))
     {
         vec3 n = tex * 2.0 - 1.0;
         return normalize(mat3(normalize(fragTangent), normalize(fragBitangent), normalize(fragNormal)) * n);
