@@ -1,3 +1,6 @@
+#include "glm/ext/matrix_transform.hpp"
+#include "glm/trigonometric.hpp"
+#include "renderer.h"
 #include "tiny_engine.h"
 #include "camera.h"
 #include <thread>
@@ -43,12 +46,12 @@ int main()
     engine.setDirLight("main", glm::vec3(2.0f, 0.5f, 2.0f));
     engine.setDirLight("secondary", glm::vec3(2.0f, 0.5f, 2.0f));
     
-    engine.setDirLightColor("secondary", glm::vec3(5.0f, 10.0f, 10.0f));
-    engine.setAmbient("secondary", glm::vec3(5.0f, 10.0f, 10.0f));
+    engine.setDirLightColor("secondary", glm::vec3(0.5f, 1.0f, 1.0f));
+    engine.setAmbient("secondary", glm::vec3(0.1f, 0.1f, 0.1f));
     
-    engine.setDirLightColor("main", glm::vec3(2.0f, 1.0f, 0.5f));
-    engine.setAmbient("main", glm::vec3(0.1f, 0.1f, 0.2f));
-    
+    engine.setDirLightColor("main", glm::vec3(1.8f, 1.69f, 1.46f));    
+    engine.setAmbient("main", glm::vec3(0.12f, 0.14f, 0.18f));
+
     engine.setDrawDistance("main", 50.f);
     
     engine.setView("main", view);
@@ -65,10 +68,10 @@ int main()
     engine.addObject(suzanne);
     engine.addObject("main", "helmet", "damaged_helmet/DamagedHelmet.gltf", glm::rotate(glm::mat4(1), glm::radians(-90.f), glm::vec3(1, 0, 0)), "damaged_helmet/Default_albedo.jpg", "damaged_helmet/Default_metalRoughness.jpg", "damaged_helmet/Default_normal.jpg");
     engine.addObject("main", "helmet2", "damaged_helmet/DamagedHelmet.gltf", glm::rotate(glm::mat4(1), glm::radians(-90.f), glm::vec3(1, 0, 0)), "damaged_helmet/Default_albedo.jpg", "damaged_helmet/Default_metalRoughness.jpg", "damaged_helmet/Default_normal.jpg");
+
     engine.setPointLightsCount("main", 2);
-    engine.setPointLight("main", glm::vec3(2.0f, 0.0f, 0.0f), 0);
-    engine.setPointLightColor("main", glm::vec3(2.0f, 0.0f, 0.0f), 0);
-    engine.setPointLightColor("main", glm::vec3(0.0f, 2.0f, 0.0f), 1);
+    engine.setPointLightColor("main", glm::vec3(1.0f, 0.0f, 0.0f), 0);
+    engine.setPointLightColor("main", glm::vec3(0.0f, 1.0f, 0.0f), 1);
     
     bool isMainScene = 1;
 
