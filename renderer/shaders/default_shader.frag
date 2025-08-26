@@ -66,7 +66,7 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0) {
 }
 
 void main() {
-    vec3 albedo    = pow(texture(texSampler,     fragTexCoord).rgb, vec3(1));
+    vec3 albedo    = texture(texSampler,     fragTexCoord).rgb;
     vec2 mr        = texture(mrSampler, fragTexCoord).bg;
     float metalness = mr.r;
     float roughness = mr.g;
@@ -104,7 +104,7 @@ void main() {
         vec3  Fp   = fresnelSchlick(max(dot(Hp, V), 0.0), F0);
         vec3  specular_p = NDFp * Gp * Fp
                           / (4.0 * max(dot(N, V), 0.0) * max(dot(N, Lp), 0.0) + 0.0001);
-        vec3 kD_p = (vec3(1.0) - Fp) * (1.0 - metalness) + vec3(0.05);
+        vec3 kD_p = (vec3(1.0) - Fp) * (1.0 - metalness);
         float NdotLp = max(dot(N, Lp), 0.0);
 
         Lo += (kD_p * albedo + specular_p) * radiance * NdotLp;
