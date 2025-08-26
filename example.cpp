@@ -1,6 +1,5 @@
 #include "glm/ext/matrix_transform.hpp"
 #include "glm/trigonometric.hpp"
-#include "renderer.h"
 #include "tiny_engine.h"
 #include "camera.h"
 #include <thread>
