@@ -3,6 +3,9 @@ textures - done!
 model loading - done!
 directional light - done!
 point lights - done!
-shadows
+shadows {
+csm
+cube shadow map(for point lights)
+}
 animations
 physics
