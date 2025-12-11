@@ -2,6 +2,37 @@
 #include <vulkan/vulkan_core.h>
 #include <vector>
 
+void delete_object(std::unique_ptr<_Object> &obj, VmaAllocator allocator, VkDevice device)
+{
+    if (obj->vertexBuffer != VK_NULL_HANDLE)
+    {
+        vmaDestroyBuffer(allocator, obj->vertexBuffer, obj->vertexBufferMemory);
+    }
+        
+    if (obj->indexBuffer != VK_NULL_HANDLE)
+    {
+        vmaDestroyBuffer(allocator, obj->indexBuffer, obj->indexBufferMemory);
+    }
+        
+    if (obj->textureImage != VK_NULL_HANDLE)
+    {
+        vkDestroyImageView(device, obj->textureImageView, nullptr);
+        vmaDestroyImage(allocator, obj->textureImage, obj->textureImageMemory);
+    }
+        
+    if (obj->normalImage != VK_NULL_HANDLE)
+    {
+        vkDestroyImageView(device, obj->normalImageView, nullptr);
+        vmaDestroyImage(allocator, obj->normalImage, obj->normalImageMemory);
+    }
+
+    if (obj->metalRoughnessImage != VK_NULL_HANDLE)
+    {
+        vkDestroyImageView(device, obj->metalRoughnessImageView, nullptr);
+        vmaDestroyImage(allocator, obj->metalRoughnessImage, obj->metalRoughnessImageMemory);
+    }
+}
+
 void _Scene::createDescriptorSetsForScene(VkExtent2D extent, VmaAllocator allocator, VkDescriptorSetLayout descriptor_set_layout, VkDevice device)
 {
     scene_data.proj = glm::perspective(glm::radians(45.0f), extent.width / (float)extent.height, 0.1f, draw_distance);
@@ -33,35 +64,7 @@ void _Scene::deleteScene(VmaAllocator allocator, VkDevice device)
 {
     for (auto it = objects.begin(); it != objects.end(); ++it)
     {
-        auto &obj = it->second;
-        
-        if (obj->vertexBuffer != VK_NULL_HANDLE)
-        {
-            vmaDestroyBuffer(allocator, obj->vertexBuffer, obj->vertexBufferMemory);
-        }
-        
-        if (obj->indexBuffer != VK_NULL_HANDLE)
-        {
-            vmaDestroyBuffer(allocator, obj->indexBuffer, obj->indexBufferMemory);
-        }
-        
-        if (obj->textureImage != VK_NULL_HANDLE)
-        {
-            vkDestroyImageView(device, obj->textureImageView, nullptr);
-            vmaDestroyImage(allocator, obj->textureImage, obj->textureImageMemory);
-        }
-        
-        if (obj->normalImage != VK_NULL_HANDLE)
-        {
-            vkDestroyImageView(device, obj->normalImageView, nullptr);
-            vmaDestroyImage(allocator, obj->normalImage, obj->normalImageMemory);
-        }
-
-        if (obj->metalRoughnessImage != VK_NULL_HANDLE)
-        {
-            vkDestroyImageView(device, obj->metalRoughnessImageView, nullptr);
-            vmaDestroyImage(allocator, obj->metalRoughnessImage, obj->metalRoughnessImageMemory);
-        }
+        delete_object(it->second, allocator, device);
     }
 
     if (scene_data.uniformBufferMemory != VK_NULL_HANDLE && scene_data.uniformBufferMapped != nullptr)
