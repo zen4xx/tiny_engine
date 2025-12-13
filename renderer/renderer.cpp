@@ -1,7 +1,6 @@
 #include "renderer.h"
 #include "renderer_util.h"
 #include "../error_handler/error_handler.h"
-
 #include <fstream>
 #include <iostream>
 
@@ -403,3 +402,17 @@ void Renderer::addObject(const tiny_engine::Object &obj)
     // moves object to scene
     m_scenes[obj.scene_name]->objects[obj.obj_name] = std::move(object);
 }
+
+void Renderer::deleteObject(const std::string &scene_name, const std::string &obj_name)
+{
+    vkWaitForFences(m_device, m_in_flight_fences.size(), m_in_flight_fences.data(), VK_TRUE, UINT64_MAX);
+    m_scenes[scene_name]->deleteObject(m_scenes[scene_name]->objects[obj_name], m_allocator, m_device);
+    m_scenes[scene_name]->objects.erase(obj_name);
+}
+
+void Renderer::deleteObject(const tiny_engine::Object &obj)
+{
+    vkWaitForFences(m_device, m_in_flight_fences.size(), m_in_flight_fences.data(), VK_TRUE, UINT64_MAX);
+    m_scenes[obj.scene_name]->deleteObject(m_scenes[obj.scene_name]->objects[obj.obj_name], m_allocator, m_device);
+    m_scenes[obj.scene_name]->objects.erase(obj.obj_name);
+} 

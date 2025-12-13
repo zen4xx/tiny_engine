@@ -91,6 +91,8 @@ int main()
             std::cout << engine.getFPSCount() << std::endl;
         if (engine.isKeyPressed(GLFW_KEY_X))
             isMainScene ? isMainScene = 0 : isMainScene = 1;
+        if (engine.isKeyPressed(GLFW_KEY_0))
+            engine.deleteObject("main", "helmet"); 
         if(engine.isKeyPressed(GLFW_KEY_LEFT))
             hpos.x -= speed * engine.getDeltaTime();
         if(engine.isKeyPressed(GLFW_KEY_RIGHT))

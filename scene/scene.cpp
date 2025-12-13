@@ -4,6 +4,9 @@
 
 void delete_object(std::unique_ptr<_Object> &obj, VmaAllocator allocator, VkDevice device)
 {
+
+    if (!obj) return;
+
     if (obj->vertexBuffer != VK_NULL_HANDLE)
     {
         vmaDestroyBuffer(allocator, obj->vertexBuffer, obj->vertexBufferMemory);
