@@ -19,8 +19,8 @@ public:
     inline void addObject(const std::string &scene_name, const std::string &obj_name, const std::string &gltf_model_path, glm::mat4 pos, const std::string &albedo_path="_default", const std::string &mr_path="_default", const std::string &normal_path="_default") { m_renderer->addObject(scene_name, obj_name, gltf_model_path, pos, albedo_path, mr_path, normal_path); };
     inline void addObject(const tiny_engine::Object &obj) { m_renderer->addObject(obj); };
 
-    inline void deleteObject(const std::string &scene_name, const std::string &obj_name) { m_renderer->deleteObject(scene_name, obj_name); };
-    inline void deleteObject(const tiny_engine::Object &obj) { m_renderer->deleteObject(obj); };
+    inline void deleteObject(const std::string &scene_name, const std::string &obj_name) { m_renderer->deleteObject(scene_name, obj_name); }; // it is not thread-safety function yet
+    inline void deleteObject(const tiny_engine::Object &obj) { m_renderer->deleteObject(obj); }; // it is not thread-safety function yet
     
     inline void moveObject(const std::string &scene_name, const std::string &obj_name, glm::mat4 pos) { m_renderer->moveObject(scene_name, obj_name, pos); };
     inline void moveObject(const tiny_engine::Object &obj, glm::mat4 pos) { m_renderer->moveObject(obj, pos); };

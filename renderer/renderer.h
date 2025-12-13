@@ -40,8 +40,8 @@ public:
     void addObject(const std::string &scene_name, const std::string &obj_name, const std::string &gltf_model_path, glm::mat4 pos, const std::string &albedo_path = "_default", const std::string &mr_path = "_default", const std::string &normal_path = "_default");
     void addObject(const tiny_engine::Object &obj);
     
-    void deleteObject(const std::string &scene_name, const std::string &obj_name);
-    void deleteObject(const tiny_engine::Object &obj);
+    void deleteObject(const std::string &scene_name, const std::string &obj_name); // it is not thread-safety function yet
+    void deleteObject(const tiny_engine::Object &obj); // it is not thread-safety function yet
 
     inline void moveObject(const std::string &scene_name, const std::string &obj_name, glm::mat4 pos) { m_scenes[scene_name]->objects[obj_name]->pc_data.model = pos; };
     inline void moveObject(const tiny_engine::Object &obj, glm::mat4 pos) { m_scenes[obj.scene_name]->objects[obj.obj_name]->pc_data.model = pos; };
