@@ -261,6 +261,8 @@ void Renderer::addObject(const std::string &scene_name, const std::string &name,
     object->indices = indices;
     object->pc_data.model = pos;
 
+    object->is_alive = 1;
+
     createVertexBuffer(&object->vertexBuffer, object->vertices, &object->vertexBufferMemory, m_command_pool, m_graphics_queue, m_allocator, m_physical_device, m_device);
     createIndexBuffer(object->indices, &object->indexBuffer, &object->indexBufferMemory, m_command_pool, m_graphics_queue, m_allocator, m_device);
 
@@ -305,6 +307,8 @@ void Renderer::addObject(const std::string &scene_name, const std::string &name,
     auto object = std::make_unique<_Object>();
     object->pc_data.model = pos;
     loadModel(gltf_model_path, object.get());
+
+    object->is_alive = 1;
 
     createVertexBuffer(&object->vertexBuffer, object->vertices, &object->vertexBufferMemory, m_command_pool, m_graphics_queue, m_allocator, m_physical_device, m_device);
     createIndexBuffer(object->indices, &object->indexBuffer, &object->indexBufferMemory, m_command_pool, m_graphics_queue, m_allocator, m_device);
@@ -359,6 +363,8 @@ void Renderer::addObject(const tiny_engine::Object &obj)
         object->indices = *obj.indices;
     }
 
+    object->is_alive = 1;
+
     createVertexBuffer(&object->vertexBuffer, object->vertices, &object->vertexBufferMemory, m_command_pool, m_graphics_queue, m_allocator, m_physical_device, m_device);
     createIndexBuffer(object->indices, &object->indexBuffer, &object->indexBufferMemory, m_command_pool, m_graphics_queue, m_allocator, m_device);
 
@@ -405,6 +411,11 @@ void Renderer::addObject(const tiny_engine::Object &obj)
 
 void Renderer::deleteObject(const std::string &scene_name, const std::string &obj_name)
 {
+    if (m_scenes.find(scene_name) == m_scenes.end()) return;
+    if (m_scenes[scene_name]->objects.find(obj_name) == m_scenes[scene_name]->objects.end()) return;
+    
+    m_scenes[scene_name]->objects[obj_name]->is_alive = 0;
+
     vkWaitForFences(m_device, m_in_flight_fences.size(), m_in_flight_fences.data(), VK_TRUE, UINT64_MAX);
     m_scenes[scene_name]->deleteObject(m_scenes[scene_name]->objects[obj_name], m_allocator, m_device);
     m_scenes[scene_name]->objects.erase(obj_name);
@@ -412,6 +423,11 @@ void Renderer::deleteObject(const std::string &scene_name, const std::string &ob
 
 void Renderer::deleteObject(const tiny_engine::Object &obj)
 {
+    if (m_scenes.find(obj.scene_name) == m_scenes.end()) return;
+    if (m_scenes[obj.scene_name]->objects.find(obj.obj_name) == m_scenes[obj.scene_name]->objects.end()) return;
+    
+    m_scenes[obj.scene_name]->objects[obj.obj_name]->is_alive = 0;
+
     vkWaitForFences(m_device, m_in_flight_fences.size(), m_in_flight_fences.data(), VK_TRUE, UINT64_MAX);
     m_scenes[obj.scene_name]->deleteObject(m_scenes[obj.scene_name]->objects[obj.obj_name], m_allocator, m_device);
     m_scenes[obj.scene_name]->objects.erase(obj.obj_name);

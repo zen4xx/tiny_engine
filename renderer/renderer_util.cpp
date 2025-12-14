@@ -1194,7 +1194,7 @@ void recordSecondary(ThreadData *thread, const std::unordered_map<std::string, s
     for (auto it = start; it != end; ++it)
     {
 
-        if(!isAABBVisible(frustumPlanes, it->second->aabbMin, it->second->aabbMax))
+        if(!isAABBVisible(frustumPlanes, it->second->aabbMin, it->second->aabbMax) || !it->second->is_alive)
             continue;
 
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &scene_data.descriptorSets[it->second->dc_index], 0, nullptr); 
@@ -1354,7 +1354,7 @@ void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData>
     auto end = objects.end();
     for (auto it = start; it != end; ++it)
     {
-        if(!isAABBVisible(frustumPlanes, it->second->aabbMin, it->second->aabbMax))
+        if(!isAABBVisible(frustumPlanes, it->second->aabbMin, it->second->aabbMax) || !it->second->is_alive)
             continue;
 
         vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &scene_data.descriptorSets[it->second->dc_index], 0, nullptr); 

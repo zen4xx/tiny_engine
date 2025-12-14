@@ -1,5 +1,6 @@
 #ifndef RENDERER_UTIL
 #define RENDERER_UTIL
+#include <atomic>
 #include <vulkan/vulkan_core.h>
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -119,6 +120,8 @@ struct _PushConstantsData
 struct _Object
 {
     int dc_index; //descriptor set index 
+
+    std::atomic_bool is_alive;
     
     _PushConstantsData pc_data;
     
