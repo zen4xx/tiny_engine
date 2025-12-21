@@ -75,3 +75,10 @@ Tiny Engine is **designed for medium-scale and high-scale projects**. It’s wri
    target_link_libraries(myApp PRIVATE Tiny_engine)
  ```
 
+## Defines
+
+Disable nested command buffers and multithreaded rendering: 
+```c++
+#define TINY_ENGINE_NO_SECONDARY_CMD_BUFFERS
+```
+##
