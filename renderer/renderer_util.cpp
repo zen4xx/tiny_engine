@@ -13,17 +13,24 @@
 #include <iostream>
 #include <stdexcept>
 
+#ifdef __APPLE__
+#ifndef TINY_ENGINE_NO_SECONDARY_CMD_BUFFERS
+#define TINY_ENGINE_NO_SECONDARY_CMD_BUFFERS
+#endif
+#endif
+
 std::vector<const char *> getRequiredExtensions(bool isDebug);
 
 std::vector<const char *> required_extensions;
-#ifndef __APPLE__
+
+#ifndef TINY_ENGINE_NO_SECONDARY_CMD_BUFFERS
 const std::vector<const char *> deviceExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
     VK_EXT_NESTED_COMMAND_BUFFER_EXTENSION_NAME
 };
 #endif
 
-#ifdef __APPLE__
+#ifdef TINY_ENGINE_NO_SECONDARY_CMD_BUFFERS
 const std::vector<const char *> deviceExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
@@ -1127,8 +1134,7 @@ bool isAABBVisible(const std::array<glm::vec4, 6>& planes,
     return true;
 }
 
-#ifndef __APPLE__
-
+#ifndef TINY_ENGINE_NO_SECONDARY_CMD_BUFFERS
 void recordSecondary(ThreadData *thread, const std::unordered_map<std::string, std::unique_ptr<_Object>> &objects, const VkExtent2D &extent, const VkRenderPass &render_pass, const VkFramebuffer &framebuffer, const VkPipeline &graphics_pipeline, const VkPipelineLayout &pipeline_layout, uint32_t current_frame, const _SceneData &scene_data, VkDevice device, typename std::unordered_map<std::string, std::unique_ptr<_Object>>::const_iterator start, typename std::unordered_map<std::string, std::unique_ptr<_Object>>::const_iterator end)
 {
     VkCommandBuffer cmd = thread->command_buffers[current_frame];
@@ -1280,7 +1286,7 @@ void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData>
 
 #endif
 
-#ifdef __APPLE__
+#ifdef TINY_ENGINE_NO_SECONDARY_CMD_BUFFERS
 void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData> &threads, const std::unordered_map<std::string, std::unique_ptr<_Object>> &objects, uint32_t image_index, const VkExtent2D &extent, const VkRenderPass &render_pass, const std::vector<VkFramebuffer> &framebuffers, const VkPipeline &graphics_pipeline, const VkPipelineLayout &pipeline_layout, uint32_t current_frame, const _SceneData &scene_data, VkDevice device)
 {
     VkCommandBufferBeginInfo beginInfo{};
