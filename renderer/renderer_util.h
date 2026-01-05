@@ -1,5 +1,6 @@
 #ifndef RENDERER_UTIL
 #define RENDERER_UTIL
+#include "glm/fwd.hpp"
 #include <atomic>
 #include <vulkan/vulkan_core.h>
 #define GLFW_INCLUDE_VULKAN
@@ -23,6 +24,7 @@
 
 #define TINY_ENGINE_MAX_MSAA_QUALITY 255
 #define MAX_POINT_LIGHTS_COUNT 16
+#define CSM_CASCADE_COUNT 4
 
 struct QueueFamilyIndices
 {
@@ -46,6 +48,9 @@ struct ThreadData
 {
     std::vector<VkCommandBuffer> command_buffers;
     VkCommandPool command_pool;
+
+    std::vector<std::vector<VkCommandBuffer>> shadowSecondaryCmdBuffers;
+    bool isShadowCmdBufferRecorded[CSM_CASCADE_COUNT] = {};
 
     bool is_cmd_buffer_recorded;
 };
@@ -97,6 +102,12 @@ struct Vertex
 
 // _StructName or _ClassName means that a local object
 
+struct _CascadeData
+{
+    glm::mat4 viewProj;
+    float splitDepth;
+};
+
 struct _UniformBufferObject
 {
     alignas(16) glm::mat4 view;
@@ -110,6 +121,7 @@ struct _UniformBufferObject
     alignas(16) glm::vec4 point_light_pos[MAX_POINT_LIGHTS_COUNT]; // w for padding
 
     alignas(4) int point_lights_count;
+    _CascadeData cascades[4];
 };
 
 struct _PushConstantsData
@@ -153,6 +165,18 @@ struct _Object
 };
 
 
+struct ShadowMapResources
+{
+    VkImage depthImage;
+    VmaAllocation depthImageMemory;
+    VkImageView depthImageView;
+    VkSampler shadowSampler;
+    VkRenderPass shadowRenderPass;
+    std::vector<VkFramebuffer> framebuffers;
+    VkExtent2D extent = {2048, 2048};
+     std::vector<VkImageView> layerViews;
+};
+
 struct _SceneData
 {
     glm::vec3 dirLight = {0.0f, 0.0f, 0.0f};
@@ -167,6 +191,9 @@ struct _SceneData
     glm::mat4 view;
     glm::mat4 proj;
     
+    _CascadeData cascades[CSM_CASCADE_COUNT];
+    ShadowMapResources csm;
+
     VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
     std::vector<VkDescriptorSet> descriptorSets;
     
@@ -174,6 +201,7 @@ struct _SceneData
     VmaAllocation uniformBufferMemory;
     void *uniformBufferMapped;
 };
+
 
 bool loadModel(const std::string &filename, _Object *object);
 
@@ -199,7 +227,7 @@ void createIndexBuffer(std::vector<uint32_t> indices, VkBuffer *index_buffer, Vm
 void createDescriptorSetLayout(VkDescriptorSetLayout *descriptor_set_layout, VkDevice device);
 void createUniformBuffer(VkBuffer *uniform_buffer, VmaAllocation *uniform_buffer_memory, void **uniform_buffer_mapped, VmaAllocator allocator);
 void createDescriptorPool(VkDescriptorPool *descriptor_pool, uint32_t descriptor_count, VmaAllocator allocator, VkDevice device);
-void addDescriptorSet(VkDescriptorSet descriptor_set, VkBuffer uniform_buffer, VkImageView texture_image_view, VkImageView mr_image_view, VkImageView normal_image_view, VkSampler texture_sampler, VkDevice device);
+void addDescriptorSet(VkDescriptorSet descriptor_set, VkBuffer uniform_buffer, VkImageView texture_image_view, VkImageView mr_image_view, VkImageView normal_image_view, VkSampler texture_sampler, VkImageView shadow_image_view, VkSampler shadow_sampler, VkDevice device);
 void createDescriptorSets(std::vector<VkDescriptorSet> &descriptor_sets, VkDescriptorSetLayout descriptor_set_layout, uint32_t count, VkDescriptorPool descriptor_pool, VkDevice device);
 void createTextureImage(const char *texture_path, VkImage &image, VmaAllocation &image_memory, VmaAllocator allocator, VkCommandPool command_pool, VkQueue graphics_queue, VkDevice device);
 void createTextureImageView(VkImageView *texture_image_view, VkImage image, VkDevice device);
@@ -207,8 +235,18 @@ void createTextureSampler(VkSampler *texture_sampler, VkPhysicalDevice physical_
 void createDepthResources(VkImage &depth_image, VmaAllocation &depth_image_memory, VkImageView &depth_image_view, VmaAllocator allocator, VkExtent2D swap_chain_extent, VkQueue graphics_queue, VkCommandPool command_pool, VkSampleCountFlagBits msaa_samples, VkPhysicalDevice physical_device, VkDevice device);
 void createColorResources(VkImage &color_image, VmaAllocation &color_image_memory, VkImageView &color_image_view, VmaAllocator allocator, VkExtent2D swap_chain_extent, VkFormat swap_chain_image_format, VkQueue graphics_queue, VkCommandPool command_pool, VkSampleCountFlagBits msaa_samples, VkDevice device);
 void computeAABB(_Object& obj);
+void createShadowRenderPass(VkDevice device, VkFormat depthFormat, VkRenderPass *renderPass);
+void updateCSMCascades(const glm::mat4& view, const glm::mat4& proj, const glm::vec3& lightDir, float zNear, float zFar, int cascadeCount, _CascadeData* cascades, glm::vec3 sceneAABBMin, glm::vec3 sceneAABBMax);
+void createCSMResources(ShadowMapResources& csm, VkPhysicalDevice physicalDevice, VkDevice device, VmaAllocator allocator, VkQueue graphicsQueue, VkCommandPool commandPool);
+void createShadowPipelineLayout(VkPipelineLayout *shadowPipelineLayout, VkDevice device);
+void createShadowPipeline(VkPipeline *shadowPipeline, VkPipelineLayout shadowPipelineLayout, VkRenderPass shadowRenderPass, VkExtent2D shadowExtent, const std::string& shadowVertPath, VkDevice device);
+void recordShadowCommandBuffer(VkCommandBuffer primaryCmd, std::vector<ThreadData> &threads, const std::unordered_map<std::string, std::unique_ptr<_Object>> &objects, const ShadowMapResources &csm, VkPipeline shadowPipeline, VkPipelineLayout shadowPipelineLayout, const _SceneData &scene, VkDevice device, uint32_t currentFrame);
+
+void endSingleTimeCommands(VkCommandBuffer command_buffer, VkCommandPool command_pool, VkQueue graphics_queue, VkDevice device);
+VkCommandBuffer beginSingleTimeCommands(VkCommandPool command_pool, VkDevice device);
 
 VkSampleCountFlagBits getMaxUsableSampleCount(VkPhysicalDevice physical_device);
+VkFormat findDepthFormat(VkPhysicalDevice physical_device);
 
 static std::vector<char> readFile(const std::string &filename);
 #endif

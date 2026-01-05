@@ -45,7 +45,7 @@ void _Scene::createDescriptorSetsForScene(VkExtent2D extent, VmaAllocator alloca
     int i = 0;
     for (auto it = objects.begin(); it != objects.end(); ++it)
     {
-        addDescriptorSet(scene_data.descriptorSets[i], scene_data.uniformBuffer, it->second->textureImageView, it->second->metalRoughnessImageView, it->second->normalImageView, *it->second->sampler, device);
+        addDescriptorSet(scene_data.descriptorSets[i], scene_data.uniformBuffer, it->second->textureImageView, it->second->metalRoughnessImageView, it->second->normalImageView, *it->second->sampler, scene_data.csm.depthImageView, scene_data.csm.shadowSampler, device);
         it->second->dc_index = i;
         ++i;
     }
@@ -65,6 +65,25 @@ void _Scene::destroyDescriptorPool(VkDevice device)
 
 void _Scene::deleteScene(VmaAllocator allocator, VkDevice device)
 {
+    
+    auto &csm = scene_data.csm;
+
+    for (auto fb : csm.framebuffers)
+        vkDestroyFramebuffer(device, fb, nullptr);
+    csm.framebuffers.clear();
+
+    for (auto view : csm.layerViews)
+        vkDestroyImageView(device, view, nullptr);
+    csm.layerViews.clear();
+
+    vkDestroyImageView(device, csm.depthImageView, nullptr);
+    vkDestroySampler(device, csm.shadowSampler, nullptr);
+    vkDestroyRenderPass(device, csm.shadowRenderPass, nullptr);
+    vmaDestroyImage(allocator, csm.depthImage, csm.depthImageMemory);
+    
+    vkDestroyPipeline(device, m_shadow_pipeline, nullptr);
+    vkDestroyPipelineLayout(device, m_shadow_layout, nullptr);
+    
     for (auto it = objects.begin(); it != objects.end(); ++it)
     {
         delete_object(it->second, allocator, device);

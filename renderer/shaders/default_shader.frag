@@ -1,5 +1,6 @@
 #version 450
 #define MAX_POINT_LIGHTS_COUNT 16
+#define CSM_CASCADE_COUNT 4
 
 layout(location = 0) in vec2  fragTexCoord;
 layout(location = 1) in vec3  fragNormal;
@@ -13,8 +14,14 @@ layout(location = 0) out vec4 outColor;
 layout(binding = 1) uniform sampler2D texSampler;    
 layout(binding = 2) uniform sampler2D mrSampler;      
 layout(binding = 3) uniform sampler2D normalSampler;  
+layout(binding = 4) uniform sampler2DArrayShadow shadowMap;
 
 const float PI = 3.14159265359;
+
+struct CascadeData {
+    mat4 viewProj;
+    float splitDepth;
+};
 
 layout(binding = 0) uniform UniformBufferObject {
     mat4 view;
@@ -27,6 +34,7 @@ layout(binding = 0) uniform UniformBufferObject {
     vec4 point_light_pos[MAX_POINT_LIGHTS_COUNT];
 
     int point_light_count;
+    CascadeData cascades[CSM_CASCADE_COUNT];
 } ubo;
 
 // ----------------------------------------------------------------------------
@@ -58,11 +66,41 @@ float GeometrySchlickGGX(float NdotV, float roughness) {
 }
 
 float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
-    return GeometrySchlickGGX(max(dot(N, V), 0.0), roughness) * GeometrySchlickGGX(max(dot(N, L), 0.0), roughness);
+    return GeometrySchlickGGX(max(dot(N, V), 0.0), roughness) * 
+        GeometrySchlickGGX(max(dot(N, L), 0.0), roughness);
 }
 
 vec3 fresnelSchlick(float cosTheta, vec3 F0) {
     return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+}
+
+// ----------------------------------------------------------------------------
+// CSM functions
+// ----------------------------------------------------------------------------
+
+int getCascadeIndex() {
+    vec4 viewPos = ubo.view * vec4(fragPos, 1.0);
+    float depth = viewPos.z; 
+
+    for (int i = 0; i < CSM_CASCADE_COUNT - 1; ++i) {
+        if (depth < ubo.cascades[i].splitDepth) return i;
+    }
+    return CSM_CASCADE_COUNT - 1;
+}
+
+float sampleShadowMap(vec4 fragPosLightSpace, int cascadeIndex) {
+    if (fragPosLightSpace.w <= 0.0) return 1.0;
+
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    projCoords = projCoords * 0.5 + 0.5; // [-1,1] → [0,1]
+
+    if (projCoords.x < 0.0 || projCoords.x > 1.0 ||
+        projCoords.y < 0.0 || projCoords.y > 1.0 ||
+        projCoords.z < 0.0 || projCoords.z > 1.0) // Проверка z
+        return 1.0;
+
+    return texture(shadowMap, vec4(projCoords.xy, projCoords.z, float(cascadeIndex)));
+
 }
 
 void main() {
@@ -71,10 +109,15 @@ void main() {
     float metalness = mr.r;
     float roughness = mr.g;
 
+    int cascadeIndex = getCascadeIndex();
+    vec4 fragPosLightSpace = ubo.cascades[cascadeIndex].viewProj * vec4(fragPos, 1.0);
+    float shadow = sampleShadowMap(fragPosLightSpace, cascadeIndex);
+
     vec3 N = getNormalTangentSpace();
     vec3 V = normalize(fragCameraPos - fragPos);
     vec3 F0 = mix(vec3(0.04), albedo, metalness);
 
+    // === Направленный свет с CSM ===
     vec3 Ld = normalize(-ubo.dirLight);
     vec3 Hd = normalize(V + Ld);
     float NDFd = DistributionGGX(N, Hd, roughness);
@@ -84,10 +127,11 @@ void main() {
                       / (4.0 * max(dot(N, V), 0.0) * max(dot(N, Ld), 0.0) + 0.0001);
     vec3 kD_d = (vec3(1.0) - Fd) * (1.0 - metalness) + vec3(0.05);
     float NdotLd = max(dot(N, Ld), 0.0);
-    vec3 irradiance_d = ubo.ambient + ubo.dirLightColor * NdotLd;
 
+    vec3 irradiance_d = ubo.ambient + ubo.dirLightColor * NdotLd * shadow;
     vec3 Lo = (kD_d * albedo + specular_d) * irradiance_d;
 
+    // === Точечные источники (без теней) ===
     for(int i = 0; i < ubo.point_light_count; ++i) {
         vec3 lightPos   = ubo.point_light_pos[i].xyz;
         vec3 lightColor = ubo.point_light_colors[i].xyz;
@@ -96,7 +140,6 @@ void main() {
         float dist = length(lightPos - fragPos);
         float attenuation = 1.0 / (dist * dist);
         vec3 radiance = lightColor * attenuation;
-
 
         vec3 Hp = normalize(V + Lp);
         float NDFp = DistributionGGX(N, Hp, roughness);
@@ -109,6 +152,7 @@ void main() {
 
         Lo += (kD_p * albedo + specular_p) * radiance * NdotLp;
     }
-
     outColor = vec4(Lo, 1.0);
+    // outColor = vec4(vec3(cascadeIndex / float(CSM_CASCADE_COUNT)), 1.0);
+    // outColor = vec4(vec3(shadow), 1.0);
 }

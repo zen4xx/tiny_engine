@@ -1,3 +1,4 @@
+#include "glm/ext/matrix_float4x4.hpp"
 #include "glm/ext/matrix_transform.hpp"
 #include "glm/trigonometric.hpp"
 #include "tiny_engine.h"
@@ -67,14 +68,15 @@ int main()
     engine.addObject(suzanne);
     engine.addObject("main", "helmet", "damaged_helmet/DamagedHelmet.gltf", glm::rotate(glm::mat4(1), glm::radians(-90.f), glm::vec3(1, 0, 0)), "damaged_helmet/Default_albedo.jpg", "damaged_helmet/Default_metalRoughness.jpg", "damaged_helmet/Default_normal.jpg");
     engine.addObject("main", "helmet2", "damaged_helmet/DamagedHelmet.gltf", glm::rotate(glm::mat4(1), glm::radians(-90.f), glm::vec3(1, 0, 0)), "damaged_helmet/Default_albedo.jpg", "damaged_helmet/Default_metalRoughness.jpg", "damaged_helmet/Default_normal.jpg");
-
+    
     engine.setPointLightsCount("main", 2);
     engine.setPointLightColor("main", glm::vec3(1.0f, 0.0f, 0.0f), 0);
     engine.setPointLightColor("main", glm::vec3(0.0f, 1.0f, 0.0f), 1);
     
     bool isMainScene = 1;
 
-    glm::vec3 hpos(3.0f, 0.0f, 0.0f);
+    glm::vec3 hpos(0.5f, 0.0f, 0.0f);
+    
     float speed = 3.0f;
     
     while (engine.isWindowOpen())
@@ -101,6 +103,10 @@ int main()
             hpos.z += speed * engine.getDeltaTime();
         if(engine.isKeyPressed(GLFW_KEY_UP))
             hpos.z -= speed * engine.getDeltaTime();
+        if(engine.isKeyPressed(GLFW_KEY_1))
+            hpos.y += speed * engine.getDeltaTime();
+        if(engine.isKeyPressed(GLFW_KEY_2))
+            hpos.y -= speed * engine.getDeltaTime();
 
         engine.setView("main", camera.GetViewMatrix());
 

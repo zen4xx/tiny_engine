@@ -33,6 +33,9 @@ public:
 
     std::unordered_map<std::string, std::unique_ptr<_Object>> objects;
     float draw_distance = 10;
+    
+    VkPipelineLayout m_shadow_layout;
+    VkPipeline m_shadow_pipeline;
 
     _SceneData scene_data;
 };

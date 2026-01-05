@@ -4,6 +4,7 @@
 #include "renderer_util.h"
 #include "../scene/scene.h"
 #include <cstdint>
+#include <vulkan/vulkan_core.h>
 
 namespace tiny_engine
 {
@@ -62,7 +63,7 @@ public:
     inline float getFPSCount() { return fps; };
     inline float getDeltaTime() { return m_delta_time; };
 
-    inline void createScene(const std::string &scene_name) { m_scenes[scene_name] = std::move(std::make_unique<_Scene>(m_allocator)); };
+    void createScene(const std::string &scene_name);
     inline void deleteScene(const std::string &scene_name)
     {
         m_scenes[scene_name]->deleteScene(m_allocator, m_device);
@@ -104,13 +105,14 @@ private:
 
     VkDescriptorSetLayout m_descriptor_set_layout;
     VkPipelineLayout m_pipeline_layout;
-
+    
     VkViewport m_viewport;
     VkRect2D m_scissor;
 
     VkPipeline m_graphics_pipeline;
 
     VkCommandPool m_command_pool;
+    VkCommandPool m_shadow_command_pool;
 
     VkSwapchainKHR m_swap_chain;
     VkFormat m_swap_chain_image_format;
@@ -141,6 +143,7 @@ private:
     // vectors
     std::vector<VkImage> m_swap_chain_images;
     std::vector<VkCommandBuffer> m_command_buffers;
+    std::vector<VkCommandBuffer> m_shadow_command_buffers;
 
     std::vector<ThreadData> m_threads;
 

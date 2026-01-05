@@ -3,6 +3,7 @@
 #include "../error_handler/error_handler.h"
 #include <fstream>
 #include <iostream>
+#include <vulkan/vulkan_core.h>
 
 /*INITIALIZATION VULKAN*/
 
@@ -47,6 +48,7 @@ Renderer::~Renderer()
     }
 
     vkDestroyCommandPool(m_device, m_command_pool, nullptr);
+    vkDestroyCommandPool(m_device, m_shadow_command_pool, nullptr);
 
     for (auto thread : m_threads)
     {
@@ -148,20 +150,33 @@ void Renderer::setWindow(GLFWwindow *window)
     createDescriptorSetLayout(&m_descriptor_set_layout, m_device);
     createGraphicsPipeline("tiny_engine_assets/shaders/vert.spv", "tiny_engine_assets/shaders/frag.spv", &m_vert_shader_module, &m_frag_shader_module, &m_descriptor_set_layout, m_dynamic_states, &m_viewport, &m_scissor, m_swap_chain_extent, &m_render_pass, &m_pipeline_layout, &m_graphics_pipeline, m_msaa_samples, m_device);
     createCommandPool(&m_command_pool, m_surface, m_physical_device, m_device);
+    createCommandPool(&m_shadow_command_pool, m_surface, m_physical_device, m_device);
     
     createDepthResources(m_depth_image, m_depth_image_memory, m_depth_image_view, m_allocator, m_swap_chain_extent, m_graphics_queue, m_command_pool, m_msaa_samples, m_physical_device, m_device);
     createColorResources(m_color_image, m_color_image_memory, m_color_image_view, m_allocator, m_swap_chain_extent, m_swap_chain_image_format, m_graphics_queue, m_command_pool, m_msaa_samples, m_device);
     
     createFramebuffers(m_swap_chain_frame_buffers, m_swap_chain_image_views, m_render_pass, m_swap_chain_extent, m_color_image_view, m_depth_image_view, m_device);
     createCommandBuffers(m_command_buffers, m_command_pool, MAX_FRAMES_IN_FLIGHT, m_device);
+    createCommandBuffers(m_shadow_command_buffers, m_shadow_command_pool, MAX_FRAMES_IN_FLIGHT, m_device);
     createTextureSampler(&m_sampler, m_physical_device, m_device);
-
 
     m_threads.resize(m_thread_count);
     for (unsigned int i = 0; i < m_thread_count; ++i)
     {
         createCommandPool(&m_threads[i].command_pool, m_surface, m_physical_device, m_device);
         createSecondaryCommandBuffers(m_threads[i].command_buffers, m_threads[i].command_pool, MAX_FRAMES_IN_FLIGHT, m_device);
+
+        m_threads[i].shadowSecondaryCmdBuffers.resize(CSM_CASCADE_COUNT);
+        for (int cascade = 0; cascade < CSM_CASCADE_COUNT; ++cascade) 
+        {
+            m_threads[i].shadowSecondaryCmdBuffers[cascade].resize(MAX_FRAMES_IN_FLIGHT);
+            VkCommandBufferAllocateInfo allocInfo{};
+            allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+            allocInfo.commandPool = m_threads[i].command_pool;
+            allocInfo.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
+            allocInfo.commandBufferCount = MAX_FRAMES_IN_FLIGHT;
+            vkAllocateCommandBuffers(m_device, &allocInfo, m_threads[i].shadowSecondaryCmdBuffers[cascade].data());
+        }        
     }
 
     createSyncObjects(m_image_available_semaphores, m_render_finished_semaphores, m_in_flight_fences, MAX_FRAMES_IN_FLIGHT, m_swap_chain_images.size(), m_device);
@@ -202,12 +217,25 @@ void Renderer::drawScene(const std::string &scene_name)
         recreateSwapChain(&m_swap_chain, m_render_pass, m_swap_chain_frame_buffers, m_window, m_surface, m_swap_chain_images, m_swap_chain_image_views, &m_swap_chain_image_format, &m_swap_chain_extent, m_color_image_view, m_depth_image_view, m_physical_device, m_device);
         return;
     }
+
+    auto& scene = m_scenes[scene_name]->scene_data;
+
+    updateCSMCascades(scene.view, scene.proj, scene.dirLight, 0.1, m_scenes[scene_name]->draw_distance, CSM_CASCADE_COUNT, scene.cascades, glm::vec3(-m_scenes[scene_name]->draw_distance / 2), glm::vec3(m_scenes[scene_name]->draw_distance / 2));
+    recordShadowCommandBuffer(m_shadow_command_buffers[current_frame], m_threads, m_scenes[scene_name]->objects, scene.csm, m_scenes[scene_name]->m_shadow_pipeline, m_scenes[scene_name]->m_shadow_layout, scene, m_device, current_frame);
     
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &m_shadow_command_buffers[current_frame];
+
+    vkQueueSubmit(m_graphics_queue, 1, &submitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(m_graphics_queue);
+
     vkResetFences(m_device, 1, &m_in_flight_fences[current_frame]);
     vkResetCommandBuffer(m_command_buffers[current_frame], 0);
-    recordCommandBuffer(m_command_buffers[current_frame], m_threads, m_scenes[scene_name]->objects, imageIndex, m_swap_chain_extent, m_render_pass, m_swap_chain_frame_buffers, m_graphics_pipeline, m_pipeline_layout, current_frame, m_scenes[scene_name]->scene_data, m_device);
+    recordCommandBuffer(m_command_buffers[current_frame], m_threads, m_scenes[scene_name]->objects, imageIndex, m_swap_chain_extent, m_render_pass, m_swap_chain_frame_buffers, m_graphics_pipeline, m_pipeline_layout, current_frame, scene, m_device);
     
-    VkSubmitInfo submitInfo = {};
+    submitInfo = {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     
     VkSemaphore waitSemaphores[] = {m_image_available_semaphores[current_frame]};
@@ -432,3 +460,12 @@ void Renderer::deleteObject(const tiny_engine::Object &obj)
     m_scenes[obj.scene_name]->deleteObject(m_scenes[obj.scene_name]->objects[obj.obj_name], m_allocator, m_device);
     m_scenes[obj.scene_name]->objects.erase(obj.obj_name);
 } 
+
+void Renderer::createScene(const std::string &scene_name)
+{
+    m_scenes[scene_name] = std::move(std::make_unique<_Scene>(m_allocator));
+
+    createCSMResources(m_scenes[scene_name]->scene_data.csm, m_physical_device, m_device, m_allocator, m_graphics_queue, m_command_pool);
+    createShadowPipelineLayout(&m_scenes[scene_name]->m_shadow_layout, m_device);
+    createShadowPipeline(&m_scenes[scene_name]->m_shadow_pipeline, m_scenes[scene_name]->m_shadow_layout, m_scenes[scene_name]->scene_data.csm.shadowRenderPass, m_scenes[scene_name]->scene_data.csm.extent, "tiny_engine_assets/shaders/shadow.spv", m_device);
+}
