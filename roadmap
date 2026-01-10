@@ -4,7 +4,7 @@ model loading - done!
 directional light - done!
 point lights - done!
 shadows {
-csm
+csm(deadline - 1 february)
 cube shadow map(for point lights)
 }
 animations
