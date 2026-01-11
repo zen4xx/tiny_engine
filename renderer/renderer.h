@@ -128,6 +128,8 @@ private:
     VmaAllocation m_color_image_memory;
     VkImageView m_color_image_view;
 
+    _DepthPass m_depth_pass;
+
     uint32_t current_frame = 0;
 
     const int MAX_FRAMES_IN_FLIGHT = 2;
@@ -137,6 +139,8 @@ private:
     float m_delta_time = 0;
 
     std::unordered_map<std::string, std::unique_ptr<_Scene>> m_scenes;
+
+    std::array<_Cascade, SHADOW_MAP_CASCADE_COUNT> m_cascades;
 
     // vectors
     std::vector<VkImage> m_swap_chain_images;
