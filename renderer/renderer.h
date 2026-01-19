@@ -130,6 +130,8 @@ private:
 
     _DepthPass m_depth_pass;
 
+    _DepthImage m_cascade_depth_image;
+
     uint32_t current_frame = 0;
 
     const int MAX_FRAMES_IN_FLIGHT = 2;

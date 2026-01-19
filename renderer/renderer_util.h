@@ -162,6 +162,14 @@ struct _Cascade
     glm::mat4 vpMatrix; // view project matrix
 };
 
+struct _DepthImage
+{
+    VkImage image;
+    VmaAllocation mem;
+    VkImageView view;
+    VkSampler sampler;
+};
+
 struct _DepthPass
 {
     VkRenderPass renderPass;
