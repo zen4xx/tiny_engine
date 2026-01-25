@@ -231,7 +231,7 @@ void createTextureSampler(VkSampler *texture_sampler, VkPhysicalDevice physical_
 void createDepthResources(VkImage &depth_image, VmaAllocation &depth_image_memory, VkImageView &depth_image_view, VmaAllocator allocator, VkExtent2D swap_chain_extent, VkQueue graphics_queue, VkCommandPool command_pool, VkSampleCountFlagBits msaa_samples, VkPhysicalDevice physical_device, VkDevice device);
 void createColorResources(VkImage &color_image, VmaAllocation &color_image_memory, VkImageView &color_image_view, VmaAllocator allocator, VkExtent2D swap_chain_extent, VkFormat swap_chain_image_format, VkQueue graphics_queue, VkCommandPool command_pool, VkSampleCountFlagBits msaa_samples, VkDevice device);
 void computeAABB(_Object& obj);
-
+void createDepthPass(_DepthPass *depth_pass, _DepthImage *depth, std::array<_Cascade, SHADOW_MAP_CASCADE_COUNT> &cascades, VkPhysicalDevice physical_device, VmaAllocator allocator, VkDevice device);
 
 
 VkSampleCountFlagBits getMaxUsableSampleCount(VkPhysicalDevice physical_device);

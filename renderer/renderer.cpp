@@ -1,8 +1,10 @@
 #include "renderer.h"
 #include "renderer_util.h"
 #include "../error_handler/error_handler.h"
+#include <cstdint>
 #include <fstream>
 #include <iostream>
+#include <vulkan/vulkan_core.h>
 
 /*INITIALIZATION VULKAN*/
 
@@ -37,10 +39,25 @@ Renderer::~Renderer()
 
     vkDeviceWaitIdle(m_device);
 
+    for (uint8_t i = 0; i < SHADOW_MAP_CASCADE_COUNT; ++i)
+    {
+        vkDestroyFramebuffer(m_device, m_cascades[i].framebuffer, nullptr);
+        vkDestroyImageView(m_device, m_cascades[i].imageView, nullptr);
+    }
+
+    vkDestroyImageView(m_device, m_cascade_depth_image.view, nullptr);
+    vmaDestroyImage(m_allocator, m_cascade_depth_image.image, m_cascade_depth_image.mem);
+    
+    vkDestroyPipeline(m_device, m_depth_pass.pipeline, nullptr);
+    vkDestroyPipelineLayout(m_device, m_depth_pass.layout, nullptr);
+    vkDestroyRenderPass(m_device, m_depth_pass.renderPass, nullptr);
+
+    vkDestroySampler(m_device, m_cascade_depth_image.sampler, nullptr);
+
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)    
         vkDestroyFence(m_device, m_in_flight_fences[i], nullptr);
 
-    for(int i = 0; i < m_swap_chain_images.size(); ++i)
+    for (int i = 0; i < m_swap_chain_images.size(); ++i)
     {
         vkDestroySemaphore(m_device, m_render_finished_semaphores[i], nullptr);
         vkDestroySemaphore(m_device, m_image_available_semaphores[i], nullptr);
@@ -165,6 +182,8 @@ void Renderer::setWindow(GLFWwindow *window)
     }
 
     createSyncObjects(m_image_available_semaphores, m_render_finished_semaphores, m_in_flight_fences, MAX_FRAMES_IN_FLIGHT, m_swap_chain_images.size(), m_device);
+
+    createDepthPass(&m_depth_pass, &m_cascade_depth_image, m_cascades, m_physical_device, m_allocator, m_device);
 }
 void Renderer::drawScene(const std::string &scene_name)
 {

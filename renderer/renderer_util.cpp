@@ -1931,7 +1931,7 @@ void computeAABB(_Object& obj) {
     obj.aabbMax = max;  
 }
 
-void createDepthPass(_DepthPass *depth_pass, _DepthImage depth, VkPhysicalDevice physical_device, VmaAllocator allocator, VkDevice device)
+void createDepthPass(_DepthPass *depth_pass, _DepthImage *depth, std::array<_Cascade, SHADOW_MAP_CASCADE_COUNT> &cascades, VkPhysicalDevice physical_device, VmaAllocator allocator, VkDevice device)
 {
     VkFormat depthFormat = findDepthFormat(physical_device);
 
@@ -2004,11 +2004,12 @@ void createDepthPass(_DepthPass *depth_pass, _DepthImage depth, VkPhysicalDevice
     allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
     allocInfo.requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
-    res = vmaCreateImage(allocator, &imageInfo, &allocInfo, &depth.image, &depth.mem, nullptr);
+    res = vmaCreateImage(allocator, &imageInfo, &allocInfo, &depth->image, &depth->mem, nullptr);
     if (res != VK_SUCCESS)
         err("Failed to create cascade depth image", res);
 
     VkImageViewCreateInfo viewInfo = {};
+    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 	viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
 	viewInfo.format = depthFormat;
 	viewInfo.subresourceRange = {};
@@ -2017,10 +2018,59 @@ void createDepthPass(_DepthPass *depth_pass, _DepthImage depth, VkPhysicalDevice
 	viewInfo.subresourceRange.levelCount = 1;
 	viewInfo.subresourceRange.baseArrayLayer = 0;
     viewInfo.subresourceRange.layerCount = SHADOW_MAP_CASCADE_COUNT;
-	viewInfo.image = depth.image;
+	viewInfo.image = depth->image;
 	
-    res = vkCreateImageView(device, &viewInfo, nullptr, &depth.view);
+    res = vkCreateImageView(device, &viewInfo, nullptr, &depth->view);
     if (res != VK_SUCCESS)
         err("Failed to create cascade depth image view", res);
+
+    for (uint8_t i = 0; i < SHADOW_MAP_CASCADE_COUNT; ++i)
+    {
+        VkImageViewCreateInfo viewInfo = {};
+        viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+    	viewInfo.format = depthFormat;
+	    viewInfo.subresourceRange = {};
+	    viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+	    viewInfo.subresourceRange.baseMipLevel = 0;
+	    viewInfo.subresourceRange.levelCount = 1;
+	    viewInfo.subresourceRange.baseArrayLayer = i;
+        viewInfo.subresourceRange.layerCount = 1;
+	    viewInfo.image = depth->image;       
+
+        res = vkCreateImageView(device, &viewInfo, nullptr, &cascades[i].imageView);
+        if (res != VK_SUCCESS)
+            err("Failed to create image view per cascade", res);
+
+        VkFramebufferCreateInfo framebufferInfo{};
+        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        framebufferInfo.renderPass = depth_pass->renderPass;
+        framebufferInfo.attachmentCount = 1;
+        framebufferInfo.pAttachments = &cascades[i].imageView;
+        framebufferInfo.width = SHADOW_MAP_DIM;
+        framebufferInfo.height = SHADOW_MAP_DIM;
+        framebufferInfo.layers = 1;
+        
+        res = vkCreateFramebuffer(device, &framebufferInfo, nullptr, &cascades[i].framebuffer);
+        if (res != VK_SUCCESS)
+            err("Failed to create a framebuffer per cascade", res);
+    }
+
+    VkSamplerCreateInfo sampler = {};
+    sampler.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	sampler.magFilter = VK_FILTER_LINEAR;
+	sampler.minFilter = VK_FILTER_LINEAR;
+	sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+	sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	sampler.mipLodBias = 0.0f;
+	sampler.maxAnisotropy = 1.0f;
+	sampler.minLod = 0.0f;
+	sampler.maxLod = 1.0f;
+	sampler.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+
+	res = vkCreateSampler(device, &sampler, nullptr, &depth->sampler);
+    if (res != VK_SUCCESS)
+        err("Failed to create a depth sampler", res);
 }
-//happy new year
