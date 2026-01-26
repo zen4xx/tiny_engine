@@ -33,6 +33,7 @@ int main()
     
     glfwSetCursorPosCallback(engine.getWindow(), mouse_callback);
     glfwSetInputMode(engine.getWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
     if (glfwRawMouseMotionSupported())
         glfwSetInputMode(engine.getWindow(), GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 
