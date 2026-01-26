@@ -36,7 +36,6 @@ Renderer::Renderer(const char *app_name, bool is_debug)
 
 Renderer::~Renderer()
 {
-
     vkDeviceWaitIdle(m_device);
 
     for (uint8_t i = 0; i < SHADOW_MAP_CASCADE_COUNT; ++i)
@@ -48,8 +47,8 @@ Renderer::~Renderer()
     vkDestroyImageView(m_device, m_cascade_depth_image.view, nullptr);
     vmaDestroyImage(m_allocator, m_cascade_depth_image.image, m_cascade_depth_image.mem);
     
-    vkDestroyPipeline(m_device, m_depth_pass.pipeline, nullptr);
-    vkDestroyPipelineLayout(m_device, m_depth_pass.layout, nullptr);
+    //vkDestroyPipeline(m_device, m_depth_pass.pipeline, nullptr); 
+    //vkDestroyPipelineLayout(m_device, m_depth_pass.layout, nullptr);
     vkDestroyRenderPass(m_device, m_depth_pass.renderPass, nullptr);
 
     vkDestroySampler(m_device, m_cascade_depth_image.sampler, nullptr);
