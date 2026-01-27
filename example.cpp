@@ -30,7 +30,7 @@ int main()
     uint8_t thread_count = std::thread::hardware_concurrency(); 
     
     auto engine = Tiny_engine("myapp", 1920, 1080, "test", TINY_ENGINE_MAX_MSAA_QUALITY, thread_count, true);
-    
+
     glfwSetCursorPosCallback(engine.getWindow(), mouse_callback);
     glfwSetInputMode(engine.getWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 

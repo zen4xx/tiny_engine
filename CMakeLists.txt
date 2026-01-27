@@ -60,6 +60,10 @@ else()
   add_library(${PROJECT_NAME} STATIC ${SOURCE_FILES})
 endif()
 
+if (NOT TINY_ENGINE_NO_SECONDARY_CMD_BUFFERS)
+    add_compile_definitions(TINY_ENGINE_NO_SECONDARY_CMD_BUFFERS=${1})
+endif()
+
 
 include_directories(${PROJECT_SOURCE_DIR}/external/glm)  # for GLM
 include_directories("${PROJECT_SOURCE_DIR}/include") 
