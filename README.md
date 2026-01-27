@@ -80,5 +80,6 @@ Tiny Engine is **designed for medium-scale and high-scale projects**. It’s wri
 Disable nested command buffers and multithreaded rendering: 
 ```c++
 #define TINY_ENGINE_NO_SECONDARY_CMD_BUFFERS
+or cmake define DTINY_ENGINE_NO_SECONDARY_CMD_BUFFERS=1 
 ```
 ##
