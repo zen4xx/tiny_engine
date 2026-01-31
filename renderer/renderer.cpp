@@ -47,8 +47,8 @@ Renderer::~Renderer()
     vkDestroyImageView(m_device, m_cascade_depth_image.view, nullptr);
     vmaDestroyImage(m_allocator, m_cascade_depth_image.image, m_cascade_depth_image.mem);
     
-    //vkDestroyPipeline(m_device, m_depth_pass.pipeline, nullptr); 
-    //vkDestroyPipelineLayout(m_device, m_depth_pass.layout, nullptr);
+    vkDestroyPipeline(m_device, m_depth_pass.pipeline, nullptr); 
+    vkDestroyPipelineLayout(m_device, m_depth_pass.layout, nullptr);
     vkDestroyRenderPass(m_device, m_depth_pass.renderPass, nullptr);
 
     vkDestroySampler(m_device, m_cascade_depth_image.sampler, nullptr);
@@ -182,7 +182,7 @@ void Renderer::setWindow(GLFWwindow *window)
 
     createSyncObjects(m_image_available_semaphores, m_render_finished_semaphores, m_in_flight_fences, MAX_FRAMES_IN_FLIGHT, m_swap_chain_images.size(), m_device);
 
-    createDepthPass(&m_depth_pass, &m_cascade_depth_image, m_cascades, m_physical_device, m_allocator, m_device);
+    createDepthPass(&m_depth_pass, &m_cascade_depth_image, m_cascades, "vert", "frag", m_physical_device, m_allocator, m_device);
 }
 void Renderer::drawScene(const std::string &scene_name)
 {
