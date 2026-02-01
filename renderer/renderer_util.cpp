@@ -2074,7 +2074,7 @@ void createDepthPass(_DepthPass *depth_pass, _DepthImage *depth, std::array<_Cas
     if (res != VK_SUCCESS)
         err("Failed to create a depth sampler", res);
 
-   depth_pass->layout = VK_NULL_HANDLE; //TODO: create pipeline layout 
+    depth_pass->layout = VK_NULL_HANDLE; //TODO: create pipeline layout 
 
     auto vertCode = readFile(vert_shader_path);
     auto fragCode = readFile(frag_shader_path);
