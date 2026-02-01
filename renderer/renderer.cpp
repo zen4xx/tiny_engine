@@ -182,7 +182,7 @@ void Renderer::setWindow(GLFWwindow *window)
 
     createSyncObjects(m_image_available_semaphores, m_render_finished_semaphores, m_in_flight_fences, MAX_FRAMES_IN_FLIGHT, m_swap_chain_images.size(), m_device);
 
-    createDepthPass(&m_depth_pass, &m_cascade_depth_image, m_cascades, "vert", "frag", m_physical_device, m_allocator, m_device);
+    createDepthPass(&m_depth_pass, &m_cascade_depth_image, m_cascades, &m_descriptor_set_layout, "tiny_engine_assets/shaders/csm_ver.spvt", "tiny_engine_assets/shaders/csm_frag.spv", m_physical_device, m_allocator, m_device);
 }
 void Renderer::drawScene(const std::string &scene_name)
 {

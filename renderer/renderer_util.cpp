@@ -1931,7 +1931,7 @@ void computeAABB(_Object& obj) {
     obj.aabbMax = max;  
 }
 
-void createDepthPass(_DepthPass *depth_pass, _DepthImage *depth, std::array<_Cascade, SHADOW_MAP_CASCADE_COUNT> &cascades, const std::string vert_shader_path, const std::string frag_shader_path, VkPhysicalDevice physical_device, VmaAllocator allocator, VkDevice device)
+void createDepthPass(_DepthPass *depth_pass, _DepthImage *depth, std::array<_Cascade, SHADOW_MAP_CASCADE_COUNT> &cascades, VkDescriptorSetLayout *descriptor_set_layout, const std::string vert_shader_path, const std::string frag_shader_path, VkPhysicalDevice physical_device, VmaAllocator allocator, VkDevice device)
 {
     VkFormat depthFormat = findDepthFormat(physical_device);
 
@@ -2074,7 +2074,21 @@ void createDepthPass(_DepthPass *depth_pass, _DepthImage *depth, std::array<_Cas
     if (res != VK_SUCCESS)
         err("Failed to create a depth sampler", res);
 
-    depth_pass->layout = VK_NULL_HANDLE; //TODO: create pipeline layout 
+    VkPushConstantRange range = {};
+    range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    range.offset = 0;
+    range.size = sizeof(_DepthPushConstantsData);
+
+    VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipelineLayoutInfo.setLayoutCount = 1;
+    pipelineLayoutInfo.pSetLayouts = descriptor_set_layout;
+    pipelineLayoutInfo.pushConstantRangeCount = 1;
+    pipelineLayoutInfo.pPushConstantRanges = &range;
+
+    res = vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &depth_pass->layout);
+    if (res != VK_SUCCESS)
+        err("Failed to create depth pipeline layout", res);
 
     auto vertCode = readFile(vert_shader_path);
     auto fragCode = readFile(frag_shader_path);
