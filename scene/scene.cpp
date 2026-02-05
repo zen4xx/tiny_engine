@@ -1,4 +1,5 @@
 #include "scene.h"
+#include "renderer_util.h"
 #include <vulkan/vulkan_core.h>
 #include <vector>
 
@@ -36,7 +37,7 @@ void delete_object(std::unique_ptr<_Object> &obj, VmaAllocator allocator, VkDevi
     }
 }
 
-void _Scene::createDescriptorSetsForScene(VkExtent2D extent, VmaAllocator allocator, VkDescriptorSetLayout descriptor_set_layout, VkDevice device)
+void _Scene::createDescriptorSetsForScene(VkExtent2D extent, VmaAllocator allocator, VkDescriptorSetLayout descriptor_set_layout, const _CascadedShadowMap &csm, VkDevice device)
 {
     scene_data.proj = glm::perspective(glm::radians(45.0f), extent.width / (float)extent.height, 0.1f, draw_distance);
 
@@ -45,10 +46,11 @@ void _Scene::createDescriptorSetsForScene(VkExtent2D extent, VmaAllocator alloca
     int i = 0;
     for (auto it = objects.begin(); it != objects.end(); ++it)
     {
-        addDescriptorSet(scene_data.descriptorSets[i], scene_data.uniformBuffer, it->second->textureImageView, it->second->metalRoughnessImageView, it->second->normalImageView, *it->second->sampler, device);
+        addDescriptorSet(scene_data.descriptorSets[i], scene_data.uniformBuffer, scene_data.csmUniformBuffer, it->second->textureImageView, it->second->metalRoughnessImageView, it->second->normalImageView, *it->second->sampler, *it->second->csm_sampler, csm, device);
         it->second->dc_index = i;
         ++i;
-    }
+    }        
+
     isDescriptorSetsCreated = 1;
 }
 

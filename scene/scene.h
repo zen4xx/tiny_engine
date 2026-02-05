@@ -15,10 +15,20 @@ public:
     _Scene(VmaAllocator allocator)
     {
         createUniformBuffer(&scene_data.uniformBuffer, &scene_data.uniformBufferMemory, &scene_data.uniformBufferMapped, allocator);
+
+        VkDeviceSize csmUBOSize = sizeof(_CascadedShadowMapData);
+        createBuffer(csmUBOSize,
+                     VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                     VMA_MEMORY_USAGE_AUTO,
+                     nullptr,
+                     &scene_data.csmUniformBuffer,
+                     &scene_data.csmUniformBufferMemory,
+                     allocator);
+        vmaMapMemory(allocator, scene_data.csmUniformBufferMemory, &scene_data.csmUniformBufferMapped);
     }
 
 public:
-    void createDescriptorSetsForScene(VkExtent2D extent, VmaAllocator allocator, VkDescriptorSetLayout descriptor_set_layout, VkDevice device);
+    void createDescriptorSetsForScene(VkExtent2D extent, VmaAllocator allocator, VkDescriptorSetLayout descriptor_set_layout, const _CascadedShadowMap &csm, VkDevice device);
 
     void destroyDescriptorPool(VkDevice device);
     void deleteScene(VmaAllocator allocator, VkDevice device);

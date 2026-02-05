@@ -37,6 +37,8 @@ Renderer::~Renderer()
 
     vkDeviceWaitIdle(m_device);
 
+    destroyCascadedShadowMap(m_csm, m_allocator, m_device);
+
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)    
         vkDestroyFence(m_device, m_in_flight_fences[i], nullptr);
 
@@ -145,7 +147,8 @@ void Renderer::setWindow(GLFWwindow *window)
     createSwapChain(m_device, m_physical_device, m_window, m_surface, &m_swap_chain, m_swap_chain_images, &m_swap_chain_image_format, &m_swap_chain_extent);
     createImageViews(m_swap_chain_image_views, m_swap_chain_images, m_swap_chain_image_format, m_device);
     createRenderPass(&m_render_pass, &m_pipeline_layout, m_swap_chain_image_format, m_msaa_samples, m_physical_device, m_device);
-    createDescriptorSetLayout(&m_descriptor_set_layout, m_device);
+    createShadowSampler(&m_csm_sampler, m_device);
+    createDescriptorSetLayout(&m_descriptor_set_layout, &m_csm_sampler, m_device);
     createGraphicsPipeline("tiny_engine_assets/shaders/vert.spv", "tiny_engine_assets/shaders/frag.spv", &m_vert_shader_module, &m_frag_shader_module, &m_descriptor_set_layout, m_dynamic_states, &m_viewport, &m_scissor, m_swap_chain_extent, &m_render_pass, &m_pipeline_layout, &m_graphics_pipeline, m_msaa_samples, m_device);
     createCommandPool(&m_command_pool, m_surface, m_physical_device, m_device);
     
@@ -155,8 +158,8 @@ void Renderer::setWindow(GLFWwindow *window)
     createFramebuffers(m_swap_chain_frame_buffers, m_swap_chain_image_views, m_render_pass, m_swap_chain_extent, m_color_image_view, m_depth_image_view, m_device);
     createCommandBuffers(m_command_buffers, m_command_pool, MAX_FRAMES_IN_FLIGHT, m_device);
     createTextureSampler(&m_sampler, m_physical_device, m_device);
-
-
+    createCascadedShadowMap(m_csm, m_swap_chain_extent, m_allocator, m_device, m_physical_device, m_command_pool, m_graphics_queue);
+    
     m_threads.resize(m_thread_count);
     for (unsigned int i = 0; i < m_thread_count; ++i)
     {
@@ -173,7 +176,7 @@ void Renderer::drawScene(const std::string &scene_name)
         return;
 
     if (!m_scenes[scene_name]->isDescriptorSetsCreated)
-        m_scenes[scene_name]->createDescriptorSetsForScene(m_swap_chain_extent, m_allocator, m_descriptor_set_layout, m_device);
+        m_scenes[scene_name]->createDescriptorSetsForScene(m_swap_chain_extent, m_allocator, m_descriptor_set_layout, m_csm, m_device);
 
     static double lastTime = glfwGetTime();
 
@@ -205,6 +208,49 @@ void Renderer::drawScene(const std::string &scene_name)
     
     vkResetFences(m_device, 1, &m_in_flight_fences[current_frame]);
     vkResetCommandBuffer(m_command_buffers[current_frame], 0);
+
+    _CascadedShadowMapData csmData;
+    for (int i = 0; i < 4; ++i)
+        csmData.lightViewProj[i] = m_csm.lightViewProj[i];
+    csmData.cascadeSplits = glm::vec4(
+        m_csm.cascadeSplits[0],
+        m_csm.cascadeSplits[1],
+        m_csm.cascadeSplits[2],
+        m_csm.cascadeSplits[3]
+    );
+    csmData.lightDir = m_scenes[scene_name]->scene_data.dirLight;
+    csmData.cascadeCount = 4;
+
+    memcpy(m_scenes[scene_name]->scene_data.csmUniformBufferMapped, &csmData, sizeof(csmData));
+
+    updateCascadedShadowMatrices(m_csm,
+                                 m_scenes[scene_name]->scene_data.dirLight,
+                                 glm::vec3(glm::inverse(m_scenes[scene_name]->scene_data.view) * glm::vec4(0,0,0,1)),
+                                 m_scenes[scene_name]->scene_data.view,
+                                 m_scenes[scene_name]->scene_data.proj,
+                                 m_scenes[scene_name]->draw_distance);
+
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    vkBeginCommandBuffer(m_command_buffers[current_frame], &beginInfo);
+
+    recordShadowMapPass(m_command_buffers[current_frame],
+                        m_scenes[scene_name]->objects,
+                        m_csm,
+                        m_scenes[scene_name]->scene_data,
+                        m_csm.pipelineLayout,
+                        current_frame);
+
+    vkEndCommandBuffer(m_command_buffers[current_frame]);
+
+    VkSubmitInfo submit{};
+    submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit.commandBufferCount = 1;
+    submit.pCommandBuffers = &m_command_buffers[current_frame];
+    vkQueueSubmit(m_graphics_queue, 1, &submit, VK_NULL_HANDLE);
+    vkQueueWaitIdle(m_graphics_queue); 
+
     recordCommandBuffer(m_command_buffers[current_frame], m_threads, m_scenes[scene_name]->objects, imageIndex, m_swap_chain_extent, m_render_pass, m_swap_chain_frame_buffers, m_graphics_pipeline, m_pipeline_layout, current_frame, m_scenes[scene_name]->scene_data, m_device);
     
     VkSubmitInfo submitInfo = {};
@@ -295,6 +341,7 @@ void Renderer::addObject(const std::string &scene_name, const std::string &name,
     createTextureImageView(&object->normalImageView, object->normalImage, m_device);
 
     object->sampler = &m_sampler;
+    object->csm_sampler = &m_csm_sampler;
 
     computeAABB(*object);
 
@@ -343,6 +390,7 @@ void Renderer::addObject(const std::string &scene_name, const std::string &name,
 
 
     object->sampler = &m_sampler;
+    object->csm_sampler = &m_csm_sampler;
 
     computeAABB(*object);
 
@@ -402,6 +450,7 @@ void Renderer::addObject(const tiny_engine::Object &obj)
 
 
     object->sampler = &m_sampler;
+    object->csm_sampler = &m_csm_sampler;
 
     computeAABB(*object);
 

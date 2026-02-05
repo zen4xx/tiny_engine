@@ -4,6 +4,7 @@
 #include "renderer_util.h"
 #include "../scene/scene.h"
 #include <cstdint>
+#include <vulkan/vulkan_core.h>
 
 namespace tiny_engine
 {
@@ -72,7 +73,7 @@ public:
     inline void updateScene(const std::string &scene_name)
     {
         m_scenes[scene_name]->destroyDescriptorPool(m_device);
-        m_scenes[scene_name]->createDescriptorSetsForScene(m_swap_chain_extent, m_allocator, m_descriptor_set_layout, m_device);
+        m_scenes[scene_name]->createDescriptorSetsForScene(m_swap_chain_extent, m_allocator, m_descriptor_set_layout, m_csm, m_device);
     };
 
 private:
@@ -117,6 +118,7 @@ private:
     VkExtent2D m_swap_chain_extent;
 
     VkSampler m_sampler;
+    VkSampler m_csm_sampler;
 
     VkSampleCountFlagBits m_msaa_samples = VK_SAMPLE_COUNT_1_BIT;
 
@@ -135,6 +137,8 @@ private:
 
     float fps = 0;
     float m_delta_time = 0;
+
+    _CascadedShadowMap m_csm;
 
     std::unordered_map<std::string, std::unique_ptr<_Scene>> m_scenes;
 
