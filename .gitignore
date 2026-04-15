@@ -1,12 +1,27 @@
-*.cmake
+```
+# CMake build artifacts
 CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
 Makefile
-/CMakeFiles
-/.vscode
-/build
-/_deps
-/.cache
-log
-compile_commands.json
-Tiny_engine
-libTiny_engine.a
+
+# Executables
+tiny_engine
+
+# Logs and temp files
+*.log
+*.tmp
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# Editors
+.vscode/
+.idea/
+
+# OS specific
+.DS_Store
+Thumbs.db
+```

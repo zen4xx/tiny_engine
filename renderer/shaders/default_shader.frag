@@ -7,12 +7,14 @@ layout(location = 2) in vec3  fragCameraPos;
 layout(location = 3) in vec3  fragPos;
 layout(location = 4) in vec3  fragTangent;
 layout(location = 5) in vec3  fragBitangent;
+layout(location = 6) in vec4 fragPosLightSpace;
 
 layout(location = 0) out vec4 outColor;
 
 layout(binding = 1) uniform sampler2D texSampler;    
 layout(binding = 2) uniform sampler2D mrSampler;      
 layout(binding = 3) uniform sampler2D normalSampler;  
+layout(binding = 4) uniform sampler2DShadow shadowMap;
 
 const float PI = 3.14159265359;
 
@@ -27,6 +29,8 @@ layout(binding = 0) uniform UniformBufferObject {
     vec4 point_light_pos[MAX_POINT_LIGHTS_COUNT];
 
     int point_light_count;
+    
+    mat4 lightSpaceMatrix;
 } ubo;
 
 // ----------------------------------------------------------------------------
@@ -65,6 +69,39 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0) {
     return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
 }
 
+float calculateShadow(vec3 fragPosLightSpace) {
+    // Perform perspective divide
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    // Transform from [0,1] to [-1,1]
+    projCoords = projCoords * 0.5 + 0.5;
+    
+    // Check if fragment is behind the light
+    if(projCoords.z > 1.0)
+        return 0.0;
+    
+    // Get closest depth value from light's perspective
+    float closestDepth = texture(shadowMap, projCoords.xy).r;
+    // Get depth of current fragment from light's perspective
+    float currentDepth = projCoords.z;
+    
+    // Calculate bias to avoid shadow acne
+    float bias = 0.005;
+    
+    // Check whether current frag pos is in shadow with PCF
+    float shadow = 0.0;
+    vec2 texelSize = 1.0 / vec2(2048.0); // Assuming 2048x2048 shadow map
+    
+    for(int x = -1; x <= 1; ++x) {
+        for(int y = -1; y <= 1; ++y) {
+            float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r; 
+            shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;        
+        }    
+    }
+    shadow /= 9.0;
+    
+    return shadow;
+}
+
 void main() {
     vec3 albedo    = texture(texSampler,     fragTexCoord).rgb;
     vec2 mr        = texture(mrSampler, fragTexCoord).bg;
@@ -76,6 +113,10 @@ void main() {
     vec3 F0 = mix(vec3(0.04), albedo, metalness);
 
     vec3 Ld = normalize(-ubo.dirLight);
+    
+    // Calculate shadow factor
+    float shadow = calculateShadow(fragPosLightSpace.xyz);
+    
     vec3 Hd = normalize(V + Ld);
     float NDFd = DistributionGGX(N, Hd, roughness);
     float Gd   = GeometrySmith(N, V, Ld, roughness);
@@ -84,7 +125,8 @@ void main() {
                       / (4.0 * max(dot(N, V), 0.0) * max(dot(N, Ld), 0.0) + 0.0001);
     vec3 kD_d = (vec3(1.0) - Fd) * (1.0 - metalness) + vec3(0.05);
     float NdotLd = max(dot(N, Ld), 0.0);
-    vec3 irradiance_d = ubo.ambient + ubo.dirLightColor * NdotLd;
+    // Apply shadow to directional light contribution
+    vec3 irradiance_d = ubo.ambient + ubo.dirLightColor * NdotLd * (1.0 - shadow);
 
     vec3 Lo = (kD_d * albedo + specular_d) * irradiance_d;
 

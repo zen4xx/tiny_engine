@@ -54,6 +54,9 @@ public:
     inline void setPointLight(const std::string &scene_name, glm::vec3 pos, uint8_t index) { m_scenes[scene_name]->scene_data.pointLightPos[index] = glm::vec4(pos.x, pos.y, pos.z, 0.0f); };
     inline void setPointLightColor(const std::string &scene_name, glm::vec3 color, uint8_t index) { m_scenes[scene_name]->scene_data.pointLightColors[index] = glm::vec4(color.x, color.y, color.z, 0.0f); };
     inline void setPointLightsCount(const std::string &scene_name, int count) { m_scenes[scene_name]->scene_data.pointLightsCount = count; };
+    
+    // Shadow mapping public API
+    inline void setLightSpaceMatrix(const std::string &scene_name, glm::mat4 lightSpaceMatrix) { m_scenes[scene_name]->scene_data.lightSpaceMatrix = lightSpaceMatrix; };
 
     // Must be called before setWindow
     inline void setThreadCount(uint8_t count) { m_thread_count = count; };
@@ -127,6 +130,20 @@ private:
     VkImage m_color_image;
     VmaAllocation m_color_image_memory;
     VkImageView m_color_image_view;
+    
+    // Shadow mapping resources
+    VkImage m_shadow_map_image;
+    VmaAllocation m_shadow_map_image_memory;
+    VkImageView m_shadow_map_image_view;
+    VkSampler m_shadow_map_sampler;
+    VkRenderPass m_shadow_render_pass;
+    VkPipelineLayout m_shadow_pipeline_layout;
+    VkPipeline m_shadow_pipeline;
+    VkShaderModule m_shadow_vert_shader_module;
+    VkShaderModule m_shadow_frag_shader_module;
+    VkFramebuffer m_shadow_framebuffer;
+    VkCommandBuffer m_shadow_command_buffer;
+    VkCommandPool m_shadow_command_pool;
 
     uint32_t current_frame = 0;
 

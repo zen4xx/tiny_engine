@@ -110,6 +110,8 @@ struct _UniformBufferObject
     alignas(16) glm::vec4 point_light_pos[MAX_POINT_LIGHTS_COUNT]; // w for padding
 
     alignas(4) int point_lights_count;
+    
+    alignas(16) glm::mat4 lightSpaceMatrix;
 };
 
 struct _PushConstantsData
@@ -166,6 +168,7 @@ struct _SceneData
     
     glm::mat4 view;
     glm::mat4 proj;
+    glm::mat4 lightSpaceMatrix;
     
     VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
     std::vector<VkDescriptorSet> descriptorSets;
@@ -207,6 +210,16 @@ void createTextureSampler(VkSampler *texture_sampler, VkPhysicalDevice physical_
 void createDepthResources(VkImage &depth_image, VmaAllocation &depth_image_memory, VkImageView &depth_image_view, VmaAllocator allocator, VkExtent2D swap_chain_extent, VkQueue graphics_queue, VkCommandPool command_pool, VkSampleCountFlagBits msaa_samples, VkPhysicalDevice physical_device, VkDevice device);
 void createColorResources(VkImage &color_image, VmaAllocation &color_image_memory, VkImageView &color_image_view, VmaAllocator allocator, VkExtent2D swap_chain_extent, VkFormat swap_chain_image_format, VkQueue graphics_queue, VkCommandPool command_pool, VkSampleCountFlagBits msaa_samples, VkDevice device);
 void computeAABB(_Object& obj);
+
+// Shadow mapping functions
+void createImage(uint32_t width, uint32_t height, VkFormat format, VkSampleCountFlagBits sample_count, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage &image, VmaAllocation &image_memory, VmaAllocator allocator);
+void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout, VkCommandPool command_pool, VkQueue graphics_queue, VkDevice device);
+VkFormat findDepthFormat(VkPhysicalDevice physical_device);
+void createShaderModule(const std::vector<char> &code, VkShaderModule *shader_module, VkDevice device);
+void createShadowMapResources(VkImage &shadow_map_image, VmaAllocation &shadow_map_image_memory, VkImageView &shadow_map_image_view, VkSampler &shadow_map_sampler, VmaAllocator allocator, VkExtent2D extent, VkQueue graphics_queue, VkCommandPool command_pool, VkPhysicalDevice physical_device, VkDevice device);
+void createShadowRenderPass(VkRenderPass *shadow_render_pass, VkFormat depth_format, VkSampleCountFlagBits samples, VkDevice device);
+void createShadowPipeline(const std::string vertex_shader_path, const std::string frag_shader_path, VkShaderModule *vert_shader_module, VkShaderModule *frag_shader_module, VkDescriptorSetLayout *descriptor_set_layout, VkExtent2D extent, VkRenderPass *render_pass, VkPipelineLayout *pipeline_layout, VkPipeline *pipeline, VkDevice device);
+void recordShadowCommandBuffer(VkCommandBuffer command_buffer, const std::unordered_map<std::string, std::unique_ptr<_Object>> &objects, const VkExtent2D &extent, const VkRenderPass &render_pass, const VkFramebuffer &framebuffer, const VkPipeline &graphics_pipeline, const VkPipelineLayout &pipeline_layout, const glm::mat4 &lightSpaceMatrix, const _SceneData& scene_data, VkDevice device);
 
 VkSampleCountFlagBits getMaxUsableSampleCount(VkPhysicalDevice physical_device);
 

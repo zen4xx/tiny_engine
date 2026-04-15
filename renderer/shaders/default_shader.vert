@@ -30,6 +30,9 @@ layout(location = 3) out vec3  fragPos;
 layout(location = 4) out vec3  fragTangent;
 layout(location = 5) out vec3  fragBitangent;
 
+layout(binding = 4) uniform sampler2DShadow shadowMap;
+layout(location = 6) out vec4 fragPosLightSpace;
+
 void main() {
     mat3 normalMatrix = mat3(transpose(inverse(model)));
 
