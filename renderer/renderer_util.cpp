@@ -1,3 +1,5 @@
+#include "glm/ext/vector_float3.hpp"
+#include <cstddef>
 #include <vulkan/vulkan_core.h>
 #define VMA_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
@@ -1551,7 +1553,7 @@ void createDescriptorSetLayout(VkDescriptorSetLayout *descriptor_set_layout, VkS
     csmUBOLayoutBinding.binding = 4;
     csmUBOLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     csmUBOLayoutBinding.descriptorCount = 1;
-    csmUBOLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    csmUBOLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT;
     csmUBOLayoutBinding.pImmutableSamplers = nullptr;
 
     VkDescriptorSetLayoutBinding shadowMapBindings[4];
@@ -1596,7 +1598,7 @@ void createUniformBuffer(VkBuffer *uniform_buffer, VmaAllocation *uniform_buffer
 void createDescriptorPool(VkDescriptorPool *descriptor_pool, uint32_t descriptor_count, VmaAllocator allocator, VkDevice device)
 {
 
-    std::array<VkDescriptorPoolSize, 4> poolSizes{};
+    std::array<VkDescriptorPoolSize, 9> poolSizes{};
 
     poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     poolSizes[0].descriptorCount = descriptor_count;
@@ -1609,6 +1611,21 @@ void createDescriptorPool(VkDescriptorPool *descriptor_pool, uint32_t descriptor
 
     poolSizes[3].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     poolSizes[3].descriptorCount = descriptor_count;
+    
+    poolSizes[4].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    poolSizes[4].descriptorCount = descriptor_count;
+
+    poolSizes[5].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    poolSizes[5].descriptorCount = descriptor_count;
+
+    poolSizes[6].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    poolSizes[6].descriptorCount = descriptor_count;
+
+    poolSizes[7].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    poolSizes[7].descriptorCount = descriptor_count;
+
+    poolSizes[8].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    poolSizes[8].descriptorCount = descriptor_count;
 
     VkDescriptorPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -1982,11 +1999,11 @@ void computeAABB(_Object& obj) {
     obj.aabbMax = max;  
 }
 
-void createCascadedShadowMap(_CascadedShadowMap& csm, VkExtent2D swapChainExtent, VmaAllocator allocator, VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue graphicsQueue)
+void createCascadedShadowMap(_CascadedShadowMap& csm, VkExtent2D swapChainExtent, VmaAllocator allocator, VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue graphicsQueue, VkDescriptorSetLayout layout)
 {
     const int N = _CascadedShadowMap::CASCADE_COUNT;
     const VkFormat depthFormat = findDepthFormat(physicalDevice);
-    const uint32_t shadowMapRes = 2048; // можно параметризовать
+    const uint32_t shadowMapRes = 2048;
 
     // Render pass (depth-only)
     {
@@ -2081,12 +2098,15 @@ void createCascadedShadowMap(_CascadedShadowMap& csm, VkExtent2D swapChainExtent
         plInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         plInfo.pushConstantRangeCount = 1;
         plInfo.pPushConstantRanges = &pcRange;
+        plInfo.setLayoutCount = 1;
+        plInfo.pSetLayouts = &layout;
+
         vkCreatePipelineLayout(device, &plInfo, nullptr, &csm.pipelineLayout);
     }
 
     // Graphics pipeline (shadow depth-only)
     {
-        auto vertCode = readFile("tiny_engine_assets/shaders/shadow.vert.spv");
+        auto vertCode = readFile("tiny_engine_assets/shaders/shadow.spv");
         VkShaderModule vertShader;
         createShaderModule(vertCode, &vertShader, device);
 
@@ -2096,15 +2116,23 @@ void createCascadedShadowMap(_CascadedShadowMap& csm, VkExtent2D swapChainExtent
         stage.module = vertShader;
         stage.pName = "main";
 
-        auto bindingDesc = Vertex::getBindingDescription();
-        auto attrDesc = Vertex::getAttributeDescriptions();
+        VkVertexInputBindingDescription bindingDesc{};
+        bindingDesc.binding = 0;
+        bindingDesc.stride = sizeof(glm::vec3);
+        bindingDesc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+        VkVertexInputAttributeDescription attrDesc{};
+        attrDesc.binding = 0;
+        attrDesc.location = 0;
+        attrDesc.format = VK_FORMAT_R32G32B32_SFLOAT;
+        attrDesc.offset = offsetof(Vertex, pos);
 
         VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
         vertexInputInfo.vertexBindingDescriptionCount = 1;
         vertexInputInfo.pVertexBindingDescriptions = &bindingDesc;
-        vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attrDesc.size());
-        vertexInputInfo.pVertexAttributeDescriptions = attrDesc.data();
+        vertexInputInfo.vertexAttributeDescriptionCount = 1;
+        vertexInputInfo.pVertexAttributeDescriptions = &attrDesc;
 
         VkPipelineInputAssemblyStateCreateInfo inputAsm{};
         inputAsm.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -2254,14 +2282,17 @@ void recordShadowMapPass(VkCommandBuffer cmd, const std::unordered_map<std::stri
         VkClearValue clear{1.0f, 0};
         rpInfo.clearValueCount = 1;
         rpInfo.pClearValues = &clear;
-        vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, csm.pipeline);
 
         VkViewport vp{0, 0, (float)shadowMapRes, (float)shadowMapRes, 0, 1};
         VkRect2D sc{{0,0}, {shadowMapRes, shadowMapRes}};
         vkCmdSetViewport(cmd, 0, 1, &vp);
         vkCmdSetScissor(cmd, 0, 1, &sc);
+
+        vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, csm.pipeline);
+
+        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &sceneData.descriptorSets[objects.begin()->second->dc_index], 0, nullptr);
 
         for (const auto& objPair : objects)
         {

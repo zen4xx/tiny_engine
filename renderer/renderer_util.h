@@ -235,7 +235,7 @@ void createTextureSampler(VkSampler *texture_sampler, VkPhysicalDevice physical_
 void createDepthResources(VkImage &depth_image, VmaAllocation &depth_image_memory, VkImageView &depth_image_view, VmaAllocator allocator, VkExtent2D swap_chain_extent, VkQueue graphics_queue, VkCommandPool command_pool, VkSampleCountFlagBits msaa_samples, VkPhysicalDevice physical_device, VkDevice device);
 void createColorResources(VkImage &color_image, VmaAllocation &color_image_memory, VkImageView &color_image_view, VmaAllocator allocator, VkExtent2D swap_chain_extent, VkFormat swap_chain_image_format, VkQueue graphics_queue, VkCommandPool command_pool, VkSampleCountFlagBits msaa_samples, VkDevice device);
 void computeAABB(_Object& obj);
-void createCascadedShadowMap(_CascadedShadowMap& csm, VkExtent2D swapChainExtent, VmaAllocator allocator, VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue graphicsQueue);
+void createCascadedShadowMap(_CascadedShadowMap& csm, VkExtent2D swapChainExtent, VmaAllocator allocator, VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue graphicsQueue, VkDescriptorSetLayout layout);
 void destroyCascadedShadowMap(_CascadedShadowMap& csm, VmaAllocator allocator, VkDevice device);
 void updateCascadedShadowMatrices(_CascadedShadowMap& csm, const glm::vec3& lightDir, const glm::vec3& cameraPos, const glm::mat4& cameraView, const glm::mat4& cameraProj, float drawDistance);
 void recordShadowMapPass(VkCommandBuffer cmd, const std::unordered_map<std::string, std::unique_ptr<_Object>>& objects, const _CascadedShadowMap& csm, const _SceneData& sceneData, VkPipelineLayout pipelineLayout, uint32_t currentFrame);

@@ -5,7 +5,7 @@ layout(push_constant) uniform PushConsts {
 
 layout(location = 0) in vec3 inPosition;
 
-layout(binding = 0) uniform UniformBufferCSM {
+layout(binding = 4) uniform UniformBufferCSM {
     mat4 lightViewProj[4];
 } ubo_csm;
 

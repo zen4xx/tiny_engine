@@ -2,7 +2,6 @@
 #define MAX_POINT_LIGHTS_COUNT 16
 #define CASCADE_COUNT 4
 
-// --- Входные данные ---
 layout(location = 0) in vec2  fragTexCoord;
 layout(location = 1) in vec3  fragNormal;
 layout(location = 2) in vec3  fragCameraPos;
@@ -10,15 +9,12 @@ layout(location = 3) in vec3  fragPos;
 layout(location = 4) in vec3  fragTangent;
 layout(location = 5) in vec3  fragBitangent;
 
-// --- Выход ---
 layout(location = 0) out vec4 outColor;
 
-// --- Текстуры ---
 layout(binding = 1) uniform sampler2D texSampler;        // albedo
 layout(binding = 2) uniform sampler2D mrSampler;         // metal/roughness
 layout(binding = 3) uniform sampler2D normalSampler;     // normal map
 
-// --- Основной UBO ---
 layout(binding = 0) uniform UniformBufferObject {
     mat4 view;
     mat4 proj;
@@ -33,25 +29,23 @@ layout(binding = 0) uniform UniformBufferObject {
 // --- CSM UBO ---
 layout(binding = 4) uniform CSMData {
     mat4 lightViewProj[CASCADE_COUNT];
-    vec4 cascadeSplits; // x = split0, y = split1, z = split2, w = split3
+    vec4 cascadeSplits; 
     vec3 lightDir;
     int cascadeCount;
 } csm;
 
-// --- Теневые карты (sampler2DShadow) ---
 layout(binding = 5) uniform sampler2DShadow shadowMap0;
 layout(binding = 6) uniform sampler2DShadow shadowMap1;
 layout(binding = 7) uniform sampler2DShadow shadowMap2;
 layout(binding = 8) uniform sampler2DShadow shadowMap3;
 
-// --- Настройки теней ---
 const float SHADOW_BIAS = 0.005f;
 const int PCF_KERNEL_SIZE = 2;
-const float PCF_STEP = 1.0 / 2048.0; // соответствует разрешению shadow map из патча
+const float PCF_STEP = 1.0 / 2048.0; 
 const float PI = 3.14159265359;
 
 // ----------------------------------------------------------------------------
-// PBR helper functions (без изменений)
+// PBR helper functions 
 // ----------------------------------------------------------------------------
 vec3 getNormalTangentSpace() {
     vec3 tex = texture(normalSampler, fragTexCoord).xyz;
@@ -85,16 +79,13 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0) {
     return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
 }
 
-// ----------------------------------------------------------------------------
-// Теневая функция с PCF
-// ----------------------------------------------------------------------------
 float sampleShadowPCF(sampler2DShadow shadowMap, vec4 fragPosLightSpace)
 {
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     projCoords = projCoords * 0.5 + 0.5; // [-1,1] → [0,1]
 
     if (projCoords.z > 1.0 || any(lessThan(projCoords.xy, vec2(0.0))) || any(greaterThan(projCoords.xy, vec2(1.0))))
-        return 1.0; // вне тени
+        return 1.0; 
 
     float shadow = 0.0;
     for (int x = -PCF_KERNEL_SIZE; x <= PCF_KERNEL_SIZE; ++x)
@@ -108,9 +99,6 @@ float sampleShadowPCF(sampler2DShadow shadowMap, vec4 fragPosLightSpace)
     return shadow / (pow(2 * PCF_KERNEL_SIZE + 1, 2));
 }
 
-// ----------------------------------------------------------------------------
-// Основная функция
-// ----------------------------------------------------------------------------
 void main()
 {
     vec3 albedo    = texture(texSampler, fragTexCoord).rgb;
@@ -144,11 +132,9 @@ void main()
         shadowFactor = sampleShadowPCF(shadowMap3, fragPosLightSpace);
     }
 
-    // === Освещение ===
     vec3 Lo = ubo.ambient * albedo; // ambient
 
-    // Направленный свет
-    vec3 Ld = normalize(-ubo.dirLight); // направление к источнику
+    vec3 Ld = normalize(-ubo.dirLight); 
     vec3 Hd = normalize(V + Ld);
     float NDFd = DistributionGGX(N, Hd, roughness);
     float Gd   = GeometrySmith(N, V, Ld, roughness);
@@ -159,14 +145,13 @@ void main()
     vec3 radianceDir = ubo.dirLightColor * NdotLd;
     Lo += (kD_d * albedo / PI + kS_d * (NDFd * Gd / (4.0 * max(dot(N, V), 0.001) * max(dot(N, Ld), 0.001)))) * radianceDir * shadowFactor;
 
-    // Точечные источники
     for (int i = 0; i < ubo.point_light_count; ++i)
     {
         vec3 lightPos   = ubo.point_light_pos[i].xyz;
         vec3 lightColor = ubo.point_light_colors[i].xyz;
         vec3 Lp = normalize(lightPos - fragPos);
         float dist = length(lightPos - fragPos);
-        float attenuation = 1.0 / (dist * dist + 0.01); // небольшой offset для стабильности
+        float attenuation = 1.0 / (dist * dist + 0.01); 
         vec3 radiance = lightColor * attenuation;
         vec3 Hp = normalize(V + Lp);
         float NDFp = DistributionGGX(N, Hp, roughness);

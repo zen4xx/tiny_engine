@@ -158,7 +158,7 @@ void Renderer::setWindow(GLFWwindow *window)
     createFramebuffers(m_swap_chain_frame_buffers, m_swap_chain_image_views, m_render_pass, m_swap_chain_extent, m_color_image_view, m_depth_image_view, m_device);
     createCommandBuffers(m_command_buffers, m_command_pool, MAX_FRAMES_IN_FLIGHT, m_device);
     createTextureSampler(&m_sampler, m_physical_device, m_device);
-    createCascadedShadowMap(m_csm, m_swap_chain_extent, m_allocator, m_device, m_physical_device, m_command_pool, m_graphics_queue);
+    createCascadedShadowMap(m_csm, m_swap_chain_extent, m_allocator, m_device, m_physical_device, m_command_pool, m_graphics_queue, m_descriptor_set_layout);
     
     m_threads.resize(m_thread_count);
     for (unsigned int i = 0; i < m_thread_count; ++i)
