@@ -10,5 +10,5 @@ layout(binding = 4) uniform UniformBufferCSM {
 } ubo_csm;
 
 void main() {
-    gl_Position = ubo_csm.lightViewProj[0] * pc.model * vec4(inPosition, 1.0);
+    gl_Position = ubo_csm.lightViewProj[1] * pc.model * vec4(inPosition, 1.0);
 }

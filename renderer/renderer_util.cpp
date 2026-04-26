@@ -2110,11 +2110,23 @@ void createCascadedShadowMap(_CascadedShadowMap& csm, VkExtent2D swapChainExtent
         VkShaderModule vertShader;
         createShaderModule(vertCode, &vertShader, device);
 
-        VkPipelineShaderStageCreateInfo stage{};
-        stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        stage.stage = VK_SHADER_STAGE_VERTEX_BIT;
-        stage.module = vertShader;
-        stage.pName = "main";
+        auto fragCode = readFile("tiny_engine_assets/shaders/shadow_frag.spv");
+        VkShaderModule fragShader;
+        createShaderModule(fragCode, &fragShader, device);
+
+        VkPipelineShaderStageCreateInfo vertShaderStageCreateInfo{};
+        vertShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        vertShaderStageCreateInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+        vertShaderStageCreateInfo.module = vertShader;
+        vertShaderStageCreateInfo.pName = "main";
+
+        VkPipelineShaderStageCreateInfo fragShaderStageCreateInfo{};
+        fragShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        fragShaderStageCreateInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+        fragShaderStageCreateInfo.module = fragShader;
+        fragShaderStageCreateInfo.pName = "main";
+
+        VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageCreateInfo, fragShaderStageCreateInfo};
 
         VkVertexInputBindingDescription bindingDesc{};
         bindingDesc.binding = 0;
@@ -2173,24 +2185,39 @@ void createCascadedShadowMap(_CascadedShadowMap& csm, VkExtent2D swapChainExtent
         depthStencil.depthBoundsTestEnable = VK_FALSE;
         depthStencil.stencilTestEnable = VK_FALSE;
 
+        VkPipelineColorBlendAttachmentState colorBlendAttachment{};
+        colorBlendAttachment.colorWriteMask = 0; 
+        colorBlendAttachment.blendEnable = VK_FALSE;
+
+        VkPipelineColorBlendStateCreateInfo colorBlending{};
+        colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+        colorBlending.logicOpEnable = VK_FALSE;
+        colorBlending.attachmentCount = 1; 
+        colorBlending.pAttachments = &colorBlendAttachment;
+
         VkGraphicsPipelineCreateInfo pipelineInfo{};
         pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-        pipelineInfo.stageCount = 1;
-        pipelineInfo.pStages = &stage;
+        pipelineInfo.stageCount = 2;
+        pipelineInfo.pStages = shaderStages;
         pipelineInfo.pVertexInputState = &vertexInputInfo;
         pipelineInfo.pInputAssemblyState = &inputAsm;
         pipelineInfo.pViewportState = &viewportState;
         pipelineInfo.pRasterizationState = &rasterizer;
         pipelineInfo.pMultisampleState = &multisampling;
         pipelineInfo.pDepthStencilState = &depthStencil;
+        pipelineInfo.pColorBlendState = &colorBlending;
         pipelineInfo.layout = csm.pipelineLayout;
         pipelineInfo.renderPass = csm.renderPass;
         pipelineInfo.subpass = 0;
 
-        vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &csm.pipeline);
+        VkResult res = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &csm.pipeline);
+        if (res != VK_SUCCESS) 
+            err("Failed to create depth pipeline", res);
 
         vkDestroyShaderModule(device, vertShader, nullptr);
-    }
+        vkDestroyShaderModule(device, fragShader, nullptr);
+
+    } 
 }
 
 void updateCascadedShadowMatrices(_CascadedShadowMap& csm, const glm::vec3& lightDir, const glm::vec3& cameraPos, const glm::mat4& cameraView, const glm::mat4& cameraProj, float drawDistance)
