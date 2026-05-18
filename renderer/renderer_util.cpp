@@ -670,13 +670,14 @@ void createLogicalDevice(VkQueue *graphicsQueue, VkQueue *presentQueue, VkDevice
     createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
     createInfo.ppEnabledExtensionNames = deviceExtensions.data();
 
-    if (isDebug)
-    {
-        createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-        createInfo.ppEnabledLayerNames = validationLayers.data();
-    }
-    else
-        createInfo.enabledLayerCount = 0;
+    createInfo.enabledLayerCount = 0;
+    // if (isDebug)
+    // {
+    //     createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+    //     createInfo.ppEnabledLayerNames = validationLayers.data();
+    // }
+    // else
+    //     createInfo.enabledLayerCount = 0;
 
     if (vkCreateDevice(*physical_device, &createInfo, nullptr, device) != VK_SUCCESS)
         err("Failed to create logical device", 1);
@@ -1813,101 +1814,172 @@ bool loadModel(const std::string &filename, _Object *object)
         return false;
     }
 
+    size_t baseVertexOffset = object->vertices.size();
+    size_t baseIndexOffset = object->indices.size();
+
     for (const auto &mesh : model.meshes)
     {
         for (const auto &primitive : mesh.primitives)
         {
+            if (primitive.mode != TINYGLTF_MODE_TRIANGLES && primitive.mode != -1) 
+            {
+                if (primitive.mode != TINYGLTF_MODE_TRIANGLES) {
+                    err("Unsupported primitive mode (only TRIANGLES supported)", 1);
+                    continue;
+                }
+            }
 
             if (primitive.attributes.find("POSITION") == primitive.attributes.end() ||
-                primitive.attributes.find("TEXCOORD_0") == primitive.attributes.end()||
+                primitive.attributes.find("TEXCOORD_0") == primitive.attributes.end() ||
                 primitive.attributes.find("NORMAL") == primitive.attributes.end())
             {
                 err("Missing POSITION, TEXCOORD_0 or NORMAL attribute in primitive", 1);
                 continue;
             }
 
-            const tinygltf::Accessor &positionAccessor = model.accessors[primitive.attributes.at("POSITION")];
-            const tinygltf::BufferView &positionView = model.bufferViews[positionAccessor.bufferView];
-            const tinygltf::Buffer &positionBuffer = model.buffers[positionView.buffer];
+            auto readAttributeData = [&](const tinygltf::Accessor &accessor, 
+                                         const tinygltf::Model &mdl,
+                                         int components) -> std::vector<float> 
+            {
+                const tinygltf::BufferView &view = mdl.bufferViews[accessor.bufferView];
+                const tinygltf::Buffer &buffer = mdl.buffers[view.buffer];
+                
+                const uint8_t *basePtr = buffer.data.data() + view.byteOffset + accessor.byteOffset;
+                size_t componentSize = tinygltf::GetComponentSizeInBytes(static_cast<uint32_t>(accessor.componentType));
+                size_t stride = view.byteStride != 0 ? view.byteStride : 
+                    (components * componentSize);
+                
+                std::vector<float> result;
+                result.reserve(accessor.count * components);
+                
+                for (size_t i = 0; i < accessor.count; ++i)
+                {
+                    const uint8_t *ptr = basePtr + i * stride;
+                    if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT)
+                    {
+                        const float *data = reinterpret_cast<const float*>(ptr);
+                        for (int c = 0; c < components; ++c) result.push_back(data[c]);
+                    }
+                    else if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT)
+                    {
+                        const uint16_t *data = reinterpret_cast<const uint16_t*>(ptr);
+                        for (int c = 0; c < components; ++c) {
+                            float val = static_cast<float>(data[c]);
+                            if (accessor.normalized) val /= 65535.0f;
+                            result.push_back(val);
+                        }
+                    }
+                    else if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE)
+                    {
+                        const uint8_t *data = reinterpret_cast<const uint8_t*>(ptr);
+                        for (int c = 0; c < components; ++c) {
+                            float val = static_cast<float>(data[c]);
+                            if (accessor.normalized) val /= 255.0f;
+                            result.push_back(val);
+                        }
+                    }
+                    else if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_SHORT)
+                    {
+                        const int16_t *data = reinterpret_cast<const int16_t*>(ptr);
+                        for (int c = 0; c < components; ++c) {
+                            float val = static_cast<float>(data[c]);
+                            if (accessor.normalized) val /= 32767.0f;
+                            result.push_back(val);
+                        }
+                    }
+                    else if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_BYTE)
+                    {
+                        const int8_t *data = reinterpret_cast<const int8_t*>(ptr);
+                        for (int c = 0; c < components; ++c) {
+                            float val = static_cast<float>(data[c]);
+                            if (accessor.normalized) val /= 127.0f;
+                            result.push_back(val);
+                        }
+                    }
+                    else
+                    {
+                        for (int c = 0; c < components; ++c) result.push_back(0.0f);
+                    }
+                }
+                return result;
+            };
 
-            const tinygltf::Accessor &texCoordAccessor = model.accessors[primitive.attributes.at("TEXCOORD_0")];
-            const tinygltf::BufferView &texCoordView = model.bufferViews[texCoordAccessor.bufferView];
-            const tinygltf::Buffer &texCoordBuffer = model.buffers[texCoordView.buffer];
-
-            const tinygltf::Accessor &normalAccessor = model.accessors[primitive.attributes.at("NORMAL")];
-            const tinygltf::BufferView &normalView = model.bufferViews[normalAccessor.bufferView];
-            const tinygltf::Buffer &normalBuffer = model.buffers[normalView.buffer];
-
-            const float *positionData = reinterpret_cast<const float *>(positionBuffer.data.data() + positionView.byteOffset + positionAccessor.byteOffset);
-            const float *texCoordData = reinterpret_cast<const float *>(texCoordBuffer.data.data() + texCoordView.byteOffset + texCoordAccessor.byteOffset);
-            const float *normalData = reinterpret_cast<const float *>(normalBuffer.data.data() + normalView.byteOffset + normalAccessor.byteOffset);
-
-            const float *tangentData = nullptr;
-            if (primitive.attributes.find("TANGENT") != primitive.attributes.end()) {
-                const tinygltf::Accessor &tangentAccessor = model.accessors[primitive.attributes.at("TANGENT")];
-                const tinygltf::BufferView &tangentView = model.bufferViews[tangentAccessor.bufferView];
-                const tinygltf::Buffer &tangentBuffer = model.buffers[tangentView.buffer];
-                tangentData = reinterpret_cast<const float*>(tangentBuffer.data.data() + tangentView.byteOffset + tangentAccessor.byteOffset);
+            const tinygltf::Accessor &posAcc = model.accessors[primitive.attributes.at("POSITION")];
+            const tinygltf::Accessor &texAcc = model.accessors[primitive.attributes.at("TEXCOORD_0")];
+            const tinygltf::Accessor &normAcc = model.accessors[primitive.attributes.at("NORMAL")];
+            
+            std::vector<float> posData = readAttributeData(posAcc, model, 3);
+            std::vector<float> texData = readAttributeData(texAcc, model, 2);
+            std::vector<float> normData = readAttributeData(normAcc, model, 3);
+            
+            std::vector<float> tangentData;
+            bool hasTangent = primitive.attributes.find("TANGENT") != primitive.attributes.end();
+            if (hasTangent) {
+                const tinygltf::Accessor &tangAcc = model.accessors[primitive.attributes.at("TANGENT")];
+                tangentData = readAttributeData(tangAcc, model, 4);
             }
 
-
-            for (size_t i = 0; i < positionAccessor.count; ++i)
+            size_t vertexStartIdx = object->vertices.size();
+            
+            for (size_t i = 0; i < posAcc.count; ++i)
             {
                 Vertex vertex;
-
-                vertex.pos.x = positionData[i * 3 + 0];
-                vertex.pos.y = positionData[i * 3 + 1];
-                vertex.pos.z = positionData[i * 3 + 2];
-
-                vertex.texCoord.x = texCoordData[i * 2 + 0];
-                vertex.texCoord.y = texCoordData[i * 2 + 1];
-
-                vertex.normal.x = normalData[i * 3 + 0]; 
-                vertex.normal.y = normalData[i * 3 + 1]; 
-                vertex.normal.z = normalData[i * 3 + 2]; 
-
-                if (tangentData) {
+                vertex.pos = glm::vec3(posData[i*3+0], posData[i*3+1], posData[i*3+2]);
+                vertex.texCoord = glm::vec2(texData[i*2+0], texData[i*2+1]);
+                vertex.normal = glm::vec3(normData[i*3+0], normData[i*3+1], normData[i*3+2]);
+                
+                if (hasTangent && !tangentData.empty()) {
                     vertex.tangent = glm::vec4(
-                        tangentData[i*4 + 0],
-                        tangentData[i*4 + 1],
-                        tangentData[i*4 + 2],
-                        tangentData[i*4 + 3]   
+                        tangentData[i*4+0], tangentData[i*4+1], 
+                        tangentData[i*4+2], tangentData[i*4+3]
                     );
-                } 
-                else {
+                } else {
                     vertex.tangent = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
                 }
+
                 object->vertices.push_back(vertex);
             }
 
             if (primitive.indices >= 0)
             {
-                const tinygltf::Accessor &indexAccessor = model.accessors[primitive.indices];
-                const tinygltf::BufferView &indexView = model.bufferViews[indexAccessor.bufferView];
-                const tinygltf::Buffer &indexBuffer = model.buffers[indexView.buffer];
-
-                if (indexAccessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT)
+                const tinygltf::Accessor &idxAcc = model.accessors[primitive.indices];
+                const tinygltf::BufferView &idxView = model.bufferViews[idxAcc.bufferView];
+                const tinygltf::Buffer &idxBuffer = model.buffers[idxView.buffer];
+                
+                const uint8_t *idxBasePtr = idxBuffer.data.data() + idxView.byteOffset + idxAcc.byteOffset;
+                size_t idxStride = tinygltf::GetComponentSizeInBytes(static_cast<uint32_t>(idxAcc.componentType));
+                
+                for (size_t i = 0; i < idxAcc.count; ++i)
                 {
-                    const uint16_t *indexData = reinterpret_cast<const uint16_t *>(indexBuffer.data.data() + indexView.byteOffset + indexAccessor.byteOffset);
-                    for (size_t i = 0; i < indexAccessor.count; ++i)
-                    {
-                        uint16_t index = indexData[i];
-                        object->indices.push_back(index);
+                    const uint8_t *ptr = idxBasePtr + i * idxStride;
+                    uint32_t index = 0;
+                    
+                    if (idxAcc.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT) {
+                        index = *reinterpret_cast<const uint16_t*>(ptr);
+                    } else if (idxAcc.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT) {
+                        index = *reinterpret_cast<const uint32_t*>(ptr);
+                    } else if (idxAcc.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE) {
+                        index = *reinterpret_cast<const uint8_t*>(ptr);
+                    } else {
+                        err("Unsupported index component type", 1);
+                        continue;
                     }
+                    object->indices.push_back(static_cast<uint32_t>(vertexStartIdx + index));
                 }
-                else if (indexAccessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT)
-                {
-                    const uint32_t *indexData = reinterpret_cast<const uint32_t *>(indexBuffer.data.data() + indexView.byteOffset + indexAccessor.byteOffset);
-                    for (size_t i = 0; i < indexAccessor.count; ++i)
-                    {
-                        uint32_t index = indexData[i];
-                        object->indices.push_back(index);
-                    }
+            }
+            else
+            {
+                for (size_t i = 0; i < posAcc.count; ++i) {
+                    object->indices.push_back(static_cast<uint32_t>(vertexStartIdx + i));
                 }
             }
         }
     }
-    std::reverse(object->indices.begin(), object->indices.end()); // to CCW
+
+    for (size_t i = baseIndexOffset; i + 2 < object->indices.size(); i += 3) {
+        std::swap(object->indices[i], object->indices[i+1]);
+    }
+
     return true;
 }
 
