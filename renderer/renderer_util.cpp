@@ -1119,22 +1119,6 @@ void createSecondaryCommandBuffers(std::vector<VkCommandBuffer> &command_buffers
     }
 }
 
-bool isAABBVisible(const std::array<glm::vec4, 6>& planes,
-                   const glm::vec3& min, const glm::vec3& max)
-{
-    for (const auto& p : planes) {
- 
-        glm::vec3 ext;
-        ext.x = (p.x > 0.0f) ? max.x : min.x;
-        ext.y = (p.y > 0.0f) ? max.y : min.y;
-        ext.z = (p.z > 0.0f) ? max.z : min.z;
- 
-        if (glm::dot(glm::vec3(p), ext) + p.w < 0.0f)
-            return false;
-    }
-    return true;
-}
-
 #ifndef TINY_ENGINE_NO_SECONDARY_CMD_BUFFERS
 void recordSecondary(ThreadData *thread, const std::unordered_map<std::string, std::unique_ptr<_Object>> &objects, const VkExtent2D &extent, const VkRenderPass &render_pass, const VkFramebuffer &framebuffer, const VkPipeline &graphics_pipeline, const VkPipelineLayout &pipeline_layout, uint32_t current_frame, const _SceneData &scene_data, VkDevice device, typename std::unordered_map<std::string, std::unique_ptr<_Object>>::const_iterator start, typename std::unordered_map<std::string, std::unique_ptr<_Object>>::const_iterator end)
 {
@@ -1359,7 +1343,8 @@ void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData>
 
     memcpy(scene_data.uniformBufferMapped, &ubo, sizeof(ubo));
 
-    glm::mat4 vp = scene_data.proj * scene_data.view;
+
+    glm::mat4 vp = glm::transpose(scene_data.proj * scene_data.view);
 
     std::array<glm::vec4, 6> frustumPlanes;
 
@@ -1374,12 +1359,30 @@ void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData>
         float length = glm::length(glm::vec3(p));
         p /= length;
     }
+
     auto start = objects.begin();
     auto end = objects.end();
     for (auto it = start; it != end; ++it)
     {
-        if(!isAABBVisible(frustumPlanes, it->second->aabbMin, it->second->aabbMax) || !it->second->is_alive)
+        if(!it->second->is_alive)
             continue;
+
+        glm::vec3 worldCenter = glm::vec3(it->second->pc_data.model * glm::vec4(it->second->localCenter, 1.0f));
+
+        float sx = glm::length(glm::vec3(it->second->pc_data.model[0]));
+        float sy = glm::length(glm::vec3(it->second->pc_data.model[1]));
+        float sz = glm::length(glm::vec3(it->second->pc_data.model[2]));
+        float worldRadius = it->second->localRadius * std::max({sx, sy, sz});
+
+        bool visible = true;
+        for (const auto& p : frustumPlanes) {
+            if (glm::dot(glm::vec3(p), worldCenter) + p.w < -worldRadius) {
+                visible = false;
+                break;
+            }
+        }
+
+        if (!visible) continue;
 
         vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &scene_data.descriptorSets[it->second->dc_index], 0, nullptr); 
 
