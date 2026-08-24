@@ -1182,7 +1182,7 @@ void recordSecondary(ThreadData *thread, const std::unordered_map<std::string, s
 
     memcpy(scene_data.uniformBufferMapped, &ubo, sizeof(ubo));
 
-    glm::mat4 vp = scene_data.proj * scene_data.view;
+    glm::mat4 vp = glm::transpose(scene_data.proj * scene_data.view);
 
     std::array<glm::vec4, 6> frustumPlanes;
 
@@ -1201,8 +1201,25 @@ void recordSecondary(ThreadData *thread, const std::unordered_map<std::string, s
     for (auto it = start; it != end; ++it)
     {
 
-        if(!isAABBVisible(frustumPlanes, it->second->aabbMin, it->second->aabbMax) || !it->second->is_alive)
+        if(!it->second->is_alive)
             continue;
+
+        glm::vec3 worldCenter = glm::vec3(it->second->pc_data.model * glm::vec4(it->second->localCenter, 1.0f));
+
+        float sx = glm::length(glm::vec3(it->second->pc_data.model[0]));
+        float sy = glm::length(glm::vec3(it->second->pc_data.model[1]));
+        float sz = glm::length(glm::vec3(it->second->pc_data.model[2]));
+        float worldRadius = it->second->localRadius * std::max({sx, sy, sz});
+
+        bool visible = true;
+        for (const auto& p : frustumPlanes) {
+            if (glm::dot(glm::vec3(p), worldCenter) + p.w < -worldRadius) {
+                visible = false;
+                break;
+            }
+        }
+
+        if (!visible) continue;
 
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &scene_data.descriptorSets[it->second->dc_index], 0, nullptr); 
 
@@ -1983,22 +2000,17 @@ bool loadModel(const std::string &filename, _Object *object)
     return true;
 }
 
-
-void computeAABB(_Object& obj) {
+void computeBoundingSphere(_Object& obj) {
     if (obj.vertices.empty()) return;
 
     glm::vec3 min = obj.vertices[0].pos;
     glm::vec3 max = obj.vertices[0].pos;
 
     for (const auto& v : obj.vertices) {
-        min.x = std::min(min.x, v.pos.x);
-        min.y = std::min(min.y, v.pos.y);
-        min.z = std::min(min.z, v.pos.z);
-        max.x = std::max(max.x, v.pos.x);
-        max.y = std::max(max.y, v.pos.y);
-        max.z = std::max(max.z, v.pos.z);
+        min = glm::min(min, v.pos);
+        max = glm::max(max, v.pos);
     }
 
-    obj.aabbMin = min;  
-    obj.aabbMax = max;  
+    obj.localCenter = (min + max) * 0.5f;
+    obj.localRadius = glm::length(max - obj.localCenter);
 }
