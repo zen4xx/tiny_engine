@@ -37,10 +37,10 @@ Renderer::~Renderer()
 
     vkDeviceWaitIdle(m_device);
 
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)    
+    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)    
         vkDestroyFence(m_device, m_in_flight_fences[i], nullptr);
 
-    for(int i = 0; i < m_swap_chain_images.size(); ++i)
+    for(size_t i = 0; i < m_swap_chain_images.size(); ++i)
     {
         vkDestroySemaphore(m_device, m_render_finished_semaphores[i], nullptr);
         vkDestroySemaphore(m_device, m_image_available_semaphores[i], nullptr);
