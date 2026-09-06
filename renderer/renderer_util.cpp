@@ -949,7 +949,7 @@ void createGraphicsPipeline(const std::string vertex_shader_path, const std::str
     if (res != VK_SUCCESS)
         err("Failed to create graphics pipeline", res);
 }
-static std::vector<char> readFile(const std::string &filename)
+std::vector<char> readFile(const std::string &filename)
 {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
@@ -1257,7 +1257,7 @@ void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData>
     std::vector<std::thread> local_threads;
 
     auto it = objects.begin();
-    for (int i = 0; i < numThreads && it != objects.end(); ++i)
+    for (size_t i = 0; i < numThreads && it != objects.end(); ++i)
     {
         auto start = it;
         for (size_t j = 0; j < chunkSize && it != objects.end(); ++j)
@@ -1422,7 +1422,7 @@ void createSyncObjects(std::vector<VkSemaphore> &imageAvailableSemaphores, std::
         }
     }
 
-    for(int i = 0; i < swap_chain_image_count; ++i)
+    for(size_t i = 0; i < swap_chain_image_count; ++i)
     {
         if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
             vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS)
@@ -1834,7 +1834,6 @@ bool loadModel(const std::string &filename, _Object *object)
         return false;
     }
 
-    size_t baseVertexOffset = object->vertices.size();
     size_t baseIndexOffset = object->indices.size();
 
     for (const auto &mesh : model.meshes)

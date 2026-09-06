@@ -210,5 +210,5 @@ void computeBoundingSphere(_Object& obj);
 
 VkSampleCountFlagBits getMaxUsableSampleCount(VkPhysicalDevice physical_device);
 
-static std::vector<char> readFile(const std::string &filename);
+std::vector<char> readFile(const std::string &filename);
 #endif
