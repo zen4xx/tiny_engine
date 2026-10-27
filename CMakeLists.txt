@@ -82,7 +82,7 @@ set(DEFAULT_SHADER_DEFINES
     TONE_MAPPING
 )
 
-set(SHADER_DEFINES "${DEFAULT_SHADER_DEFINES}" CACHE STRING "Список #define для GLSL шейдеров (разделитель - ;)")
+set(SHADER_DEFINES "${DEFAULT_SHADER_DEFINES}" CACHE STRING "glsl shaders")
 
 message(STATUS "Shader defines: ${SHADER_DEFINES}")
 
