@@ -356,7 +356,7 @@ size_t Renderer::addObject(const std::string &scene_name, const std::string &glt
 }
 
 
-void Renderer::addObject(tiny_engine::Object &obj)
+size_t Renderer::addObject(tiny_engine::Object &obj)
 {
     _Object object;
     object.pc_data.model = obj.pos;
@@ -413,6 +413,7 @@ void Renderer::addObject(tiny_engine::Object &obj)
     // moves object to scene
     m_scenes[obj.scene_name]->objects.push_back(std::move(object));
     obj.obj_id = m_scenes[obj.scene_name]->objects.size() - 1;
+    return obj.obj_id;
 }
 
 void Renderer::deleteObject(const std::string &scene_name, size_t obj_id)

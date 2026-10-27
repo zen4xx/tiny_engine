@@ -3,6 +3,7 @@
 
 #include "renderer_util.h"
 #include "../scene/scene.h"
+#include <cstddef>
 #include <cstdint>
 
 namespace tiny_engine
@@ -39,7 +40,7 @@ public:
     // Returns object_id
     size_t addObject(const std::string &scene_name, const std::vector<Vertex> &vertices, const std::vector<uint32_t> &indices, glm::mat4 pos, const std::string &albedo_path = "_default", const std::string &mr_path = "_default", const std::string &normal_path = "_default");
     size_t addObject(const std::string &scene_name, const std::string &gltf_model_path, glm::mat4 pos, const std::string &albedo_path = "_default", const std::string &mr_path = "_default", const std::string &normal_path = "_default");
-    void addObject(tiny_engine::Object &obj);
+    size_t addObject(tiny_engine::Object &obj);
     
     void deleteObject(const std::string &scene_name, size_t obj_id); 
     void deleteObject(const tiny_engine::Object &obj); 
