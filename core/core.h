@@ -15,14 +15,15 @@ public:
     inline void update() { glfwPollEvents(); };
 
     // Must be called before drawScene
-    inline void addObject(const std::string &scene_name, const std::string &obj_name, const std::vector<Vertex> &vertices, const std::vector<uint32_t> &indices, glm::mat4 pos, const std::string &albedo_path="_default", const std::string &mr_path="_default", const std::string &normal_path="_default") { m_renderer->addObject(scene_name, obj_name, vertices, indices, pos, albedo_path, mr_path, normal_path); };
-    inline void addObject(const std::string &scene_name, const std::string &obj_name, const std::string &gltf_model_path, glm::mat4 pos, const std::string &albedo_path="_default", const std::string &mr_path="_default", const std::string &normal_path="_default") { m_renderer->addObject(scene_name, obj_name, gltf_model_path, pos, albedo_path, mr_path, normal_path); };
-    inline void addObject(const tiny_engine::Object &obj) { m_renderer->addObject(obj); };
+    // Returns a object_id
+    inline size_t addObject(const std::string &scene_name, const std::vector<Vertex> &vertices, const std::vector<uint32_t> &indices, glm::mat4 pos, const std::string &albedo_path="_default", const std::string &mr_path="_default", const std::string &normal_path="_default") { return m_renderer->addObject(scene_name, vertices, indices, pos, albedo_path, mr_path, normal_path); };
+    inline size_t addObject(const std::string &scene_name, const std::string &gltf_model_path, glm::mat4 pos, const std::string &albedo_path="_default", const std::string &mr_path="_default", const std::string &normal_path="_default") { return m_renderer->addObject(scene_name, gltf_model_path, pos, albedo_path, mr_path, normal_path); };
+    inline void addObject(tiny_engine::Object &obj) { m_renderer->addObject(obj); };
 
-    inline void deleteObject(const std::string &scene_name, const std::string &obj_name) { m_renderer->deleteObject(scene_name, obj_name); }; 
+    inline void deleteObject(const std::string &scene_name, size_t obj_id) { m_renderer->deleteObject(scene_name, obj_id); }; 
     inline void deleteObject(const tiny_engine::Object &obj) { m_renderer->deleteObject(obj); }; 
     
-    inline void moveObject(const std::string &scene_name, const std::string &obj_name, glm::mat4 pos) { m_renderer->moveObject(scene_name, obj_name, pos); };
+    inline void moveObject(const std::string &scene_name, size_t obj_id, glm::mat4 pos) { m_renderer->moveObject(scene_name, obj_id, pos); };
     inline void moveObject(const tiny_engine::Object &obj, glm::mat4 pos) { m_renderer->moveObject(obj, pos); };
 
     inline void drawScene(const std::string &scene_name) { m_renderer->drawScene(scene_name); };

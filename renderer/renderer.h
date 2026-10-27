@@ -10,7 +10,7 @@ namespace tiny_engine
     struct Object
     {
         std::string scene_name;
-        std::string obj_name;
+        size_t obj_id;
 
         const std::vector<Vertex> *vertices = nullptr;
         const std::vector<uint32_t> *indices = nullptr;
@@ -36,15 +36,16 @@ public:
     void setWindow(GLFWwindow *window);
     void drawScene(const std::string &scene_name);
     // Must be called before drawScene
-    void addObject(const std::string &scene_name, const std::string &obj_name, const std::vector<Vertex> &vertices, const std::vector<uint32_t> &indices, glm::mat4 pos, const std::string &albedo_path = "_default", const std::string &mr_path = "_default", const std::string &normal_path = "_default");
-    void addObject(const std::string &scene_name, const std::string &obj_name, const std::string &gltf_model_path, glm::mat4 pos, const std::string &albedo_path = "_default", const std::string &mr_path = "_default", const std::string &normal_path = "_default");
-    void addObject(const tiny_engine::Object &obj);
+    // Returns object_id
+    size_t addObject(const std::string &scene_name, const std::vector<Vertex> &vertices, const std::vector<uint32_t> &indices, glm::mat4 pos, const std::string &albedo_path = "_default", const std::string &mr_path = "_default", const std::string &normal_path = "_default");
+    size_t addObject(const std::string &scene_name, const std::string &gltf_model_path, glm::mat4 pos, const std::string &albedo_path = "_default", const std::string &mr_path = "_default", const std::string &normal_path = "_default");
+    void addObject(tiny_engine::Object &obj);
     
-    void deleteObject(const std::string &scene_name, const std::string &obj_name); 
+    void deleteObject(const std::string &scene_name, size_t obj_id); 
     void deleteObject(const tiny_engine::Object &obj); 
 
-    inline void moveObject(const std::string &scene_name, const std::string &obj_name, glm::mat4 pos) { m_scenes[scene_name]->objects[obj_name]->pc_data.model = pos; };
-    inline void moveObject(const tiny_engine::Object &obj, glm::mat4 pos) { m_scenes[obj.scene_name]->objects[obj.obj_name]->pc_data.model = pos; };
+    inline void moveObject(const std::string &scene_name, const std::size_t &obj_id, glm::mat4 pos) { m_scenes[scene_name]->objects[obj_id].pc_data.model = pos; };
+    inline void moveObject(const tiny_engine::Object &obj, glm::mat4 pos) { m_scenes[obj.scene_name]->objects[obj.obj_id].pc_data.model = pos; };
 
     inline void setView(const std::string &scene_name, glm::mat4 view) { m_scenes[scene_name]->scene_data.view = view; };
     inline void setDrawDistance(const std::string &scene_name, float distance) { m_scenes[scene_name]->setDrawDistance(distance); };

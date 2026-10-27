@@ -1,6 +1,7 @@
 #ifndef RENDERER_UTIL
 #define RENDERER_UTIL
 #include <atomic>
+#include <cstddef>
 #include <vulkan/vulkan_core.h>
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -120,9 +121,7 @@ struct _PushConstantsData
 struct _Object
 {
     int dc_index; //descriptor set index 
-
     std::atomic_bool is_alive;
-    
     _PushConstantsData pc_data;
     
     VkBuffer vertexBuffer;
@@ -150,6 +149,118 @@ struct _Object
 
     glm::vec3 localCenter{0.0f};  
     float localRadius{0.0f};
+
+    _Object() noexcept
+        : dc_index(-1),
+          is_alive(true),
+          pc_data{},
+          vertexBuffer(VK_NULL_HANDLE),
+          vertexBufferMemory(VK_NULL_HANDLE),
+          indexBuffer(VK_NULL_HANDLE),
+          indexBufferMemory(VK_NULL_HANDLE),
+          textureImage(VK_NULL_HANDLE),
+          textureImageView(VK_NULL_HANDLE),
+          textureImageMemory(VK_NULL_HANDLE),
+          metalRoughnessImage(VK_NULL_HANDLE),
+          metalRoughnessImageView(VK_NULL_HANDLE),
+          metalRoughnessImageMemory(VK_NULL_HANDLE),
+          normalImage(VK_NULL_HANDLE),
+          normalImageView(VK_NULL_HANDLE),
+          normalImageMemory(VK_NULL_HANDLE),
+          sampler(nullptr),
+          vertices(),
+          indices(),
+          localCenter(0.0f),
+          localRadius(0.0f)
+    {}
+
+    _Object(_Object&& other) noexcept
+        : dc_index(other.dc_index),
+          is_alive(other.is_alive.load()),
+          pc_data(std::move(other.pc_data)),
+          vertexBuffer(other.vertexBuffer),
+          vertexBufferMemory(other.vertexBufferMemory),
+          indexBuffer(other.indexBuffer),
+          indexBufferMemory(other.indexBufferMemory),
+          textureImage(other.textureImage),
+          textureImageView(other.textureImageView),
+          textureImageMemory(other.textureImageMemory),
+          metalRoughnessImage(other.metalRoughnessImage),
+          metalRoughnessImageView(other.metalRoughnessImageView),
+          metalRoughnessImageMemory(other.metalRoughnessImageMemory),
+          normalImage(other.normalImage),
+          normalImageView(other.normalImageView),
+          normalImageMemory(other.normalImageMemory),
+          sampler(other.sampler),
+          vertices(std::move(other.vertices)),
+          indices(std::move(other.indices)),
+          localCenter(other.localCenter),
+          localRadius(other.localRadius)
+    {
+        other.vertexBuffer = VK_NULL_HANDLE;
+        other.vertexBufferMemory = VK_NULL_HANDLE;
+        other.indexBuffer = VK_NULL_HANDLE;
+        other.indexBufferMemory = VK_NULL_HANDLE;
+        other.textureImage = VK_NULL_HANDLE;
+        other.textureImageView = VK_NULL_HANDLE;
+        other.textureImageMemory = VK_NULL_HANDLE;
+        other.metalRoughnessImage = VK_NULL_HANDLE;
+        other.metalRoughnessImageView = VK_NULL_HANDLE;
+        other.metalRoughnessImageMemory = VK_NULL_HANDLE;
+        other.normalImage = VK_NULL_HANDLE;
+        other.normalImageView = VK_NULL_HANDLE;
+        other.normalImageMemory = VK_NULL_HANDLE;
+        other.sampler = nullptr;
+    }
+
+    _Object& operator=(_Object&& other) noexcept
+    {
+        if (this != &other)
+        {
+            dc_index = other.dc_index;
+            is_alive.store(other.is_alive.load());
+            pc_data = std::move(other.pc_data);
+
+            vertexBuffer = other.vertexBuffer;
+            vertexBufferMemory = other.vertexBufferMemory;
+            indexBuffer = other.indexBuffer;
+            indexBufferMemory = other.indexBufferMemory;
+            textureImage = other.textureImage;
+            textureImageView = other.textureImageView;
+            textureImageMemory = other.textureImageMemory;
+            metalRoughnessImage = other.metalRoughnessImage;
+            metalRoughnessImageView = other.metalRoughnessImageView;
+            metalRoughnessImageMemory = other.metalRoughnessImageMemory;
+            normalImage = other.normalImage;
+            normalImageView = other.normalImageView;
+            normalImageMemory = other.normalImageMemory;
+            sampler = other.sampler;
+
+            vertices = std::move(other.vertices);
+            indices = std::move(other.indices);
+            localCenter = other.localCenter;
+            localRadius = other.localRadius;
+
+            other.vertexBuffer = VK_NULL_HANDLE;
+            other.vertexBufferMemory = VK_NULL_HANDLE;
+            other.indexBuffer = VK_NULL_HANDLE;
+            other.indexBufferMemory = VK_NULL_HANDLE;
+            other.textureImage = VK_NULL_HANDLE;
+            other.textureImageView = VK_NULL_HANDLE;
+            other.textureImageMemory = VK_NULL_HANDLE;
+            other.metalRoughnessImage = VK_NULL_HANDLE;
+            other.metalRoughnessImageView = VK_NULL_HANDLE;
+            other.metalRoughnessImageMemory = VK_NULL_HANDLE;
+            other.normalImage = VK_NULL_HANDLE;
+            other.normalImageView = VK_NULL_HANDLE;
+            other.normalImageMemory = VK_NULL_HANDLE;
+            other.sampler = nullptr;
+        }
+        return *this;
+    }
+
+    _Object(const _Object&) = delete;
+    _Object& operator=(const _Object&) = delete;
 };
 
 
@@ -191,7 +302,7 @@ void createCommandPool(VkCommandPool *command_pool, VkSurfaceKHR surface, VkPhys
 void createCommandBuffers(std::vector<VkCommandBuffer> &command_buffers, VkCommandPool command_pool, int count, VkDevice device);
 void createSecondaryCommandBuffers(std::vector<VkCommandBuffer> &command_buffers, VkCommandPool command_pool, int count, VkDevice device);
 void createSyncObjects(std::vector<VkSemaphore> &imageAvailableSemaphores, std::vector<VkSemaphore> &renderFinishedSemaphores, std::vector<VkFence> &inFlightFences, int MAX_FRAMES_IN_FLIGHT, size_t swap_chain_image_count, VkDevice device);
-void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData> &threads, const std::unordered_map<std::string, std::unique_ptr<_Object>> &objects, uint32_t image_index, const VkExtent2D &extent, const VkRenderPass &render_pass, const std::vector<VkFramebuffer> &framebuffers, const VkPipeline &graphics_pipeline, const VkPipelineLayout &pipeline_layout, uint32_t current_frame, const _SceneData& scene_data, VkDevice device);
+void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData> &threads, const std::vector<_Object> &objects, uint32_t image_index, const VkExtent2D &extent, const VkRenderPass &render_pass, const std::vector<VkFramebuffer> &framebuffers, const VkPipeline &graphics_pipeline, const VkPipelineLayout &pipeline_layout, uint32_t current_frame, const _SceneData& scene_data, VkDevice device);
 void recreateSwapChain(VkSwapchainKHR *swap_chain, VkRenderPass render_pass, std::vector<VkFramebuffer> &framebuffers, GLFWwindow *window, VkSurfaceKHR surface, std::vector<VkImage> &images, std::vector<VkImageView> &image_views, VkFormat *format, VkExtent2D *extent, VkImageView color_image_view, VkImageView depth_image_view, VkPhysicalDevice physical_device, VkDevice device);
 void createVertexBuffer(VkBuffer *vertex_buffer, std::vector<Vertex> vertices, VmaAllocation *vertex_buffer_memory, VkCommandPool command_pool, VkQueue graphics_queue, VmaAllocator allocator, VkPhysicalDevice physical_device, VkDevice device);
 void createAllocator(VmaAllocator *allocator, VkInstance instance, VkPhysicalDevice physical_device, VkDevice device);

@@ -1120,7 +1120,7 @@ void createSecondaryCommandBuffers(std::vector<VkCommandBuffer> &command_buffers
 }
 
 #ifndef TINY_ENGINE_NO_SECONDARY_CMD_BUFFERS
-void recordSecondary(ThreadData *thread, const std::unordered_map<std::string, std::unique_ptr<_Object>> &objects, const VkExtent2D &extent, const VkRenderPass &render_pass, const VkFramebuffer &framebuffer, const VkPipeline &graphics_pipeline, const VkPipelineLayout &pipeline_layout, uint32_t current_frame, const _SceneData &scene_data, VkDevice device, typename std::unordered_map<std::string, std::unique_ptr<_Object>>::const_iterator start, typename std::unordered_map<std::string, std::unique_ptr<_Object>>::const_iterator end)
+void recordSecondary(ThreadData *thread, const std::vector<_Object> &objects, const VkExtent2D &extent, const VkRenderPass &render_pass, const VkFramebuffer &framebuffer, const VkPipeline &graphics_pipeline, const VkPipelineLayout &pipeline_layout, uint32_t current_frame, const _SceneData &scene_data, VkDevice device, typename std::vector<_Object>::const_iterator start, typename std::vector<_Object>::const_iterator end)
 {
     VkCommandBuffer cmd = thread->command_buffers[current_frame];
 
@@ -1154,18 +1154,6 @@ void recordSecondary(ThreadData *thread, const std::unordered_map<std::string, s
     scissor.extent = extent;
     vkCmdSetScissor(cmd, 0, 1, &scissor);
 
-    _UniformBufferObject ubo;
-    ubo.view = scene_data.view;
-    ubo.proj = scene_data.proj;
-    ubo.dirLight = scene_data.dirLight;
-    ubo.ambient = scene_data.ambient;
-    ubo.dirLightColor = scene_data.dirLightColor;
-    ubo.point_lights_count = scene_data.pointLightsCount;
-    memcpy(ubo.point_light_colors, scene_data.pointLightColors, sizeof(scene_data.pointLightColors));
-    memcpy(ubo.point_light_pos, scene_data.pointLightPos, sizeof(scene_data.pointLightPos));
-
-    memcpy(scene_data.uniformBufferMapped, &ubo, sizeof(ubo));
-
     glm::mat4 vp = glm::transpose(scene_data.proj * scene_data.view);
 
     std::array<glm::vec4, 6> frustumPlanes;
@@ -1185,15 +1173,15 @@ void recordSecondary(ThreadData *thread, const std::unordered_map<std::string, s
     for (auto it = start; it != end; ++it)
     {
 
-        if(!it->second->is_alive)
+        if(!it->is_alive)
             continue;
 
-        glm::vec3 worldCenter = glm::vec3(it->second->pc_data.model * glm::vec4(it->second->localCenter, 1.0f));
+        glm::vec3 worldCenter = glm::vec3(it->pc_data.model * glm::vec4(it->localCenter, 1.0f));
 
-        float sx = glm::length(glm::vec3(it->second->pc_data.model[0]));
-        float sy = glm::length(glm::vec3(it->second->pc_data.model[1]));
-        float sz = glm::length(glm::vec3(it->second->pc_data.model[2]));
-        float worldRadius = it->second->localRadius * std::max({sx, sy, sz});
+        float sx = glm::length(glm::vec3(it->pc_data.model[0]));
+        float sy = glm::length(glm::vec3(it->pc_data.model[1]));
+        float sz = glm::length(glm::vec3(it->pc_data.model[2]));
+        float worldRadius = it->localRadius * std::max({sx, sy, sz});
 
         bool visible = true;
         for (const auto& p : frustumPlanes) {
@@ -1205,23 +1193,23 @@ void recordSecondary(ThreadData *thread, const std::unordered_map<std::string, s
 
         if (!visible) continue;
 
-        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &scene_data.descriptorSets[it->second->dc_index], 0, nullptr); 
+        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &scene_data.descriptorSets[it->dc_index], 0, nullptr); 
 
-        vkCmdPushConstants(cmd, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(it->second->pc_data), &it->second->pc_data);
-        VkBuffer vertexBuffers[] = {it->second->vertexBuffer};
+        vkCmdPushConstants(cmd, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(it->pc_data), &it->pc_data);
+        VkBuffer vertexBuffers[] = {it->vertexBuffer};
         
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(cmd, 0, 1, vertexBuffers, offsets);
-        vkCmdBindIndexBuffer(cmd, it->second->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+        vkCmdBindIndexBuffer(cmd, it->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
-        vkCmdDrawIndexed(cmd, static_cast<uint32_t>(it->second->indices.size()), 1, 0, 0, 0);
+        vkCmdDrawIndexed(cmd, static_cast<uint32_t>(it->indices.size()), 1, 0, 0, 0);
     }
 
     vkEndCommandBuffer(cmd);
 
     thread->is_cmd_buffer_recorded = 1;
 }
-void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData> &threads, const std::unordered_map<std::string, std::unique_ptr<_Object>> &objects, uint32_t image_index, const VkExtent2D &extent, const VkRenderPass &render_pass, const std::vector<VkFramebuffer> &framebuffers, const VkPipeline &graphics_pipeline, const VkPipelineLayout &pipeline_layout, uint32_t current_frame, const _SceneData &scene_data, VkDevice device)
+void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData> &threads, const std::vector<_Object> &objects, uint32_t image_index, const VkExtent2D &extent, const VkRenderPass &render_pass, const std::vector<VkFramebuffer> &framebuffers, const VkPipeline &graphics_pipeline, const VkPipelineLayout &pipeline_layout, uint32_t current_frame, const _SceneData &scene_data, VkDevice device)
 {
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -1248,6 +1236,17 @@ void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData>
 
     vkCmdBeginRenderPass(command_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_KHR);
     vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline);
+
+    _UniformBufferObject ubo;
+    ubo.view = scene_data.view;
+    ubo.proj = scene_data.proj;
+    ubo.dirLight = scene_data.dirLight;
+    ubo.ambient = scene_data.ambient;
+    ubo.dirLightColor = scene_data.dirLightColor;
+    ubo.point_lights_count = scene_data.pointLightsCount;
+    memcpy(ubo.point_light_colors, scene_data.pointLightColors, sizeof(scene_data.pointLightColors));
+    memcpy(ubo.point_light_pos, scene_data.pointLightPos, sizeof(scene_data.pointLightPos));
+    memcpy(scene_data.uniformBufferMapped, &ubo, sizeof(ubo));
 
     size_t numThreads = threads.size();
 
