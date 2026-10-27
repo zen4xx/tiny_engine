@@ -82,4 +82,19 @@ Disable nested command buffers and multithreaded rendering:
 #define TINY_ENGINE_NO_SECONDARY_CMD_BUFFERS
 or cmake define DTINY_ENGINE_NO_SECONDARY_CMD_BUFFERS=1 
 ```
+Shader defines
+Shader preprocessor definitions are controlled through the SHADER_DEFINES CMake variable.
+
+    Important: Do not add these #define directives manually inside .vert / .frag files.
+    They are passed to glslc automatically by CMake.
+Example:
+   cmake -S . -B build -DSHADER_DEFINES="USE_NORMAL_MAP;USE_MR_RED_AS_AO;TONE_MAPPING"
+
+USE_NORMAL_MAP	- Enables normal mapping.
+USE_MR_RED_AS_AO - Uses the red channel of the metallic-roughness texture as ambient occlusion.
+TONE_MAPPING - Enables tone mapping.
+GAMMA_CORRECTION - Enables gamma correction. Use only if the render target is not sRGB.
+
+To reset shader defines to the default values from CMakeLists.txt:
+   cmake -U SHADER_DEFINES -S . -B build
 ##
