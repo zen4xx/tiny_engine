@@ -1,3 +1,4 @@
+#include <cstddef>
 #include <vulkan/vulkan_core.h>
 #define VMA_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
@@ -1857,16 +1858,18 @@ static glm::mat4 getNodeLocalMatrix(const tinygltf::Node& node)
     return glm::translate(glm::mat4(1.0f), T) * glm::mat4_cast(R) * glm::scale(glm::mat4(1.0f), S);
 }
 
-static int findNodeForMesh(const tinygltf::Model& model, int meshIndex)
+static void computeGlobalMatrices(const tinygltf::Model& model, int nodeIndex, const glm::mat4& parentMatrix, std::vector<glm::mat4>& outGlobalMatrices)
 {
-    for (size_t i = 0; i < model.nodes.size(); ++i)
+    const auto& node = model.nodes[nodeIndex];
+    glm::mat4 localMatrix = getNodeLocalMatrix(node);
+    glm::mat4 globalMatrix = parentMatrix * localMatrix;
+    
+    outGlobalMatrices[nodeIndex] = globalMatrix;
+
+    for (int childIndex : node.children)
     {
-        if (model.nodes[i].mesh == meshIndex)
-        {
-            return static_cast<int>(i);
-        }
+        computeGlobalMatrices(model, childIndex, globalMatrix, outGlobalMatrices);
     }
-    return -1;
 }
 
 bool loadModel(const std::string &filename, _Object *object)
@@ -1884,29 +1887,43 @@ bool loadModel(const std::string &filename, _Object *object)
         return false;
     }
 
+    std::vector<glm::mat4> nodeGlobalMatrices(model.nodes.size(), glm::mat4(1.0f));
+    
+    size_t sceneIndex = model.defaultScene >= 0 ? model.defaultScene : 0;
+    if (sceneIndex >= 0 && sceneIndex < model.scenes.size())
+    {
+        const auto& scene = model.scenes[sceneIndex];
+        for (int nodeIndex : scene.nodes)
+        {
+            computeGlobalMatrices(model, nodeIndex, glm::mat4(1.0f), nodeGlobalMatrices);
+        }
+    }
+
     size_t baseIndexOffset = object->indices.size();
 
     for (size_t meshIdx = 0; meshIdx < model.meshes.size(); ++meshIdx)
     {
         const auto &mesh = model.meshes[meshIdx];
 
-        int nodeIdx = findNodeForMesh(model, static_cast<int>(meshIdx));
-        glm::mat4 nodeMatrix(1.0f);
-        if (nodeIdx >= 0)
+        int nodeIdx = -1;
+        for (size_t i = 0; i < model.nodes.size(); ++i)
         {
-            nodeMatrix = getNodeLocalMatrix(model.nodes[nodeIdx]);
+            if (model.nodes[i].mesh == static_cast<int>(meshIdx))
+            {
+                nodeIdx = static_cast<int>(i);
+                break;
+            }
         }
 
+        glm::mat4 nodeMatrix = (nodeIdx >= 0) ? nodeGlobalMatrices[nodeIdx] : glm::mat4(1.0f);
         glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(nodeMatrix)));
 
         for (const auto &primitive : mesh.primitives)
         {
             if (primitive.mode != TINYGLTF_MODE_TRIANGLES && primitive.mode != -1) 
             {
-                if (primitive.mode != TINYGLTF_MODE_TRIANGLES) {
-                    err("Unsupported primitive mode (only TRIANGLES supported)", 1);
-                    continue;
-                }
+                err("Unsupported primitive mode (only TRIANGLES supported)", 1);
+                continue;
             }
 
             if (primitive.attributes.find("POSITION") == primitive.attributes.end() ||
@@ -1923,15 +1940,11 @@ bool loadModel(const std::string &filename, _Object *object)
             {
                 const tinygltf::BufferView &view = mdl.bufferViews[accessor.bufferView];
                 const tinygltf::Buffer &buffer = mdl.buffers[view.buffer];
-                
                 const uint8_t *basePtr = buffer.data.data() + view.byteOffset + accessor.byteOffset;
                 size_t componentSize = tinygltf::GetComponentSizeInBytes(static_cast<uint32_t>(accessor.componentType));
-                size_t stride = view.byteStride != 0 ? view.byteStride : 
-                    (components * componentSize);
-                
+                size_t stride = view.byteStride != 0 ? view.byteStride : (components * componentSize);
                 std::vector<float> result;
                 result.reserve(accessor.count * components);
-                
                 for (size_t i = 0; i < accessor.count; ++i)
                 {
                     const uint8_t *ptr = basePtr + i * stride;
@@ -1946,33 +1959,6 @@ bool loadModel(const std::string &filename, _Object *object)
                         for (int c = 0; c < components; ++c) {
                             float val = static_cast<float>(data[c]);
                             if (accessor.normalized) val /= 65535.0f;
-                            result.push_back(val);
-                        }
-                    }
-                    else if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE)
-                    {
-                        const uint8_t *data = reinterpret_cast<const uint8_t*>(ptr);
-                        for (int c = 0; c < components; ++c) {
-                            float val = static_cast<float>(data[c]);
-                            if (accessor.normalized) val /= 255.0f;
-                            result.push_back(val);
-                        }
-                    }
-                    else if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_SHORT)
-                    {
-                        const int16_t *data = reinterpret_cast<const int16_t*>(ptr);
-                        for (int c = 0; c < components; ++c) {
-                            float val = static_cast<float>(data[c]);
-                            if (accessor.normalized) val /= 32767.0f;
-                            result.push_back(val);
-                        }
-                    }
-                    else if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_BYTE)
-                    {
-                        const int8_t *data = reinterpret_cast<const int8_t*>(ptr);
-                        for (int c = 0; c < components; ++c) {
-                            float val = static_cast<float>(data[c]);
-                            if (accessor.normalized) val /= 127.0f;
                             result.push_back(val);
                         }
                     }
