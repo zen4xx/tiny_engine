@@ -12,6 +12,7 @@
 #include <thread>
 #include <iostream>
 #include <stdexcept>
+#include <glm/gtc/quaternion.hpp>
 
 #ifdef __APPLE__
 #ifndef TINY_ENGINE_NO_SECONDARY_CMD_BUFFERS
@@ -1818,6 +1819,56 @@ void createColorResources(VkImage &color_image, VmaAllocation &color_image_memor
     }
 }
 
+static glm::mat4 getNodeLocalMatrix(const tinygltf::Node& node)
+{
+    if (!node.matrix.empty())
+    {
+        glm::mat4 mat(1.0f);
+        for (int i = 0; i < 16; ++i)
+        {
+            mat[i / 4][i % 4] = static_cast<float>(node.matrix[i]);
+        }
+        return mat;
+    }
+
+    glm::vec3 T(0.0f);
+    if (!node.translation.empty())
+    {
+        T = glm::vec3(node.translation[0], node.translation[1], node.translation[2]);
+    }
+
+    glm::quat R(1.0f, 0.0f, 0.0f, 0.0f); // w, x, y, z
+    if (!node.rotation.empty())
+    {
+        R = glm::quat(
+            static_cast<float>(node.rotation[3]),
+            static_cast<float>(node.rotation[0]),
+            static_cast<float>(node.rotation[1]),
+            static_cast<float>(node.rotation[2])
+        );
+    }
+
+    glm::vec3 S(1.0f);
+    if (!node.scale.empty())
+    {
+        S = glm::vec3(node.scale[0], node.scale[1], node.scale[2]);
+    }
+
+    return glm::translate(glm::mat4(1.0f), T) * glm::mat4_cast(R) * glm::scale(glm::mat4(1.0f), S);
+}
+
+static int findNodeForMesh(const tinygltf::Model& model, int meshIndex)
+{
+    for (size_t i = 0; i < model.nodes.size(); ++i)
+    {
+        if (model.nodes[i].mesh == meshIndex)
+        {
+            return static_cast<int>(i);
+        }
+    }
+    return -1;
+}
+
 bool loadModel(const std::string &filename, _Object *object)
 {
     tinygltf::Model model;
@@ -1835,8 +1886,19 @@ bool loadModel(const std::string &filename, _Object *object)
 
     size_t baseIndexOffset = object->indices.size();
 
-    for (const auto &mesh : model.meshes)
+    for (size_t meshIdx = 0; meshIdx < model.meshes.size(); ++meshIdx)
     {
+        const auto &mesh = model.meshes[meshIdx];
+
+        int nodeIdx = findNodeForMesh(model, static_cast<int>(meshIdx));
+        glm::mat4 nodeMatrix(1.0f);
+        if (nodeIdx >= 0)
+        {
+            nodeMatrix = getNodeLocalMatrix(model.nodes[nodeIdx]);
+        }
+
+        glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(nodeMatrix)));
+
         for (const auto &primitive : mesh.primitives)
         {
             if (primitive.mode != TINYGLTF_MODE_TRIANGLES && primitive.mode != -1) 
@@ -1942,15 +2004,21 @@ bool loadModel(const std::string &filename, _Object *object)
             for (size_t i = 0; i < posAcc.count; ++i)
             {
                 Vertex vertex;
-                vertex.pos = glm::vec3(posData[i*3+0], posData[i*3+1], posData[i*3+2]);
+
+                glm::vec3 rawPos(posData[i*3+0], posData[i*3+1], posData[i*3+2]);
+                glm::vec3 rawNorm(normData[i*3+0], normData[i*3+1], normData[i*3+2]);
+
+                glm::vec4 transformedPos = nodeMatrix * glm::vec4(rawPos, 1.0f);
+                vertex.pos = glm::vec3(transformedPos) / transformedPos.w;
+                vertex.normal = glm::normalize(normalMatrix * rawNorm);
+
                 vertex.texCoord = glm::vec2(texData[i*2+0], texData[i*2+1]);
-                vertex.normal = glm::vec3(normData[i*3+0], normData[i*3+1], normData[i*3+2]);
                 
                 if (hasTangent && !tangentData.empty()) {
-                    vertex.tangent = glm::vec4(
-                        tangentData[i*4+0], tangentData[i*4+1], 
-                        tangentData[i*4+2], tangentData[i*4+3]
-                    );
+                    glm::vec3 rawTangent(tangentData[i*4+0], tangentData[i*4+1], tangentData[i*4+2]);
+                    float handedness = tangentData[i*4+3];
+                    glm::vec3 transformedTangent = glm::normalize(normalMatrix * rawTangent);
+                    vertex.tangent = glm::vec4(transformedTangent, handedness);
                 } else {
                     vertex.tangent = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
                 }
