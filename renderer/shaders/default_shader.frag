@@ -1,23 +1,37 @@
 #version 450
 
 #define MAX_POINT_LIGHTS_COUNT 16
+// #define USE_NORMAL_MAP
+// #define NORMALMAP_RECONSTRUCT_Z
+// #define NORMALMAP_FLIP_GREEN
+// #define USE_MR_RED_AS_AO
+// #define TONE_MAPPING
+// #define GAMMA_CORRECTION
+// #define ALBEDO_SRGB_DECODE
 
 layout(location = 0) in vec2 fragTexCoord;
 layout(location = 1) in vec3 fragNormal;
 layout(location = 2) in vec3 fragCameraPos;
 layout(location = 3) in vec3 fragPos;
+
+#ifdef USE_NORMAL_MAP
 layout(location = 4) in vec3 fragTangent;
 layout(location = 5) in vec3 fragBitangent;
+#endif
 
 layout(location = 0) out vec4 outColor;
 
-layout(binding = 1) uniform sampler2D texSampler;
-layout(binding = 2) uniform sampler2D mrSampler;
-layout(binding = 3) uniform sampler2D normalSampler;
+layout(set = 0, binding = 1) uniform sampler2D texSampler;
+layout(set = 0, binding = 2) uniform sampler2D mrSampler;
+
+#ifdef USE_NORMAL_MAP
+layout(set = 0, binding = 3) uniform sampler2D normalSampler;
+#endif
 
 const float PI = 3.14159265359;
+const float MIN_ROUGHNESS = 0.05;
 
-layout(binding = 0) uniform UniformBufferObject {
+layout(std140, set = 0, binding = 0) uniform UniformBufferObject {
     mat4 view;
     mat4 proj;
 
@@ -72,7 +86,15 @@ vec3 ShadeLight(
     float metallic,
     float roughness
 ) {
+    float NdotL = max(dot(N, L), 0.0);
+
+    if (NdotL <= 0.0) {
+        return vec3(0.0);
+    }
+
     vec3 H = normalize(V + L);
+
+    float NdotV = max(dot(N, V), 0.0);
 
     float NDF = DistributionGGX(N, H, roughness);
     float G = GeometrySmith(N, V, L, roughness);
@@ -81,94 +103,177 @@ vec3 ShadeLight(
     vec3 kS = F;
     vec3 kD = (vec3(1.0) - kS) * (1.0 - metallic);
 
-    float NdotL = max(dot(N, L), 0.0);
-    float NdotV = max(dot(N, V), 0.0);
-
     vec3 diffuse = kD * albedo / PI;
 
-    vec3 specular = (NDF * G * F) / max(4.0 * NdotV * NdotL, 0.001);
+    float denom = max(4.0 * NdotV * NdotL, 1e-4);
+    vec3 specular = (NDF * G * F) / denom;
 
     return (diffuse + specular) * radiance * NdotL;
 }
 
 void main() {
     vec4 baseColor = texture(texSampler, fragTexCoord);
+
+#ifdef ALBEDO_SRGB_DECODE
+    baseColor.rgb = pow(baseColor.rgb, vec3(2.2));
+#endif
+
     vec4 mr = texture(mrSampler, fragTexCoord);
 
     vec3 albedo = baseColor.rgb;
 
     float metallic = clamp(mr.b, 0.0, 1.0);
-    float roughness = clamp(mr.g, 0.05, 1.0);
+    float roughness = clamp(mr.g, MIN_ROUGHNESS, 1.0);
 
     vec3 N = normalize(fragNormal);
+
+    if (dot(N, N) < 1e-8) {
+        N = vec3(0.0, 0.0, 1.0);
+    }
+
+#ifdef USE_NORMAL_MAP
     vec3 T = normalize(fragTangent);
     vec3 B = normalize(fragBitangent);
 
-    T = normalize(T - dot(T, N) * N);
-    float tbnHandedness = (dot(cross(N, T), B) < 0.0) ? -1.0 : 1.0;
-    B = normalize(cross(N, T) * tbnHandedness);
+    if (dot(T, T) < 1e-8) {
+        vec3 up = (abs(N.z) < 0.999) ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
+        T = normalize(cross(up, N));
+    } else {
+        T = normalize(T - dot(T, N) * N);
+    }
 
-#ifdef USE_NORMAL_MAP
+    vec3 C = cross(N, T);
+
+    if (dot(C, C) < 1e-8) {
+        vec3 up = (abs(N.z) < 0.999) ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
+        T = normalize(cross(up, N));
+        C = cross(N, T);
+    }
+
+    float handedness = 1.0;
+
+    if (dot(B, B) > 1e-8) {
+        handedness = (dot(C, B) < 0.0) ? -1.0 : 1.0;
+    }
+
+    B = normalize(C * handedness);
+
     mat3 TBN = mat3(T, B, N);
 
     vec3 normalTS = texture(normalSampler, fragTexCoord).rgb * 2.0 - 1.0;
+
+#ifdef NORMALMAP_RECONSTRUCT_Z
+    normalTS.z = sqrt(max(0.0, 1.0 - dot(normalTS.xy, normalTS.xy)));
+#endif
+
+#ifdef NORMALMAP_FLIP_GREEN
+    normalTS.y = -normalTS.y;
+#endif
 
     if (dot(normalTS, normalTS) < 1e-6) {
         normalTS = vec3(0.0, 0.0, 1.0);
     }
 
     N = normalize(TBN * normalize(normalTS));
-#else
-    N = normalize(fragNormal);
 #endif
 
-    vec3 V = normalize(fragCameraPos - fragPos);
+    vec3 V = fragCameraPos - fragPos;
+    float vLen = length(V);
+
+    if (vLen < 1e-8) {
+        V = vec3(0.0, 0.0, 1.0);
+    } else {
+        V /= vLen;
+    }
 
     vec3 F0 = mix(vec3(0.04), albedo, metallic);
 
     vec3 Lo = vec3(0.0);
 
+    // Directional light
     {
         vec3 dir = ubo.dirLight;
-
-        vec3 L = (dot(dir, dir) > 1e-8) ? normalize(-dir) : vec3(0.0, 1.0, 0.0);
-
         vec3 radiance = ubo.dirLightColor;
 
-        Lo += ShadeLight(L, V, N, radiance, albedo, F0, metallic, roughness);
+        if (dot(dir, dir) > 1e-8 && dot(radiance, radiance) > 0.0) {
+            vec3 L = normalize(-dir);
+
+            Lo += ShadeLight(
+                L,
+                V,
+                N,
+                radiance,
+                albedo,
+                F0,
+                metallic,
+                roughness
+            );
+        }
     }
 
-    for (int i = 0; i < MAX_POINT_LIGHTS_COUNT; ++i) {
-        if (i >= ubo.point_light_count) {
-            break;
+    // Point lights
+    int lightCount = ubo.point_light_count;
+
+    if (lightCount < 0) {
+        lightCount = 0;
+    }
+
+    if (lightCount > MAX_POINT_LIGHTS_COUNT) {
+        lightCount = MAX_POINT_LIGHTS_COUNT;
+    }
+
+    for (int i = 0; i < lightCount; ++i) {
+        vec4 posRange = ubo.point_light_pos[i];
+
+        vec3 toLight = posRange.xyz - fragPos;
+        float dist = length(toLight);
+
+        if (dist < 1e-6) {
+            continue;
         }
 
-        vec3 lightPos = ubo.point_light_pos[i].xyz;
-        vec3 toLight = lightPos - fragPos;
-
-        float dist = max(length(toLight), 1e-3);
-        vec3 L = normalize(toLight);
-
-        float range = ubo.point_light_pos[i].w;
-
-        float attenuation;
-
-        if (range > 0.0) {
-            float window = clamp(1.0 - pow(dist / range, 4.0), 0.0, 1.0);
-            attenuation = (window * window) / (dist * dist);
-        } else {
-            attenuation = 1.0 / (1.0 + dist * dist);
-        }
+        vec3 L = toLight / dist;
 
         float intensity = ubo.point_light_colors[i].a;
 
         if (intensity <= 0.0) {
-            intensity = 1.0;
+            continue;
+        }
+
+        float range = posRange.w;
+        float attenuation = 0.0;
+
+        if (range > 0.0) {
+            if (dist < range) {
+                float window = 1.0 - pow(dist / range, 4.0);
+                attenuation = (window * window) / max(dist * dist, 1e-6);
+            } else {
+                attenuation = 0.0;
+            }
+        } else {
+            attenuation = 1.0 / (1.0 + dist * dist);
+        }
+
+        if (attenuation <= 0.0) {
+            continue;
         }
 
         vec3 radiance = ubo.point_light_colors[i].rgb * intensity * attenuation;
 
-        Lo += ShadeLight(L, V, N, radiance, albedo, F0, metallic, roughness);
+        if (dot(radiance, radiance) <= 0.0) {
+            continue;
+        }
+
+        Lo += ShadeLight(
+            L,
+            V,
+            N,
+            radiance,
+            albedo,
+            F0,
+            metallic,
+            roughness
+        );
     }
 
     float ao = 1.0;
@@ -183,6 +288,10 @@ void main() {
 
 #ifdef TONE_MAPPING
     color = color / (color + vec3(1.0));
+#endif
+
+#ifdef GAMMA_CORRECTION
+    color = pow(color, vec3(1.0 / 2.2));
 #endif
 
     outColor = vec4(color, baseColor.a);
