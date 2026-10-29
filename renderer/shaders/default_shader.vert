@@ -2,6 +2,7 @@
 
 #define MAX_POINT_LIGHTS_COUNT 16
 
+// --- Uniform Buffer Object ---
 layout(binding = 0) uniform UniformBufferObject {
     mat4 view;
     mat4 proj;
@@ -16,9 +17,10 @@ layout(binding = 0) uniform UniformBufferObject {
     int point_light_count;
 } ubo;
 
-layout(push_constant, std430) uniform pc {
+// --- Push Constants ---
+layout(push_constant) uniform PushConstants {
     mat4 model;
-};
+} pc;
 
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec2 inTexCoord;
@@ -33,48 +35,23 @@ layout(location = 4) out vec3 fragTangent;
 layout(location = 5) out vec3 fragBitangent;
 
 void main() {
-    vec4 worldPos = model * vec4(inPosition, 1.0);
+    vec4 worldPos = pc.model * vec4(inPosition, 1.0);
     fragPos = worldPos.xyz;
 
-    mat3 model3 = mat3(model);
-    mat3 normalMatrix = transpose(inverse(model3));
+    gl_Position = ubo.proj * ubo.view * worldPos;
 
-    vec3 N = normalize(normalMatrix * inNormal);
+    fragCameraPos = -transpose(mat3(ubo.view)) * ubo.view[3].xyz;
 
-    float mirror = (determinant(model3) < 0.0) ? -1.0 : 1.0;
+    mat3 normalMatrix = transpose(inverse(mat3(pc.model)));
 
-    vec3 T;
-    float handedness = inTangent.w * mirror;
-
-    bool useTangent = (length(inTangent.xyz) > 1e-5) && (abs(handedness) > 1e-5);
-
-    if (useTangent) {
-        T = normalize(model3 * inTangent.xyz);
-
-        T -= dot(T, N) * N;
-
-        if (length(T) < 1e-5) {
-            useTangent = false;
-        } else {
-            T = normalize(T);
-        }
-    }
-
-    if (!useTangent) {
-        vec3 helper = abs(N.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
-        T = normalize(cross(helper, N));
-        handedness = mirror;
-    }
-
-    // glTF: bitangent = cross(normal, tangent) * tangent.w
-    vec3 B = normalize(cross(N, T) * handedness);
-
-    fragNormal = N;
+    fragNormal = normalize(normalMatrix * inNormal);
+    
+    vec3 T = normalize(normalMatrix * inTangent.xyz);
+    
+    vec3 B = cross(fragNormal, T) * inTangent.w;
+    
     fragTangent = T;
     fragBitangent = B;
+
     fragTexCoord = inTexCoord;
-
-    fragCameraPos = inverse(ubo.view)[3].xyz;
-
-    gl_Position = ubo.proj * ubo.view * worldPos;
 }

@@ -234,12 +234,6 @@ void main() {
 
         vec3 L = toLight / dist;
 
-        float intensity = ubo.point_light_colors[i].a;
-
-        if (intensity <= 0.0) {
-            continue;
-        }
-
         float range = posRange.w;
         float attenuation = 0.0;
 
@@ -258,7 +252,7 @@ void main() {
             continue;
         }
 
-        vec3 radiance = ubo.point_light_colors[i].rgb * intensity * attenuation;
+        vec3 radiance = ubo.point_light_colors[i].rgb * attenuation;
 
         if (dot(radiance, radiance) <= 0.0) {
             continue;
