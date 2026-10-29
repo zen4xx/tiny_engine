@@ -1290,7 +1290,7 @@ void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData>
 #endif
 
 #ifdef TINY_ENGINE_NO_SECONDARY_CMD_BUFFERS
-void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData> &threads, const std::unordered_map<std::string, std::unique_ptr<_Object>> &objects, uint32_t image_index, const VkExtent2D &extent, const VkRenderPass &render_pass, const std::vector<VkFramebuffer> &framebuffers, const VkPipeline &graphics_pipeline, const VkPipelineLayout &pipeline_layout, uint32_t current_frame, const _SceneData &scene_data, VkDevice device)
+void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData> &threads, const std::vector<_Object> &objects, uint32_t image_index, const VkExtent2D &extent, const VkRenderPass &render_pass, const std::vector<VkFramebuffer> &framebuffers, const VkPipeline &graphics_pipeline, const VkPipelineLayout &pipeline_layout, uint32_t current_frame, const _SceneData &scene_data, VkDevice device)
 {
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -1365,15 +1365,15 @@ void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData>
     auto end = objects.end();
     for (auto it = start; it != end; ++it)
     {
-        if(!it->second->is_alive)
+        if(!it->is_alive)
             continue;
 
-        glm::vec3 worldCenter = glm::vec3(it->second->pc_data.model * glm::vec4(it->second->localCenter, 1.0f));
+        glm::vec3 worldCenter = glm::vec3(it->pc_data.model * glm::vec4(it->localCenter, 1.0f));
 
-        float sx = glm::length(glm::vec3(it->second->pc_data.model[0]));
-        float sy = glm::length(glm::vec3(it->second->pc_data.model[1]));
-        float sz = glm::length(glm::vec3(it->second->pc_data.model[2]));
-        float worldRadius = it->second->localRadius * std::max({sx, sy, sz});
+        float sx = glm::length(glm::vec3(it->pc_data.model[0]));
+        float sy = glm::length(glm::vec3(it->pc_data.model[1]));
+        float sz = glm::length(glm::vec3(it->pc_data.model[2]));
+        float worldRadius = it->localRadius * std::max({sx, sy, sz});
 
         bool visible = true;
         for (const auto& p : frustumPlanes) {
@@ -1385,16 +1385,16 @@ void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData>
 
         if (!visible) continue;
 
-        vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &scene_data.descriptorSets[it->second->dc_index], 0, nullptr); 
+        vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &scene_data.descriptorSets[it->dc_index], 0, nullptr); 
 
-        vkCmdPushConstants(command_buffer, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(it->second->pc_data), &it->second->pc_data);
-        VkBuffer vertexBuffers[] = {it->second->vertexBuffer};
+        vkCmdPushConstants(command_buffer, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(it->pc_data), &it->pc_data);
+        VkBuffer vertexBuffers[] = {it->vertexBuffer};
         
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(command_buffer, 0, 1, vertexBuffers, offsets);
-        vkCmdBindIndexBuffer(command_buffer, it->second->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+        vkCmdBindIndexBuffer(command_buffer, it->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
-        vkCmdDrawIndexed(command_buffer, static_cast<uint32_t>(it->second->indices.size()), 1, 0, 0, 0);
+        vkCmdDrawIndexed(command_buffer, static_cast<uint32_t>(it->indices.size()), 1, 0, 0, 0);
     }
     vkCmdEndRenderPass(command_buffer);
 
