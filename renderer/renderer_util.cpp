@@ -1346,7 +1346,7 @@ void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData>
 #endif
 
 #ifdef TINY_ENGINE_NO_SECONDARY_CMD_BUFFERS
-void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData> &threads, const std::vector<_Object> &objects, uint32_t image_index, const VkExtent2D &extent, const VkRenderPass &render_pass, const std::vector<VkFramebuffer> &framebuffers, const VkPipeline &graphics_pipeline, const VkPipelineLayout &pipeline_layout, uint32_t current_frame, const _SceneData &scene_data, VkDevice device)
+void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData> &threads, const std::vector<_Object> &objects, uint32_t image_index, const VkExtent2D &extent, const VkRenderPass &render_pass, const std::vector<VkFramebuffer> &framebuffers, const VkPipeline &graphics_pipeline, const VkPipelineLayout &pipeline_layout, uint32_t current_frame, const _SceneData &scene_data, VkRenderPass shadow_pass, const std::vector<VkFramebuffer> &shadow_framebuffers, const VkPipeline &shadow_pipeline, const VkPipelineLayout &shadow_layout, VkDevice device)
 {
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -1356,6 +1356,54 @@ void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData>
     VkResult res = vkBeginCommandBuffer(command_buffer, &beginInfo);
     if (res != VK_SUCCESS)
         err("Failed to begin recording command buffer", res);
+
+    for (int cascade = 0; cascade < 4; ++cascade) {
+        VkRenderPassBeginInfo shadowRenderPassInfo{};
+        shadowRenderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        shadowRenderPassInfo.renderPass = shadow_pass;
+        shadowRenderPassInfo.framebuffer = shadow_framebuffers[cascade];
+        shadowRenderPassInfo.renderArea.offset = {0, 0};
+        shadowRenderPassInfo.renderArea.extent = {SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT};
+
+        VkClearValue clearValue;
+        clearValue.depthStencil = {1.0f, 0};
+        shadowRenderPassInfo.clearValueCount = 1;
+        shadowRenderPassInfo.pClearValues = &clearValue;
+
+        vkCmdBeginRenderPass(command_buffer, &shadowRenderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+        
+        vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shadow_pipeline);
+
+        VkViewport shadowViewport{};
+        shadowViewport.x = 0.0f;
+        shadowViewport.y = 0.0f;
+        shadowViewport.width = SHADOW_MAP_WIDTH;
+        shadowViewport.height = SHADOW_MAP_HEIGHT;
+        shadowViewport.minDepth = 0.0f;
+        shadowViewport.maxDepth = 1.0f;
+        vkCmdSetViewport(command_buffer, 0, 1, &shadowViewport);
+
+        VkRect2D shadowScissor{};
+        shadowScissor.offset = {0, 0};
+        shadowScissor.extent = {SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT};
+        vkCmdSetScissor(command_buffer, 0, 1, &shadowScissor);
+
+        for (const auto& obj : objects) {
+            _PushConstantsData pc = obj.pc_data;
+            pc.lightSpaceMatrix = scene_data.cascadeViewProjMatrices[cascade];
+            
+            vkCmdPushConstants(command_buffer, shadow_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(_PushConstantsData), &pc);
+            
+            vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shadow_layout, 0, 1, &scene_data.descriptorSets[obj.dc_index], 0, nullptr);
+
+            VkBuffer vertexBuffers[] = {obj.vertexBuffer};
+            VkDeviceSize offsets[] = {0};
+            vkCmdBindVertexBuffers(command_buffer, 0, 1, vertexBuffers, offsets);
+            vkCmdBindIndexBuffer(command_buffer, obj.indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+            vkCmdDrawIndexed(command_buffer, static_cast<uint32_t>(obj.indices.size()), 1, 0, 0, 0);
+        }
+        vkCmdEndRenderPass(command_buffer);
+    }
 
     VkRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -1398,8 +1446,9 @@ void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData>
     memcpy(ubo.point_light_colors, scene_data.pointLightColors, sizeof(scene_data.pointLightColors));
     memcpy(ubo.point_light_pos, scene_data.pointLightPos, sizeof(scene_data.pointLightPos));
 
+    memcpy(ubo.cascadeViewProjMatrices, scene_data.cascadeViewProjMatrices, sizeof(ubo.cascadeViewProjMatrices));
+    ubo.cascadeSplits = scene_data.cascadeSplits;
     memcpy(scene_data.uniformBufferMapped, &ubo, sizeof(ubo));
-
 
     glm::mat4 vp = glm::transpose(scene_data.proj * scene_data.view);
 
