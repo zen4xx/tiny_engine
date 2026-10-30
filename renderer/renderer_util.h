@@ -107,15 +107,20 @@ struct _UniformBufferObject
     alignas(16) glm::vec3 dirLightColor; 
     alignas(16) glm::vec3 ambient; 
     
-    alignas(16) glm::vec4 point_light_colors[MAX_POINT_LIGHTS_COUNT]; // w for padding
-    alignas(16) glm::vec4 point_light_pos[MAX_POINT_LIGHTS_COUNT]; // w for padding
+    alignas(16) glm::vec4 point_light_colors[MAX_POINT_LIGHTS_COUNT];
+    alignas(16) glm::vec4 point_light_pos[MAX_POINT_LIGHTS_COUNT];
 
     alignas(4) int point_lights_count;
+    float _padding[3];
+
+    alignas(16) glm::mat4 cascadeViewProjMatrices[4];
+    alignas(16) glm::vec4 cascadeSplits;
 };
 
 struct _PushConstantsData
 { 
     glm::mat4 model;
+    glm::mat4 lightSpaceMatrix;
 };
 
 struct _Object
@@ -284,6 +289,9 @@ struct _SceneData
     VkBuffer uniformBuffer;
     VmaAllocation uniformBufferMemory;
     void *uniformBufferMapped;
+
+    glm::mat4 cascadeViewProjMatrices[4] = { glm::mat4(1.0f), glm::mat4(1.0f), glm::mat4(1.0f), glm::mat4(1.0f) };
+    glm::vec4 cascadeSplits = glm::vec4(0.0f);
 };
 
 bool loadModel(const std::string &filename, _Object *object);
@@ -302,7 +310,7 @@ void createCommandPool(VkCommandPool *command_pool, VkSurfaceKHR surface, VkPhys
 void createCommandBuffers(std::vector<VkCommandBuffer> &command_buffers, VkCommandPool command_pool, int count, VkDevice device);
 void createSecondaryCommandBuffers(std::vector<VkCommandBuffer> &command_buffers, VkCommandPool command_pool, int count, VkDevice device);
 void createSyncObjects(std::vector<VkSemaphore> &imageAvailableSemaphores, std::vector<VkSemaphore> &renderFinishedSemaphores, std::vector<VkFence> &inFlightFences, int MAX_FRAMES_IN_FLIGHT, size_t swap_chain_image_count, VkDevice device);
-void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData> &threads, const std::vector<_Object> &objects, uint32_t image_index, const VkExtent2D &extent, const VkRenderPass &render_pass, const std::vector<VkFramebuffer> &framebuffers, const VkPipeline &graphics_pipeline, const VkPipelineLayout &pipeline_layout, uint32_t current_frame, const _SceneData& scene_data, VkDevice device);
+void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData> &threads, const std::vector<_Object> &objects, uint32_t image_index, const VkExtent2D &extent, const VkRenderPass &render_pass, const std::vector<VkFramebuffer> &framebuffers, const VkPipeline &graphics_pipeline, const VkPipelineLayout &pipeline_layout, uint32_t current_frame, const _SceneData &scene_data, VkRenderPass shadow_pass, const std::vector<VkFramebuffer> &shadow_framebuffers, const VkPipeline &shadow_pipeline, const VkPipelineLayout &shadow_layout, VkDevice device);
 void recreateSwapChain(VkSwapchainKHR *swap_chain, VkRenderPass render_pass, std::vector<VkFramebuffer> &framebuffers, GLFWwindow *window, VkSurfaceKHR surface, std::vector<VkImage> &images, std::vector<VkImageView> &image_views, VkFormat *format, VkExtent2D *extent, VkImageView color_image_view, VkImageView depth_image_view, VkPhysicalDevice physical_device, VkDevice device);
 void createVertexBuffer(VkBuffer *vertex_buffer, std::vector<Vertex> vertices, VmaAllocation *vertex_buffer_memory, VkCommandPool command_pool, VkQueue graphics_queue, VmaAllocator allocator, VkPhysicalDevice physical_device, VkDevice device);
 void createAllocator(VmaAllocator *allocator, VkInstance instance, VkPhysicalDevice physical_device, VkDevice device);
@@ -310,7 +318,7 @@ void createIndexBuffer(std::vector<uint32_t> indices, VkBuffer *index_buffer, Vm
 void createDescriptorSetLayout(VkDescriptorSetLayout *descriptor_set_layout, VkDevice device);
 void createUniformBuffer(VkBuffer *uniform_buffer, VmaAllocation *uniform_buffer_memory, void **uniform_buffer_mapped, VmaAllocator allocator);
 void createDescriptorPool(VkDescriptorPool *descriptor_pool, uint32_t descriptor_count, VmaAllocator allocator, VkDevice device);
-void addDescriptorSet(VkDescriptorSet descriptor_set, VkBuffer uniform_buffer, VkImageView texture_image_view, VkImageView mr_image_view, VkImageView normal_image_view, VkSampler texture_sampler, VkDevice device);
+void addDescriptorSet(VkDescriptorSet descriptor_set, VkBuffer uniform_buffer, VkImageView texture_image_view, VkImageView mr_image_view, VkImageView normal_image_view, VkSampler texture_sampler, VkImageView shadow_view, VkSampler shadow_sampler, VkDevice device);
 void createDescriptorSets(std::vector<VkDescriptorSet> &descriptor_sets, VkDescriptorSetLayout descriptor_set_layout, uint32_t count, VkDescriptorPool descriptor_pool, VkDevice device);
 void createTextureImage(const char *texture_path, VkImage &image, VmaAllocation &image_memory, VmaAllocator allocator, VkCommandPool command_pool, VkQueue graphics_queue, VkDevice device);
 void createTextureImageView(VkImageView *texture_image_view, VkImage image, VkDevice device);
@@ -318,6 +326,10 @@ void createTextureSampler(VkSampler *texture_sampler, VkPhysicalDevice physical_
 void createDepthResources(VkImage &depth_image, VmaAllocation &depth_image_memory, VkImageView &depth_image_view, VmaAllocator allocator, VkExtent2D swap_chain_extent, VkQueue graphics_queue, VkCommandPool command_pool, VkSampleCountFlagBits msaa_samples, VkPhysicalDevice physical_device, VkDevice device);
 void createColorResources(VkImage &color_image, VmaAllocation &color_image_memory, VkImageView &color_image_view, VmaAllocator allocator, VkExtent2D swap_chain_extent, VkFormat swap_chain_image_format, VkQueue graphics_queue, VkCommandPool command_pool, VkSampleCountFlagBits msaa_samples, VkDevice device);
 void computeBoundingSphere(_Object& obj);
+void createShadowResources(VkImage& shadowImage, VmaAllocation& shadowImageMemory, VkImageView& shadowImageView, VkImageView shadowLayerImageViews[4], VkSampler& shadowSampler, VkRenderPass& shadowRenderPass, VkFramebuffer shadowFramebuffers[4], VkPhysicalDevice physical_device, VkDevice device, VmaAllocator allocator);
+void createShadowPipeline(const std::string vertex_shader_path, VkPipelineLayout *pipeline_layout, VkRenderPass render_pass, VkPipeline *pipeline, VkDevice device);
+void updateCSMData(glm::mat4* cascadeViewProjMatrices, glm::vec4* cascadeSplits, glm::mat4 view, glm::mat4 proj, glm::vec3 lightDir, float nearPlane, float farPlane);
+void createShadowPipeline(const std::string vertex_shader_path, const std::string frag_shader_path, VkShaderModule *shadow_vert_shader_module, VkShaderModule *shadow_frag_shader_module, VkDescriptorSetLayout *descriptor_set_layout, std::vector<VkDynamicState> dynamic_states, VkPipelineLayout *pipeline_layout, VkPipeline *pipeline, VkRenderPass shadow_render_pass, VkDevice device);
 
 VkSampleCountFlagBits getMaxUsableSampleCount(VkPhysicalDevice physical_device);
 

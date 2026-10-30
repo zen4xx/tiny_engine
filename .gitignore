@@ -6,6 +6,7 @@ Makefile
 /build
 /_deps
 /.cache
+/tiny_engine_assets/shaders
 log
 compile_commands.json
 Tiny_engine

@@ -18,8 +18,7 @@ public:
     }
 
 public:
-    void createDescriptorSetsForScene(VkExtent2D extent, VmaAllocator allocator, VkDescriptorSetLayout descriptor_set_layout, VkDevice device);
-
+    void createDescriptorSetsForScene(VkExtent2D extent, VmaAllocator allocator, VkDescriptorSetLayout descriptor_set_layout, VkImageView shadow_view, VkSampler shadow_sampler, VkDevice device);
     void destroyDescriptorPool(VkDevice device);
     void deleteScene(VmaAllocator allocator, VkDevice device);
 

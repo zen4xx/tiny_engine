@@ -5,6 +5,8 @@
 #include "../scene/scene.h"
 #include <cstddef>
 #include <cstdint>
+#include <vector>
+#include <vulkan/vulkan_core.h>
 
 namespace tiny_engine
 {
@@ -74,7 +76,7 @@ public:
     inline void updateScene(const std::string &scene_name)
     {
         m_scenes[scene_name]->destroyDescriptorPool(m_device);
-        m_scenes[scene_name]->createDescriptorSetsForScene(m_swap_chain_extent, m_allocator, m_descriptor_set_layout, m_device);
+        m_scenes[scene_name]->createDescriptorSetsForScene(m_swap_chain_extent, m_allocator, m_descriptor_set_layout, m_shadow_image_view, m_shadow_sampler, m_device);
     };
 
 private:
@@ -129,6 +131,20 @@ private:
     VkImage m_color_image;
     VmaAllocation m_color_image_memory;
     VkImageView m_color_image_view;
+
+    VkShaderModule m_shadow_vert_shader_module;
+    VkShaderModule m_shadow_frag_shader_module;
+
+    VkImage m_shadow_image;
+    VmaAllocation m_shadow_image_memory;
+    VkImageView m_shadow_image_view;
+    VkImageView m_shadow_layer_image_views[4];
+    VkSampler m_shadow_sampler;
+
+    VkRenderPass m_shadow_render_pass;
+    std::vector<VkFramebuffer> m_shadow_framebuffers = {0, 0, 0, 0};
+    VkPipelineLayout m_shadow_pipeline_layout;
+    VkPipeline m_shadow_pipeline;
 
     uint32_t current_frame = 0;
 

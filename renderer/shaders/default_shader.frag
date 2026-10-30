@@ -13,11 +13,9 @@ layout(location = 0) in vec2 fragTexCoord;
 layout(location = 1) in vec3 fragNormal;
 layout(location = 2) in vec3 fragCameraPos;
 layout(location = 3) in vec3 fragPos;
-
-#ifdef USE_NORMAL_MAP
 layout(location = 4) in vec3 fragTangent;
 layout(location = 5) in vec3 fragBitangent;
-#endif
+layout(location = 6) in vec3 fragViewPos;
 
 layout(location = 0) out vec4 outColor;
 
@@ -28,10 +26,12 @@ layout(set = 0, binding = 2) uniform sampler2D mrSampler;
 layout(set = 0, binding = 3) uniform sampler2D normalSampler;
 #endif
 
+layout(set = 0, binding = 4) uniform sampler2DArrayShadow shadowSampler;
+
 const float PI = 3.14159265359;
 const float MIN_ROUGHNESS = 0.05;
 
-layout(std140, set = 0, binding = 0) uniform UniformBufferObject {
+layout(binding = 0) uniform UniformBufferObject {
     mat4 view;
     mat4 proj;
 
@@ -43,6 +43,9 @@ layout(std140, set = 0, binding = 0) uniform UniformBufferObject {
     vec4 point_light_pos[MAX_POINT_LIGHTS_COUNT];
 
     int point_light_count;
+
+    mat4 cascadeViewProjMatrices[4];
+    vec4 cascadeSplits;
 } ubo;
 
 float DistributionGGX(vec3 N, vec3 H, float roughness) {
@@ -190,7 +193,7 @@ void main() {
 
     vec3 Lo = vec3(0.0);
 
-    // Directional light
+    // Directional light + CSM Shadows
     {
         vec3 dir = ubo.dirLight;
         vec3 radiance = ubo.dirLightColor;
@@ -198,16 +201,25 @@ void main() {
         if (dot(dir, dir) > 1e-8 && dot(radiance, radiance) > 0.0) {
             vec3 L = normalize(-dir);
 
-            Lo += ShadeLight(
-                L,
-                V,
-                N,
-                radiance,
-                albedo,
-                F0,
-                metallic,
-                roughness
-            );
+            // --- CSM Shadow Calculation ---
+            float shadow = 1.0;
+            float viewDepth = abs(fragViewPos.z); // Глубина во view-space
+            
+            int cascadeIndex = 3;
+            if (viewDepth < ubo.cascadeSplits.x) cascadeIndex = 0;
+            else if (viewDepth < ubo.cascadeSplits.y) cascadeIndex = 1;
+            else if (viewDepth < ubo.cascadeSplits.z) cascadeIndex = 2;
+
+            vec4 shadowCoord = ubo.cascadeViewProjMatrices[cascadeIndex] * vec4(fragPos, 1.0);
+            shadowCoord.xyz = shadowCoord.xyz / shadowCoord.w;
+            shadowCoord.xy = shadowCoord.xy * 0.5 + 0.5;
+            
+            float currentDepth = shadowCoord.z;
+            float bias = 0.005; 
+            
+            shadow = texture(shadowSampler, vec4(shadowCoord.xy, cascadeIndex, currentDepth - bias)).r;
+            
+            Lo += shadow * ShadeLight(L, V, N, radiance, albedo, F0, metallic, roughness);
         }
     }
 

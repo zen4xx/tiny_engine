@@ -34,7 +34,7 @@ void delete_object(_Object &obj, VmaAllocator allocator, VkDevice device)
     }
 }
 
-void _Scene::createDescriptorSetsForScene(VkExtent2D extent, VmaAllocator allocator, VkDescriptorSetLayout descriptor_set_layout, VkDevice device)
+void _Scene::createDescriptorSetsForScene(VkExtent2D extent, VmaAllocator allocator, VkDescriptorSetLayout descriptor_set_layout, VkImageView shadow_view, VkSampler shadow_sampler, VkDevice device)
 {
     scene_data.proj = glm::perspective(glm::radians(45.0f), extent.width / (float)extent.height, 0.1f, draw_distance);
 
@@ -43,7 +43,7 @@ void _Scene::createDescriptorSetsForScene(VkExtent2D extent, VmaAllocator alloca
     int i = 0;
     for (auto it = objects.begin(); it != objects.end(); ++it)
     {
-        addDescriptorSet(scene_data.descriptorSets[i], scene_data.uniformBuffer, it->textureImageView, it->metalRoughnessImageView, it->normalImageView, *it->sampler, device);
+        addDescriptorSet(scene_data.descriptorSets[i], scene_data.uniformBuffer, it->textureImageView, it->metalRoughnessImageView, it->normalImageView, *it->sampler, shadow_view, shadow_sampler, device);
         it->dc_index = i;
         ++i;
     }

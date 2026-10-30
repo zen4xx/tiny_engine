@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <fstream>
 #include <iostream>
+#include <vulkan/vulkan_core.h>
 
 /*INITIALIZATION VULKAN*/
 
@@ -57,15 +58,28 @@ Renderer::~Renderer()
     for (auto framebuffer : m_swap_chain_frame_buffers)
         vkDestroyFramebuffer(m_device, framebuffer, nullptr);
 
+    for (auto framebuffer : m_shadow_framebuffers)
+        vkDestroyFramebuffer(m_device, framebuffer, nullptr);
+
     vkDestroyImageView(m_device, m_depth_image_view, nullptr);
     vmaDestroyImage(m_allocator, m_depth_image, m_depth_image_memory);
 
     vkDestroyImageView(m_device, m_color_image_view, nullptr);
     vmaDestroyImage(m_allocator, m_color_image, m_color_image_memory);
+    
+    vkDestroyImageView(m_device, m_shadow_image_view, nullptr);
+    vmaDestroyImage(m_allocator, m_shadow_image, m_shadow_image_memory);
+
+    for (auto img : m_shadow_layer_image_views)
+        vkDestroyImageView(m_device, img, nullptr);
 
     vkDestroyPipeline(m_device, m_graphics_pipeline, nullptr);
     vkDestroyPipelineLayout(m_device, m_pipeline_layout, nullptr);
     vkDestroyRenderPass(m_device, m_render_pass, nullptr);
+
+    vkDestroyPipeline(m_device, m_shadow_pipeline, nullptr);
+    vkDestroyPipelineLayout(m_device, m_shadow_pipeline_layout, nullptr);
+    vkDestroyRenderPass(m_device, m_shadow_render_pass, nullptr);
 
     for (auto imageView : m_swap_chain_image_views)
         vkDestroyImageView(m_device, imageView, nullptr);
@@ -73,6 +87,7 @@ Renderer::~Renderer()
     vkDestroySwapchainKHR(m_device, m_swap_chain, nullptr);
 
     vkDestroySampler(m_device, m_sampler, nullptr);
+    vkDestroySampler(m_device, m_shadow_sampler, nullptr);
     for (auto it = m_scenes.begin(); it != m_scenes.end(); ++it)
     {
         if (!it->second->isDeleted)
@@ -82,6 +97,9 @@ Renderer::~Renderer()
 
     vkDestroyShaderModule(m_device, m_frag_shader_module, nullptr);
     vkDestroyShaderModule(m_device, m_vert_shader_module, nullptr);
+
+    vkDestroyShaderModule(m_device, m_shadow_frag_shader_module, nullptr);
+    vkDestroyShaderModule(m_device, m_shadow_vert_shader_module, nullptr);
 
     vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
 
@@ -147,7 +165,7 @@ void Renderer::setWindow(GLFWwindow *window)
     createImageViews(m_swap_chain_image_views, m_swap_chain_images, m_swap_chain_image_format, m_device);
     createRenderPass(&m_render_pass, &m_pipeline_layout, m_swap_chain_image_format, m_msaa_samples, m_physical_device, m_device);
     createDescriptorSetLayout(&m_descriptor_set_layout, m_device);
-    createGraphicsPipeline("tiny_engine_assets/shaders/vert.spv", "tiny_engine_assets/shaders/frag.spv", &m_vert_shader_module, &m_frag_shader_module, &m_descriptor_set_layout, m_dynamic_states, &m_viewport, &m_scissor, m_swap_chain_extent, &m_render_pass, &m_pipeline_layout, &m_graphics_pipeline, m_msaa_samples, m_device);
+    createGraphicsPipeline("tiny_engine_assets/shaders/default_shader.vert.spv", "tiny_engine_assets/shaders/default_shader.frag.spv", &m_vert_shader_module, &m_frag_shader_module, &m_descriptor_set_layout, m_dynamic_states, &m_viewport, &m_scissor, m_swap_chain_extent, &m_render_pass, &m_pipeline_layout, &m_graphics_pipeline, m_msaa_samples, m_device);
     createCommandPool(&m_command_pool, m_surface, m_physical_device, m_device);
     
     createDepthResources(m_depth_image, m_depth_image_memory, m_depth_image_view, m_allocator, m_swap_chain_extent, m_graphics_queue, m_command_pool, m_msaa_samples, m_physical_device, m_device);
@@ -166,6 +184,9 @@ void Renderer::setWindow(GLFWwindow *window)
     }
 
     createSyncObjects(m_image_available_semaphores, m_render_finished_semaphores, m_in_flight_fences, MAX_FRAMES_IN_FLIGHT, m_swap_chain_images.size(), m_device);
+
+    createShadowResources(m_shadow_image, m_shadow_image_memory, m_shadow_image_view, m_shadow_layer_image_views, m_shadow_sampler, m_shadow_render_pass, m_shadow_framebuffers.data(), m_physical_device, m_device, m_allocator);
+    createShadowPipeline("tiny_engine_assets/shaders/shadow_shader.vert.spv", "tiny_engine_assets/shaders/shadow_shader.frag.spv", &m_shadow_vert_shader_module, &m_shadow_frag_shader_module, &m_descriptor_set_layout, m_dynamic_states, &m_shadow_pipeline_layout, &m_shadow_pipeline, m_shadow_render_pass, m_device);
 }
 void Renderer::drawScene(const std::string &scene_name)
 {
@@ -174,7 +195,7 @@ void Renderer::drawScene(const std::string &scene_name)
         return;
 
     if (!m_scenes[scene_name]->isDescriptorSetsCreated)
-        m_scenes[scene_name]->createDescriptorSetsForScene(m_swap_chain_extent, m_allocator, m_descriptor_set_layout, m_device);
+        m_scenes[scene_name]->createDescriptorSetsForScene(m_swap_chain_extent, m_allocator, m_descriptor_set_layout, m_shadow_image_view, m_shadow_sampler, m_device);
 
     static double lastTime = glfwGetTime();
 
@@ -206,7 +227,19 @@ void Renderer::drawScene(const std::string &scene_name)
     
     vkResetFences(m_device, 1, &m_in_flight_fences[current_frame]);
     vkResetCommandBuffer(m_command_buffers[current_frame], 0);
-    recordCommandBuffer(m_command_buffers[current_frame], m_threads, m_scenes[scene_name]->objects, imageIndex, m_swap_chain_extent, m_render_pass, m_swap_chain_frame_buffers, m_graphics_pipeline, m_pipeline_layout, current_frame, m_scenes[scene_name]->scene_data, m_device);
+
+    auto &scene_data = m_scenes[scene_name]->scene_data;
+    updateCSMData(
+        scene_data.cascadeViewProjMatrices,
+        &scene_data.cascadeSplits,
+        scene_data.view,
+        scene_data.proj,
+        scene_data.dirLight,
+        0.1f,
+        m_scenes[scene_name]->draw_distance
+    );
+
+    recordCommandBuffer(m_command_buffers[current_frame], m_threads, m_scenes[scene_name]->objects, imageIndex, m_swap_chain_extent, m_render_pass, m_swap_chain_frame_buffers, m_graphics_pipeline, m_pipeline_layout, current_frame, m_scenes[scene_name]->scene_data, m_shadow_render_pass, m_shadow_framebuffers, m_shadow_pipeline, m_shadow_pipeline_layout, m_device);
     
     VkSubmitInfo submitInfo = {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;

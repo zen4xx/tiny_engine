@@ -104,16 +104,8 @@ file(GLOB SHADER_SOURCES
 set(SHADER_OUTPUTS "")
 
 foreach(SHADER_SOURCE ${SHADER_SOURCES})
-    get_filename_component(SHADER_EXT ${SHADER_SOURCE} EXT)
-    
-    if(SHADER_EXT STREQUAL ".vert")
-        set(SHADER_OUTPUT "${SHADER_OUTPUT_DIR}/vert.spv")
-    elseif(SHADER_EXT STREQUAL ".frag")
-        set(SHADER_OUTPUT "${SHADER_OUTPUT_DIR}/frag.spv")
-    else()
-        get_filename_component(SHADER_NAME ${SHADER_SOURCE} NAME)
-        set(SHADER_OUTPUT "${SHADER_OUTPUT_DIR}/${SHADER_NAME}.spv")
-    endif()
+    get_filename_component(SHADER_FILENAME ${SHADER_SOURCE} NAME)
+    set(SHADER_OUTPUT "${SHADER_OUTPUT_DIR}/${SHADER_FILENAME}.spv")
     
     add_custom_command(
         OUTPUT ${SHADER_OUTPUT}
