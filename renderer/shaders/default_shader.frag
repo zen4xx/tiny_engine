@@ -114,6 +114,21 @@ vec3 ShadeLight(
     return (diffuse + specular) * radiance * NdotL;
 }
 
+float PCF3x3(vec3 shadowCoord, int cascadeIndex) {
+    float shadow = 0.0;
+    vec2 texelSize = vec2(1.0) / vec2(4096); // SHADOW_MAP_WIDTH
+    
+    for (int x = -1; x <= 1; x++) {
+        for (int y = -1; y <= 1; y++) {
+            vec2 offset = vec2(x, y) * texelSize;
+            vec3 sampleCoord = vec3(shadowCoord.xy + offset, cascadeIndex);
+            shadow += texture(shadowSampler, vec4(sampleCoord, shadowCoord.z)).r;
+        }
+    }
+    
+    return shadow / 9.0;
+}
+
 void main() {
     vec4 baseColor = texture(texSampler, fragTexCoord);
 
@@ -210,13 +225,15 @@ void main() {
             else if (viewDepth < ubo.cascadeSplits.y) cascadeIndex = 1;
             else if (viewDepth < ubo.cascadeSplits.z) cascadeIndex = 2;
 
-            vec4 shadowCoord = ubo.cascadeViewProjMatrices[cascadeIndex] * vec4(fragPos, 1.0);
+            float normalOffsetScale = 0.15;
+            vec3 biasedFragPos = fragPos + N * normalOffsetScale;
+
+            vec4 shadowCoord = ubo.cascadeViewProjMatrices[cascadeIndex] * vec4(biasedFragPos, 1.0);
             shadowCoord.xyz = shadowCoord.xyz / shadowCoord.w;
             shadowCoord.xy = shadowCoord.xy * 0.5 + 0.5;
             
             float currentDepth = shadowCoord.z;
-            shadow = texture(shadowSampler, vec4(shadowCoord.xy, cascadeIndex, currentDepth)).r;
-            
+            shadow = PCF3x3(shadowCoord.xyz, cascadeIndex);
             Lo += shadow * ShadeLight(L, V, N, radiance, albedo, F0, metallic, roughness);
         }
     }

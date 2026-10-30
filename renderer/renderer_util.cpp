@@ -2197,7 +2197,7 @@ void createShadowResources(VkImage& shadowImage, VmaAllocation& shadowImageMemor
     imageInfo.extent.height = SHADOW_MAP_HEIGHT;
     imageInfo.extent.depth = 1;
     imageInfo.mipLevels = 1;
-    imageInfo.arrayLayers = 4; // 4 каскада
+    imageInfo.arrayLayers = 4;
     imageInfo.format = VK_FORMAT_D32_SFLOAT;
     imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -2308,13 +2308,6 @@ void updateCSMData(glm::mat4* cascadeViewProjMatrices, glm::vec4* cascadeSplits,
     float tanHalfFovY = std::abs(1.0f / proj[1][1]);
     float fovY = 2.0f * std::atan(tanHalfFovY);
     float aspect = std::abs(proj[1][1] / proj[0][0]);
-    
-    glm::mat4 clip = glm::mat4(
-        1.0f, 0.0f, 0.0f, 0.0f,
-        0.0f,-1.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 0.5f, 0.0f,
-        0.0f, 0.0f, 0.5f, 1.0f
-    );
 
     for (int i = 0; i < 4; i++) {
         float n = (i == 0) ? nearPlane : splits[i-1];
@@ -2356,8 +2349,6 @@ void updateCSMData(glm::mat4* cascadeViewProjMatrices, glm::vec4* cascadeSplits,
         glm::mat4 lightView = glm::lookAt(lightEye, center, glm::vec3(0.0f, 1.0f, 0.0f));
         
         glm::mat4 lightOrtho = glm::ortho(-radius, radius, -radius, radius, 0.1f, radius * 2.0f + 100.0f);
-        
-        lightOrtho = clip * lightOrtho;
         
         glm::vec4 shadowOrigin = lightOrtho * lightView * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
         shadowOrigin /= shadowOrigin.w;
@@ -2440,8 +2431,8 @@ void createShadowPipeline(const std::string vertex_shader_path, const std::strin
     rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     
     rasterizer.depthBiasEnable = VK_TRUE;
-    rasterizer.depthBiasConstantFactor = 1.25f;
-    rasterizer.depthBiasSlopeFactor = 1.75f;
+    rasterizer.depthBiasConstantFactor = 0.3f;
+    rasterizer.depthBiasSlopeFactor = 0.7f;
 
     VkPipelineMultisampleStateCreateInfo multisampling{};
     multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
