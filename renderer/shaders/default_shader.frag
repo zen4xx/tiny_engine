@@ -203,7 +203,7 @@ void main() {
 
             // --- CSM Shadow Calculation ---
             float shadow = 1.0;
-            float viewDepth = abs(fragViewPos.z); // Глубина во view-space
+            float viewDepth = abs(fragViewPos.z);
             
             int cascadeIndex = 3;
             if (viewDepth < ubo.cascadeSplits.x) cascadeIndex = 0;
@@ -215,9 +215,7 @@ void main() {
             shadowCoord.xy = shadowCoord.xy * 0.5 + 0.5;
             
             float currentDepth = shadowCoord.z;
-            float bias = 0.005; 
-            
-            shadow = texture(shadowSampler, vec4(shadowCoord.xy, cascadeIndex, currentDepth - bias)).r;
+            shadow = texture(shadowSampler, vec4(shadowCoord.xy, cascadeIndex, currentDepth)).r;
             
             Lo += shadow * ShadeLight(L, V, N, radiance, albedo, F0, metallic, roughness);
         }
