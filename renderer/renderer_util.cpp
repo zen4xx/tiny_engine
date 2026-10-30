@@ -1,3 +1,4 @@
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <cstddef>
 #include <vulkan/vulkan_core.h>
 #define VMA_IMPLEMENTATION
@@ -20,6 +21,9 @@
 #define TINY_ENGINE_NO_SECONDARY_CMD_BUFFERS
 #endif
 #endif
+
+#define SHADOW_MAP_WIDTH 4096
+#define SHADOW_MAP_HEIGHT 4096
 
 std::vector<const char *> getRequiredExtensions(bool isDebug);
 
@@ -1228,7 +1232,7 @@ void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData>
         shadowRenderPassInfo.renderPass = shadow_pass;
         shadowRenderPassInfo.framebuffer = shadow_framebuffers[cascade];
         shadowRenderPassInfo.renderArea.offset = {0, 0};
-        shadowRenderPassInfo.renderArea.extent = {2048, 2048};
+        shadowRenderPassInfo.renderArea.extent = {SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT};
 
         VkClearValue clearValue;
         clearValue.depthStencil = {1.0f, 0};
@@ -1242,15 +1246,15 @@ void recordCommandBuffer(VkCommandBuffer command_buffer, std::vector<ThreadData>
         VkViewport shadowViewport{};
         shadowViewport.x = 0.0f;
         shadowViewport.y = 0.0f;
-        shadowViewport.width = 2048.0f;
-        shadowViewport.height = 2048.0f;
+        shadowViewport.width = SHADOW_MAP_WIDTH;
+        shadowViewport.height = SHADOW_MAP_HEIGHT;
         shadowViewport.minDepth = 0.0f;
         shadowViewport.maxDepth = 1.0f;
         vkCmdSetViewport(command_buffer, 0, 1, &shadowViewport);
 
         VkRect2D shadowScissor{};
         shadowScissor.offset = {0, 0};
-        shadowScissor.extent = {2048, 2048};
+        shadowScissor.extent = {SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT};
         vkCmdSetScissor(command_buffer, 0, 1, &shadowScissor);
 
         for (const auto& obj : objects) {
@@ -2137,9 +2141,6 @@ void computeBoundingSphere(_Object& obj) {
 }
 
 void createShadowResources(VkImage& shadowImage, VmaAllocation& shadowImageMemory, VkImageView& shadowImageView, VkImageView shadowLayerImageViews[4], VkSampler& shadowSampler, VkRenderPass& shadowRenderPass, VkFramebuffer shadowFramebuffers[4], VkPhysicalDevice physical_device, VkDevice device, VmaAllocator allocator) {
-    const uint32_t SHADOW_MAP_WIDTH = 2048;
-    const uint32_t SHADOW_MAP_HEIGHT = 2048;
-
     VkImageCreateInfo imageInfo{};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -2241,7 +2242,7 @@ void createShadowResources(VkImage& shadowImage, VmaAllocation& shadowImageMemor
 }
 
 void updateCSMData(glm::mat4* cascadeViewProjMatrices, glm::vec4* cascadeSplits, glm::mat4 view, glm::mat4 proj, glm::vec3 lightDir, float nearPlane, float farPlane) {
-    float lambda = 0.5f; // Practical split scheme
+    float lambda = 0.5f; 
     float splits[4];
     
     for (int i = 0; i < 4; i++) {
@@ -2253,29 +2254,38 @@ void updateCSMData(glm::mat4* cascadeViewProjMatrices, glm::vec4* cascadeSplits,
     *cascadeSplits = glm::vec4(splits[0], splits[1], splits[2], splits[3]);
     
     glm::vec3 lightDirNorm = glm::normalize(lightDir);
-    
-    glm::mat4 invProj = glm::inverse(proj);
     glm::mat4 invView = glm::inverse(view);
     
+    float tanHalfFovY = std::abs(1.0f / proj[1][1]);
+    float fovY = 2.0f * std::atan(tanHalfFovY);
+    float aspect = std::abs(proj[1][1] / proj[0][0]);
+    
+    glm::mat4 clip = glm::mat4(
+        1.0f, 0.0f, 0.0f, 0.0f,
+        0.0f,-1.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 0.5f, 0.0f,
+        0.0f, 0.0f, 0.5f, 1.0f
+    );
+
     for (int i = 0; i < 4; i++) {
         float n = (i == 0) ? nearPlane : splits[i-1];
         float f = splits[i];
         
+        glm::mat4 cascadeProj = glm::perspective(fovY, aspect, n, f);
+        glm::mat4 invCascadeProj = glm::inverse(cascadeProj);
+        
         glm::vec4 frustumCorners[8] = {
-            glm::vec4(-1.0f, -1.0f, -1.0f, 1.0f), glm::vec4(1.0f, -1.0f, -1.0f, 1.0f),
-            glm::vec4(1.0f, 1.0f, -1.0f, 1.0f), glm::vec4(-1.0f, 1.0f, -1.0f, 1.0f),
-            glm::vec4(-1.0f, -1.0f, 1.0f, 1.0f), glm::vec4(1.0f, -1.0f, 1.0f, 1.0f),
-            glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), glm::vec4(-1.0f, 1.0f, 1.0f, 1.0f)
+            // Near plane (Z = 0)
+            glm::vec4(-1.0f, -1.0f, 0.0f, 1.0f), glm::vec4( 1.0f, -1.0f, 0.0f, 1.0f),
+            glm::vec4( 1.0f,  1.0f, 0.0f, 1.0f), glm::vec4(-1.0f,  1.0f, 0.0f, 1.0f),
+            // Far plane (Z = 1)
+            glm::vec4(-1.0f, -1.0f, 1.0f, 1.0f), glm::vec4( 1.0f, -1.0f, 1.0f, 1.0f),
+            glm::vec4( 1.0f,  1.0f, 1.0f, 1.0f), glm::vec4(-1.0f,  1.0f, 1.0f, 1.0f)
         };
         
-        for(int j=0; j<4; ++j) {
-            glm::vec4 c = invProj * frustumCorners[j];
+        for(int j=0; j<8; ++j) {
+            glm::vec4 c = invCascadeProj * frustumCorners[j];
             frustumCorners[j] = c / c.w;
-            frustumCorners[j].z = frustumCorners[j].z * n;
-            
-            c = invProj * frustumCorners[j+4];
-            frustumCorners[j+4] = c / c.w;
-            frustumCorners[j+4].z = frustumCorners[j+4].z * f;
         }
         
         glm::vec3 center(0.0f);
@@ -2295,15 +2305,23 @@ void updateCSMData(glm::mat4* cascadeViewProjMatrices, glm::vec4* cascadeSplits,
         
         glm::vec3 lightEye = center - lightDirNorm * radius;
         glm::mat4 lightView = glm::lookAt(lightEye, center, glm::vec3(0.0f, 1.0f, 0.0f));
+        
         glm::mat4 lightOrtho = glm::ortho(-radius, radius, -radius, radius, 0.1f, radius * 2.0f + 100.0f);
         
-        glm::vec3 shadowOrigin = glm::vec3(lightOrtho * lightView * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
-        shadowOrigin *= 2048.0f / 2.0f; 
+        lightOrtho = clip * lightOrtho;
         
-        glm::vec3 roundedOrigin = glm::round(shadowOrigin);
-        glm::vec3 roundOffset = roundedOrigin - shadowOrigin;
-        roundOffset = roundOffset * (2.0f * radius / 2048.0f);
-        
+        glm::vec4 shadowOrigin = lightOrtho * lightView * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+        shadowOrigin /= shadowOrigin.w;
+
+        float texelScale = SHADOW_MAP_WIDTH / 2.0f;
+        shadowOrigin.x *= texelScale;
+        shadowOrigin.y *= texelScale;
+
+        glm::vec2 roundOffset = glm::round(glm::vec2(shadowOrigin)) - glm::vec2(shadowOrigin);
+
+        roundOffset.x /= texelScale;
+        roundOffset.y /= texelScale;
+
         lightOrtho[3][0] += roundOffset.x;
         lightOrtho[3][1] += roundOffset.y;
         
