@@ -335,7 +335,7 @@ size_t Renderer::addObject(const std::string &scene_name, const std::vector<Vert
     // moves object to scene
     m_scenes[scene_name]->objects.push_back(std::move(object));
 
-    return m_scenes[scene_name]->objects.size();
+    return m_scenes[scene_name]->objects.size() - 1;
 }
 
 size_t Renderer::addObject(const std::string &scene_name, const std::string &gltf_model_path, glm::mat4 pos, const std::string &albedo_path, const std::string &mr_path, const std::string &normal_path)
