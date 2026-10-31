@@ -2349,22 +2349,24 @@ void updateCSMData(glm::mat4* cascadeViewProjMatrices, glm::vec4* cascadeSplits,
         glm::mat4 lightView = glm::lookAt(lightEye, center, glm::vec3(0.0f, 1.0f, 0.0f));
         
         glm::mat4 lightOrtho = glm::ortho(-radius, radius, -radius, radius, 0.1f, radius * 2.0f + 100.0f);
-        
-        glm::vec4 shadowOrigin = lightOrtho * lightView * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-        shadowOrigin /= shadowOrigin.w;
 
-        float texelScale = SHADOW_MAP_WIDTH / 2.0f;
-        shadowOrigin.x *= texelScale;
-        shadowOrigin.y *= texelScale;
+        glm::mat4 lightViewProj = lightOrtho * lightView;
 
-        glm::vec2 roundOffset = glm::round(glm::vec2(shadowOrigin)) - glm::vec2(shadowOrigin);
+        glm::vec3 camPos = glm::vec3(invView[3]);
 
-        roundOffset.x /= texelScale;
-        roundOffset.y /= texelScale;
+        glm::vec4 shadowCamPos = lightViewProj * glm::vec4(camPos, 1.0);
+        shadowCamPos = glm::vec4(glm::vec3(shadowCamPos.x, shadowCamPos.y, shadowCamPos.z) / shadowCamPos.w, shadowCamPos.w);
 
-        lightOrtho[3][0] += roundOffset.x;
-        lightOrtho[3][1] += roundOffset.y;
-        
+        glm::vec2 shadowPixelPos = (glm::vec2(shadowCamPos.x, shadowCamPos.y)) * (float)SHADOW_MAP_WIDTH / 2.0f;
+
+        glm::vec2 roundedPixel = glm::round(shadowPixelPos);
+        glm::vec2 pixelOffset = roundedPixel - shadowPixelPos;
+
+        glm::vec2 worldOffset = pixelOffset * (2.0f / (float)SHADOW_MAP_WIDTH);
+
+        lightOrtho[3][0] += worldOffset.x;
+        lightOrtho[3][1] += worldOffset.y;
+
         cascadeViewProjMatrices[i] = lightOrtho * lightView;
     }
 }
