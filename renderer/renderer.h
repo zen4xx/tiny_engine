@@ -69,13 +69,13 @@ public:
 
     inline void createScene(const std::string &scene_name, const std::string &skybox_path) { 
         m_scenes[scene_name] = std::move(std::make_unique<_Scene>(m_allocator)); 
-        createTextureSampler(&m_scenes[scene_name]->scene_data.skyboxSampler, m_physical_device, m_device);
+        createTextureSampler(&m_scenes[scene_name]->scene_data.skyboxSampler, m_physical_device, m_device, 9);
         if (skybox_path != "_default")
-            createTextureImage(skybox_path.c_str(), m_scenes[scene_name]->scene_data.skyboxImage, m_scenes[scene_name]->scene_data.skyboxMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
+            createTextureImage(skybox_path.c_str(), m_scenes[scene_name]->scene_data.skyboxImage, m_scenes[scene_name]->scene_data.skyboxMemory, m_allocator, m_command_pool, m_graphics_queue, m_device, 9, m_physical_device);
         else
-            createTextureImage("tiny_engine_assets/textures/skybox.hdr", m_scenes[scene_name]->scene_data.skyboxImage, m_scenes[scene_name]->scene_data.skyboxMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
+            createTextureImage("tiny_engine_assets/textures/skybox.hdr", m_scenes[scene_name]->scene_data.skyboxImage, m_scenes[scene_name]->scene_data.skyboxMemory, m_allocator, m_command_pool, m_graphics_queue, m_device, 9, m_physical_device);
     
-        createTextureImageView(&m_scenes[scene_name]->scene_data.skyboxView, m_scenes[scene_name]->scene_data.skyboxImage, m_device);
+        createTextureImageView(&m_scenes[scene_name]->scene_data.skyboxView, m_scenes[scene_name]->scene_data.skyboxImage, m_device, 9);
     };
     inline void deleteScene(const std::string &scene_name)
     {

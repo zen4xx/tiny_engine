@@ -325,9 +325,9 @@ void createUniformBuffer(VkBuffer *uniform_buffer, VmaAllocation *uniform_buffer
 void createDescriptorPool(VkDescriptorPool *descriptor_pool, uint32_t descriptor_count, VmaAllocator allocator, VkDevice device);
 void addDescriptorSet(VkDescriptorSet descriptor_set, VkBuffer uniform_buffer, VkImageView texture_image_view, VkImageView mr_image_view, VkImageView normal_image_view, VkSampler texture_sampler, VkImageView shadow_view, VkSampler shadow_sampler, VkImageView skybox_view, VkSampler skybox_sampler, VkDevice device);
 void createDescriptorSets(std::vector<VkDescriptorSet> &descriptor_sets, VkDescriptorSetLayout descriptor_set_layout, uint32_t count, VkDescriptorPool descriptor_pool, VkDevice device);
-void createTextureImage(const char *texture_path, VkImage &image, VmaAllocation &image_memory, VmaAllocator allocator, VkCommandPool command_pool, VkQueue graphics_queue, VkDevice device);
-void createTextureImageView(VkImageView *texture_image_view, VkImage image, VkDevice device);
-void createTextureSampler(VkSampler *texture_sampler, VkPhysicalDevice physical_device, VkDevice device);
+void createTextureImage(const char *texture_path, VkImage &image, VmaAllocation &image_memory, VmaAllocator allocator, VkCommandPool command_pool, VkQueue graphics_queue, VkDevice device, uint32_t mip_levels=1, VkPhysicalDevice physical_device=VK_NULL_HANDLE);
+void createTextureImageView(VkImageView *texture_image_view, VkImage image, VkDevice device, uint32_t mip_levels=1);
+void createTextureSampler(VkSampler *texture_sampler, VkPhysicalDevice physical_device, VkDevice device, uint32_t mip_levels=1);
 void createDepthResources(VkImage &depth_image, VmaAllocation &depth_image_memory, VkImageView &depth_image_view, VmaAllocator allocator, VkExtent2D swap_chain_extent, VkQueue graphics_queue, VkCommandPool command_pool, VkSampleCountFlagBits msaa_samples, VkPhysicalDevice physical_device, VkDevice device);
 void createColorResources(VkImage &color_image, VmaAllocation &color_image_memory, VkImageView &color_image_view, VmaAllocator allocator, VkExtent2D swap_chain_extent, VkFormat swap_chain_image_format, VkQueue graphics_queue, VkCommandPool command_pool, VkSampleCountFlagBits msaa_samples, VkDevice device);
 void computeBoundingSphere(_Object& obj);
@@ -335,6 +335,7 @@ void createShadowResources(VkImage& shadowImage, VmaAllocation& shadowImageMemor
 void createShadowPipeline(const std::string vertex_shader_path, VkPipelineLayout *pipeline_layout, VkRenderPass render_pass, VkPipeline *pipeline, VkDevice device);
 void updateCSMData(glm::mat4* cascadeViewProjMatrices, glm::vec4* cascadeSplits, glm::mat4 view, glm::mat4 proj, glm::vec3 lightDir, float nearPlane, float farPlane);
 void createShadowPipeline(const std::string vertex_shader_path, const std::string frag_shader_path, VkShaderModule *shadow_vert_shader_module, VkShaderModule *shadow_frag_shader_module, VkDescriptorSetLayout *descriptor_set_layout, std::vector<VkDynamicState> dynamic_states, VkPipelineLayout *pipeline_layout, VkPipeline *pipeline, VkRenderPass shadow_render_pass, VkDevice device);
+void generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels, VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue graphicsQueue);
 
 VkSampleCountFlagBits getMaxUsableSampleCount(VkPhysicalDevice physical_device);
 

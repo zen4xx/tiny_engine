@@ -45,10 +45,10 @@ int main()
     engine.createScene("secondary");
 
     engine.setDirLight("main", glm::vec3(-2.0f, 0.5f, -0.5f));
-    engine.setDirLight("secondary", glm::vec3(2.0f, 0.5f, 2.0f));
+    engine.setDirLight("secondary", glm::vec3(-2.0f, 0.5f, -0.5f));
     
-    engine.setDirLightColor("secondary", glm::vec3(0.5f, 1.0f, 1.0f));
-    engine.setAmbient("secondary", glm::vec3(0.1f, 0.1f, 0.1f));
+    engine.setDirLightColor("secondary", glm::vec3(5.5f, 6.0f, 6.0f));
+    engine.setAmbient("secondary", glm::vec3(1.5f, 1.5f, 1.5f));
     
     engine.setDirLightColor("main", glm::vec3(1.95f, 1.55f, 1.15f));
     engine.setAmbient("main", glm::vec3(0.08f, 0.10f, 0.18f));
