@@ -53,10 +53,13 @@ void main() {
 
     mat3 normalMatrix = transpose(inverse(mat3(pc.model)));
 
-    fragNormal = normalize(normalMatrix * inNormal);
+    vec3 N = normalize(normalMatrix * inNormal);
+    fragNormal = N;
     
     vec3 T = normalize(normalMatrix * inTangent.xyz);
-    vec3 B = cross(fragNormal, T) * inTangent.w;
+    T = normalize(T - dot(T, N) * N);
+    
+    vec3 B = cross(N, T) * inTangent.w;
     
     fragTangent = T;
     fragBitangent = B;

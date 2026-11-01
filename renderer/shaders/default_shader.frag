@@ -1,11 +1,12 @@
 #version 450
 
 #define MAX_POINT_LIGHTS_COUNT 16
-// #define USE_NORMAL_MAP
+
+#define USE_NORMAL_MAP
 // #define NORMALMAP_RECONSTRUCT_Z
 // #define NORMALMAP_FLIP_GREEN
 // #define USE_MR_RED_AS_AO
-// #define TONE_MAPPING
+#define TONE_MAPPING_ACES
 // #define GAMMA_CORRECTION
 // #define ALBEDO_SRGB_DECODE
 
@@ -48,6 +49,8 @@ layout(binding = 0) uniform UniformBufferObject {
     vec4 cascadeSplits;
 } ubo;
 
+// --- PBR Lighting Functions ---
+
 float DistributionGGX(vec3 N, vec3 H, float roughness) {
     float a = roughness * roughness;
     float a2 = a * a;
@@ -62,7 +65,7 @@ float DistributionGGX(vec3 N, vec3 H, float roughness) {
 
 float GeometrySchlickGGX(float NdotV, float roughness) {
     float r = roughness + 1.0;
-    float k = (r * r) / 8.0;
+    float k = (r * r) / 8.0; // Direct lighting
 
     return NdotV / (NdotV * (1.0 - k) + k);
 }
@@ -79,24 +82,17 @@ vec3 FresnelSchlick(float cosTheta, vec3 F0) {
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
+vec3 FresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness) {
+    return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}
+
 vec3 ShadeLight(
-    vec3 L,
-    vec3 V,
-    vec3 N,
-    vec3 radiance,
-    vec3 albedo,
-    vec3 F0,
-    float metallic,
-    float roughness
+    vec3 L, vec3 V, vec3 N, vec3 radiance, vec3 albedo, vec3 F0, float metallic, float roughness
 ) {
     float NdotL = max(dot(N, L), 0.0);
-
-    if (NdotL <= 0.0) {
-        return vec3(0.0);
-    }
+    if (NdotL <= 0.0) return vec3(0.0);
 
     vec3 H = normalize(V + L);
-
     float NdotV = max(dot(N, V), 0.0);
 
     float NDF = DistributionGGX(N, H, roughness);
@@ -107,8 +103,7 @@ vec3 ShadeLight(
     vec3 kD = (vec3(1.0) - kS) * (1.0 - metallic);
 
     vec3 diffuse = kD * albedo / PI;
-
-    float denom = max(4.0 * NdotV * NdotL, 1e-4);
+    float denom = max(4.0 * NdotV * NdotL, 0.001);
     vec3 specular = (NDF * G * F) / denom;
 
     return (diffuse + specular) * radiance * NdotL;
@@ -116,7 +111,7 @@ vec3 ShadeLight(
 
 float PCF3x3(vec3 shadowCoord, int cascadeIndex) {
     float shadow = 0.0;
-    vec2 texelSize = vec2(1.0) / vec2(4096); // SHADOW_MAP_WIDTH
+    vec2 texelSize = vec2(1.0) / vec2(4096.0); 
     
     for (int x = -1; x <= 1; x++) {
         for (int y = -1; y <= 1; y++) {
@@ -125,8 +120,16 @@ float PCF3x3(vec3 shadowCoord, int cascadeIndex) {
             shadow += texture(shadowSampler, vec4(sampleCoord, shadowCoord.z)).r;
         }
     }
-    
     return shadow / 9.0;
+}
+
+vec3 ACESFilm(vec3 x) {
+    float a = 2.51;
+    float b = 0.03;
+    float c = 2.43;
+    float d = 0.59;
+    float e = 0.14;
+    return clamp((x*(a*x+b))/(x*(c*x+d)+e), 0.0, 1.0);
 }
 
 void main() {
@@ -137,78 +140,45 @@ void main() {
 #endif
 
     vec4 mr = texture(mrSampler, fragTexCoord);
-
     vec3 albedo = baseColor.rgb;
 
     float metallic = clamp(mr.b, 0.0, 1.0);
     float roughness = clamp(mr.g, MIN_ROUGHNESS, 1.0);
 
     vec3 N = normalize(fragNormal);
-
-    if (dot(N, N) < 1e-8) {
-        N = vec3(0.0, 0.0, 1.0);
-    }
+    if (dot(N, N) < 1e-8) N = vec3(0.0, 0.0, 1.0);
 
 #ifdef USE_NORMAL_MAP
     vec3 T = normalize(fragTangent);
     vec3 B = normalize(fragBitangent);
 
-    if (dot(T, T) < 1e-8) {
-        vec3 up = (abs(N.z) < 0.999) ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
-        T = normalize(cross(up, N));
-    } else {
-        T = normalize(T - dot(T, N) * N);
-    }
-
-    vec3 C = cross(N, T);
-
-    if (dot(C, C) < 1e-8) {
-        vec3 up = (abs(N.z) < 0.999) ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
-        T = normalize(cross(up, N));
-        C = cross(N, T);
-    }
-
-    float handedness = 1.0;
-
-    if (dot(B, B) > 1e-8) {
-        handedness = (dot(C, B) < 0.0) ? -1.0 : 1.0;
-    }
-
-    B = normalize(C * handedness);
+    T = normalize(T - dot(T, N) * N);
+    B = normalize(B - dot(B, N) * N - dot(B, T) * T);
 
     mat3 TBN = mat3(T, B, N);
-
     vec3 normalTS = texture(normalSampler, fragTexCoord).rgb * 2.0 - 1.0;
 
 #ifdef NORMALMAP_RECONSTRUCT_Z
     normalTS.z = sqrt(max(0.0, 1.0 - dot(normalTS.xy, normalTS.xy)));
 #endif
-
 #ifdef NORMALMAP_FLIP_GREEN
     normalTS.y = -normalTS.y;
 #endif
 
-    if (dot(normalTS, normalTS) < 1e-6) {
-        normalTS = vec3(0.0, 0.0, 1.0);
-    }
-
+    if (dot(normalTS, normalTS) < 1e-6) normalTS = vec3(0.0, 0.0, 1.0);
     N = normalize(TBN * normalize(normalTS));
 #endif
 
     vec3 V = fragCameraPos - fragPos;
     float vLen = length(V);
+    if (vLen < 1e-8) V = vec3(0.0, 0.0, 1.0); 
+    else V /= vLen;
 
-    if (vLen < 1e-8) {
-        V = vec3(0.0, 0.0, 1.0);
-    } else {
-        V /= vLen;
-    }
-
+    float NdotV = max(dot(N, V), 0.0);
     vec3 F0 = mix(vec3(0.04), albedo, metallic);
-
     vec3 Lo = vec3(0.0);
 
-    // Directional light + CSM Shadows
+    // --- Directional Light + CSM Shadows ---
     {
         vec3 dir = ubo.dirLight;
         vec3 radiance = ubo.dirLightColor;
@@ -216,7 +186,6 @@ void main() {
         if (dot(dir, dir) > 1e-8 && dot(radiance, radiance) > 0.0) {
             vec3 L = normalize(-dir);
 
-            // --- CSM Shadow Calculation ---
             float shadow = 1.0;
             float viewDepth = abs(fragViewPos.z);
             
@@ -225,6 +194,7 @@ void main() {
             else if (viewDepth < ubo.cascadeSplits.y) cascadeIndex = 1;
             else if (viewDepth < ubo.cascadeSplits.z) cascadeIndex = 2;
 
+            // Normal Offset Bias
             float normalOffsetScale = 0.15;
             vec3 biasedFragPos = fragPos + N * normalOffsetScale;
 
@@ -232,73 +202,47 @@ void main() {
             shadowCoord.xyz = shadowCoord.xyz / shadowCoord.w;
             shadowCoord.xy = shadowCoord.xy * 0.5 + 0.5;
             
-            float currentDepth = shadowCoord.z;
+            shadowCoord.z -= 0.0005; 
+
             shadow = PCF3x3(shadowCoord.xyz, cascadeIndex);
             Lo += shadow * ShadeLight(L, V, N, radiance, albedo, F0, metallic, roughness);
         }
     }
 
-    // Point lights
-    int lightCount = ubo.point_light_count;
-
-    if (lightCount < 0) {
-        lightCount = 0;
-    }
-
-    if (lightCount > MAX_POINT_LIGHTS_COUNT) {
-        lightCount = MAX_POINT_LIGHTS_COUNT;
-    }
+    // --- Point Lights ---
+    int lightCount = clamp(ubo.point_light_count, 0, MAX_POINT_LIGHTS_COUNT);
 
     for (int i = 0; i < lightCount; ++i) {
         vec4 posRange = ubo.point_light_pos[i];
-
         vec3 toLight = posRange.xyz - fragPos;
         float dist = length(toLight);
 
-        if (dist < 1e-6) {
-            continue;
-        }
+        if (dist < 1e-6) continue;
 
         vec3 L = toLight / dist;
-
         float range = posRange.w;
         float attenuation = 0.0;
 
         if (range > 0.0) {
             if (dist < range) {
+                // Smooth Windowing (Unreal-style attenuation)
                 float window = 1.0 - pow(dist / range, 4.0);
                 attenuation = (window * window) / max(dist * dist, 1e-6);
-            } else {
-                attenuation = 0.0;
             }
         } else {
             attenuation = 1.0 / (1.0 + dist * dist);
         }
 
-        if (attenuation <= 0.0) {
-            continue;
-        }
+        if (attenuation <= 0.0) continue;
 
         vec3 radiance = ubo.point_light_colors[i].rgb * attenuation;
+        if (dot(radiance, radiance) <= 0.0) continue;
 
-        if (dot(radiance, radiance) <= 0.0) {
-            continue;
-        }
-
-        Lo += ShadeLight(
-            L,
-            V,
-            N,
-            radiance,
-            albedo,
-            F0,
-            metallic,
-            roughness
-        );
+        Lo += ShadeLight(L, V, N, radiance, albedo, F0, metallic, roughness);
     }
 
+    // --- Ambient & Environment Approximation ---
     float ao = 1.0;
-
 #ifdef USE_MR_RED_AS_AO
     ao = mr.r;
 #endif
@@ -307,7 +251,10 @@ void main() {
 
     vec3 color = ambient + Lo;
 
-#ifdef TONE_MAPPING
+    // --- Post-Processing ---
+#ifdef TONE_MAPPING_ACES
+    color = ACESFilm(color);
+#elif defined(TONE_MAPPING)
     color = color / (color + vec3(1.0));
 #endif
 
