@@ -9,6 +9,7 @@
 #define TONE_MAPPING_ACES
 // #define GAMMA_CORRECTION
 // #define ALBEDO_SRGB_DECODE
+#define USE_ENVIRONMENT_REFLECTION
 
 layout(location = 0) in vec2 fragTexCoord;
 layout(location = 1) in vec3 fragNormal;
@@ -28,9 +29,13 @@ layout(set = 0, binding = 3) uniform sampler2D normalSampler;
 #endif
 
 layout(set = 0, binding = 4) uniform sampler2DArrayShadow shadowSampler;
+layout(set = 0, binding = 5) uniform sampler2D skyboxSampler;
 
 const float PI = 3.14159265359;
 const float MIN_ROUGHNESS = 0.05;
+
+const float ENV_REFLECTION_INTENSITY = 0.2;
+const float ENV_AMBIENT_INTENSITY = 0.05;
 
 layout(binding = 0) uniform UniformBufferObject {
     mat4 view;
@@ -130,6 +135,14 @@ vec3 ACESFilm(vec3 x) {
     float d = 0.59;
     float e = 0.14;
     return clamp((x*(a*x+b))/(x*(c*x+d)+e), 0.0, 1.0);
+}
+
+vec2 VectorToLatLong(vec3 dir) {
+    vec2 uv;
+    uv.x = atan(dir.z, dir.x) * (0.5 / PI) + 0.5;
+    uv.y = asin(dir.y) * (1.0 / PI) + 0.5;
+    
+    return uv;
 }
 
 void main() {
@@ -241,13 +254,59 @@ void main() {
         Lo += ShadeLight(L, V, N, radiance, albedo, F0, metallic, roughness);
     }
 
-    // --- Ambient & Environment Approximation ---
+        // --- Ambient & Environment Approximation ---
     float ao = 1.0;
 #ifdef USE_MR_RED_AS_AO
     ao = mr.r;
 #endif
 
+#ifdef USE_ENVIRONMENT_REFLECTION
+    ivec2 skyboxSize = textureSize(skyboxSampler, 0);
+    vec2 texelSize = 1.0 / vec2(skyboxSize);
+
+    vec2 normUV = VectorToLatLong(N);
+    vec3 diffuseEnvRaw = texture(skyboxSampler, normUV).rgb;
+    
+    vec3 diffuseEnv = diffuseEnvRaw * ENV_AMBIENT_INTENSITY;
+
+    vec3 R = reflect(-V, N);
+    vec2 reflUV = VectorToLatLong(R);
+    vec3 reflectionColorRaw = vec3(0.0);
+
+    float blurRadius = roughness * 15.0; 
+
+    if (roughness < 0.05) {
+        reflectionColorRaw = texture(skyboxSampler, reflUV).rgb;
+    } else {
+        float samples = 0.0;
+        for(int x = -1; x <= 1; ++x) {
+            for(int y = -1; y <= 1; ++y) {
+                vec2 offset = vec2(x, y) * texelSize * blurRadius;
+                vec2 sampleUV = reflUV + offset;
+                
+                sampleUV.x = fract(sampleUV.x);
+                sampleUV.y = clamp(sampleUV.y, 0.0, 1.0); 
+                
+                reflectionColorRaw += texture(skyboxSampler, sampleUV).rgb;
+                samples += 1.0;
+            }
+        }
+        reflectionColorRaw /= samples;
+    }
+    
+    vec3 reflectionColor = reflectionColorRaw * ENV_REFLECTION_INTENSITY;
+
+    vec3 F = FresnelSchlickRoughness(NdotV, F0, roughness);
+    vec3 kS = F;
+    vec3 kD = 1.0 - kS;
+    kD *= 1.0 - metallic;
+
+    vec3 ambient = (kD * diffuseEnv + reflectionColor * kS) * ao;
+    
+    ambient += ubo.ambient * albedo * (1.0 - metallic) * ao;
+#else
     vec3 ambient = ubo.ambient * albedo * (1.0 - metallic) * ao;
+#endif
 
     vec3 color = ambient + Lo;
 

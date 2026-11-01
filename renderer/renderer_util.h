@@ -292,6 +292,11 @@ struct _SceneData
 
     glm::mat4 cascadeViewProjMatrices[4] = { glm::mat4(1.0f), glm::mat4(1.0f), glm::mat4(1.0f), glm::mat4(1.0f) };
     glm::vec4 cascadeSplits = glm::vec4(0.0f);
+
+    VkSampler skyboxSampler;
+    VkImage skyboxImage;
+    VkImageView skyboxView;
+    VmaAllocation skyboxMemory;
 };
 
 bool loadModel(const std::string &filename, _Object *object);
@@ -318,7 +323,7 @@ void createIndexBuffer(std::vector<uint32_t> indices, VkBuffer *index_buffer, Vm
 void createDescriptorSetLayout(VkDescriptorSetLayout *descriptor_set_layout, VkDevice device);
 void createUniformBuffer(VkBuffer *uniform_buffer, VmaAllocation *uniform_buffer_memory, void **uniform_buffer_mapped, VmaAllocator allocator);
 void createDescriptorPool(VkDescriptorPool *descriptor_pool, uint32_t descriptor_count, VmaAllocator allocator, VkDevice device);
-void addDescriptorSet(VkDescriptorSet descriptor_set, VkBuffer uniform_buffer, VkImageView texture_image_view, VkImageView mr_image_view, VkImageView normal_image_view, VkSampler texture_sampler, VkImageView shadow_view, VkSampler shadow_sampler, VkDevice device);
+void addDescriptorSet(VkDescriptorSet descriptor_set, VkBuffer uniform_buffer, VkImageView texture_image_view, VkImageView mr_image_view, VkImageView normal_image_view, VkSampler texture_sampler, VkImageView shadow_view, VkSampler shadow_sampler, VkImageView skybox_view, VkSampler skybox_sampler, VkDevice device);
 void createDescriptorSets(std::vector<VkDescriptorSet> &descriptor_sets, VkDescriptorSetLayout descriptor_set_layout, uint32_t count, VkDescriptorPool descriptor_pool, VkDevice device);
 void createTextureImage(const char *texture_path, VkImage &image, VmaAllocation &image_memory, VmaAllocator allocator, VkCommandPool command_pool, VkQueue graphics_queue, VkDevice device);
 void createTextureImageView(VkImageView *texture_image_view, VkImage image, VkDevice device);

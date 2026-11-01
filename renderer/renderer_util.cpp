@@ -1681,7 +1681,14 @@ void createDescriptorSetLayout(VkDescriptorSetLayout *descriptor_set_layout, VkD
     shadowLayoutBinding.pImmutableSamplers = nullptr;
     shadowLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-    std::array<VkDescriptorSetLayoutBinding, 5> bindings = {uboLayoutBinding, samplerLayoutBinding, normalLayoutBinding, mrLayoutBinding, shadowLayoutBinding};
+    VkDescriptorSetLayoutBinding skyboxLayoutBinding{};
+    skyboxLayoutBinding.binding = 5;
+    skyboxLayoutBinding.descriptorCount = 1;
+    skyboxLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    skyboxLayoutBinding.pImmutableSamplers = nullptr;
+    skyboxLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    std::array<VkDescriptorSetLayoutBinding, 6> bindings = {uboLayoutBinding, samplerLayoutBinding, normalLayoutBinding, mrLayoutBinding, shadowLayoutBinding, skyboxLayoutBinding};
 
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -1710,7 +1717,7 @@ void createDescriptorPool(VkDescriptorPool *descriptor_pool, uint32_t descriptor
     poolSizes[0].descriptorCount = static_cast<uint32_t>(descriptor_count);
     
     poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    poolSizes[1].descriptorCount = static_cast<uint32_t>(descriptor_count) * 4; 
+    poolSizes[1].descriptorCount = static_cast<uint32_t>(descriptor_count) * 5; 
 
     VkDescriptorPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -1738,7 +1745,7 @@ void createDescriptorSets(std::vector<VkDescriptorSet> &descriptor_sets, VkDescr
         err("Failed to allocate descriptor sets", res);
 }
 
-void addDescriptorSet(VkDescriptorSet descriptor_set, VkBuffer uniform_buffer, VkImageView texture_image_view, VkImageView mr_image_view, VkImageView normal_image_view, VkSampler texture_sampler, VkImageView shadow_view, VkSampler shadow_sampler, VkDevice device)
+void addDescriptorSet(VkDescriptorSet descriptor_set, VkBuffer uniform_buffer, VkImageView texture_image_view, VkImageView mr_image_view, VkImageView normal_image_view, VkSampler texture_sampler, VkImageView shadow_view, VkSampler shadow_sampler, VkImageView skybox_view, VkSampler skybox_sampler, VkDevice device)
 {
     VkDescriptorBufferInfo bufferInfo{};
     bufferInfo.buffer = uniform_buffer;
@@ -1764,8 +1771,13 @@ void addDescriptorSet(VkDescriptorSet descriptor_set, VkBuffer uniform_buffer, V
     shadowImageInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
     shadowImageInfo.imageView = shadow_view;
     shadowImageInfo.sampler = shadow_sampler;
+    
+    VkDescriptorImageInfo skyboxInfo{};
+    skyboxInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    skyboxInfo.imageView = skybox_view;
+    skyboxInfo.sampler = skybox_sampler;
 
-    std::array<VkWriteDescriptorSet, 5> descriptorWrites{};
+    std::array<VkWriteDescriptorSet, 6> descriptorWrites{};
 
     descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     descriptorWrites[0].dstSet = descriptor_set;
@@ -1806,6 +1818,14 @@ void addDescriptorSet(VkDescriptorSet descriptor_set, VkBuffer uniform_buffer, V
     descriptorWrites[4].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     descriptorWrites[4].descriptorCount = 1;
     descriptorWrites[4].pImageInfo = &shadowImageInfo;
+
+    descriptorWrites[5].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrites[5].dstSet = descriptor_set;
+    descriptorWrites[5].dstBinding = 5;
+    descriptorWrites[5].dstArrayElement = 0;
+    descriptorWrites[5].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptorWrites[5].descriptorCount = 1;
+    descriptorWrites[5].pImageInfo = &skyboxInfo;
 
     vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 }

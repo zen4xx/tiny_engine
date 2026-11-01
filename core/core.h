@@ -28,7 +28,7 @@ public:
     inline void moveObject(const tiny_engine::Object &obj, glm::mat4 pos) { m_renderer->moveObject(obj, pos); };
 
     inline void drawScene(const std::string &scene_name) { m_renderer->drawScene(scene_name); };
-    inline void createScene(const std::string &scene_name) { m_renderer->createScene(scene_name); };
+    inline void createScene(const std::string &scene_name, const std::string &skybox_path="_default") { m_renderer->createScene(scene_name, skybox_path); };
     // If objects are added to the scene, the function must be called before drawScene() 
     inline void updateScene(const std::string& scene_name) { m_renderer->updateScene(scene_name); };
 

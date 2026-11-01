@@ -1,4 +1,5 @@
 #include "scene.h"
+#include "renderer_util.h"
 #include <vulkan/vulkan_core.h>
 #include <vector>
 
@@ -43,7 +44,7 @@ void _Scene::createDescriptorSetsForScene(VkExtent2D extent, VmaAllocator alloca
     int i = 0;
     for (auto it = objects.begin(); it != objects.end(); ++it)
     {
-        addDescriptorSet(scene_data.descriptorSets[i], scene_data.uniformBuffer, it->textureImageView, it->metalRoughnessImageView, it->normalImageView, *it->sampler, shadow_view, shadow_sampler, device);
+        addDescriptorSet(scene_data.descriptorSets[i], scene_data.uniformBuffer, it->textureImageView, it->metalRoughnessImageView, it->normalImageView, *it->sampler, shadow_view, shadow_sampler, scene_data.skyboxView, scene_data.skyboxSampler, device);
         it->dc_index = i;
         ++i;
     }
@@ -78,6 +79,10 @@ void _Scene::deleteScene(VmaAllocator allocator, VkDevice device)
     {
         vmaDestroyBuffer(allocator, scene_data.uniformBuffer, scene_data.uniformBufferMemory);
     }
+
+    vkDestroyImageView(device, scene_data.skyboxView, nullptr);
+    vmaDestroyImage(allocator, scene_data.skyboxImage, scene_data.skyboxMemory);
+    vkDestroySampler(device, scene_data.skyboxSampler, nullptr);
 
     destroyDescriptorPool(device);
 

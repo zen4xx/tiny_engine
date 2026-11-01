@@ -5,6 +5,7 @@
 #include "../scene/scene.h"
 #include <cstddef>
 #include <cstdint>
+#include <string>
 #include <vector>
 #include <vulkan/vulkan_core.h>
 
@@ -66,7 +67,16 @@ public:
     inline float getFPSCount() { return fps; };
     inline float getDeltaTime() { return m_delta_time; };
 
-    inline void createScene(const std::string &scene_name) { m_scenes[scene_name] = std::move(std::make_unique<_Scene>(m_allocator)); };
+    inline void createScene(const std::string &scene_name, const std::string &skybox_path) { 
+        m_scenes[scene_name] = std::move(std::make_unique<_Scene>(m_allocator)); 
+        createTextureSampler(&m_scenes[scene_name]->scene_data.skyboxSampler, m_physical_device, m_device);
+        if (skybox_path != "_default")
+            createTextureImage(skybox_path.c_str(), m_scenes[scene_name]->scene_data.skyboxImage, m_scenes[scene_name]->scene_data.skyboxMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
+        else
+            createTextureImage("tiny_engine_assets/textures/skybox.hdr", m_scenes[scene_name]->scene_data.skyboxImage, m_scenes[scene_name]->scene_data.skyboxMemory, m_allocator, m_command_pool, m_graphics_queue, m_device);
+    
+        createTextureImageView(&m_scenes[scene_name]->scene_data.skyboxView, m_scenes[scene_name]->scene_data.skyboxImage, m_device);
+    };
     inline void deleteScene(const std::string &scene_name)
     {
         m_scenes[scene_name]->deleteScene(m_allocator, m_device);
