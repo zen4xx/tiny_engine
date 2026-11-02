@@ -34,9 +34,6 @@ layout(set = 0, binding = 5) uniform sampler2D skyboxSampler;
 const float PI = 3.14159265359;
 const float MIN_ROUGHNESS = 0.05;
 
-const float ENV_REFLECTION_INTENSITY = 0.5;
-const float ENV_AMBIENT_INTENSITY = 0.5;
-
 layout(binding = 0) uniform UniformBufferObject {
     mat4 view;
     mat4 proj;
@@ -270,11 +267,9 @@ void main() {
     vec2 normUV = VectorToLatLong(Nn);
 
     float specLod = roughness * maxLod;
-    vec3 reflectionColorRaw = textureLod(skyboxSampler, reflUV, specLod).rgb;
-    vec3 reflectionColor    = reflectionColorRaw * ENV_REFLECTION_INTENSITY;
+    vec3 reflectionColor = textureLod(skyboxSampler, reflUV, specLod).rgb;
 
-    vec3 diffuseEnvRaw = textureLod(skyboxSampler, normUV, max(maxLod - 1.0, 0.0)).rgb;
-    vec3 diffuseEnv    = diffuseEnvRaw * ENV_AMBIENT_INTENSITY;
+    vec3 diffuseEnv = textureLod(skyboxSampler, normUV, max(maxLod - 1.0, 0.0)).rgb;
 
     vec3 F  = FresnelSchlickRoughness(max(dot(Nn, Vv), 0.0), F0, roughness);
     vec3 kS = F;
