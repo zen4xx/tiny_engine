@@ -17,30 +17,31 @@ public:
 
     // Must be called before drawScene
     // Returns a object_id
-    inline size_t addObject(const std::string &scene_name, const std::vector<Vertex> &vertices, const std::vector<uint32_t> &indices, glm::mat4 pos, const std::string &albedo_path="_default", const std::string &mr_path="_default", const std::string &normal_path="_default") { return m_renderer->addObject(scene_name, vertices, indices, pos, albedo_path, mr_path, normal_path); };
-    inline size_t addObject(const std::string &scene_name, const std::string &gltf_model_path, glm::mat4 pos, const std::string &albedo_path="_default", const std::string &mr_path="_default", const std::string &normal_path="_default") { return m_renderer->addObject(scene_name, gltf_model_path, pos, albedo_path, mr_path, normal_path); };
+    inline size_t addObject(size_t scene_id, const std::vector<Vertex> &vertices, const std::vector<uint32_t> &indices, glm::mat4 pos, const std::string &albedo_path="_default", const std::string &mr_path="_default", const std::string &normal_path="_default") { return m_renderer->addObject(scene_id, vertices, indices, pos, albedo_path, mr_path, normal_path); };
+    inline size_t addObject(size_t scene_id, const std::string &gltf_model_path, glm::mat4 pos, const std::string &albedo_path="_default", const std::string &mr_path="_default", const std::string &normal_path="_default") { return m_renderer->addObject(scene_id, gltf_model_path, pos, albedo_path, mr_path, normal_path); };
     inline size_t addObject(tiny_engine::Object &obj) { return m_renderer->addObject(obj); };
 
-    inline void deleteObject(const std::string &scene_name, size_t obj_id) { m_renderer->deleteObject(scene_name, obj_id); }; 
+    inline void deleteObject(size_t scene_id, size_t obj_id) { m_renderer->deleteObject(scene_id, obj_id); }; 
     inline void deleteObject(const tiny_engine::Object &obj) { m_renderer->deleteObject(obj); }; 
     
-    inline void moveObject(const std::string &scene_name, size_t obj_id, glm::mat4 pos) { m_renderer->moveObject(scene_name, obj_id, pos); };
+    inline void moveObject(size_t scene_id, size_t obj_id, glm::mat4 pos) { m_renderer->moveObject(scene_id, obj_id, pos); };
     inline void moveObject(const tiny_engine::Object &obj, glm::mat4 pos) { m_renderer->moveObject(obj, pos); };
 
-    inline void drawScene(const std::string &scene_name) { m_renderer->drawScene(scene_name); };
-    inline void createScene(const std::string &scene_name, const std::string &skybox_path="_default") { m_renderer->createScene(scene_name, skybox_path); };
+    inline void drawScene(size_t scene_id) { m_renderer->drawScene(scene_id); };
+    // return scene_id
+    inline size_t createScene(const std::string &skybox_path="_default") { return m_renderer->createScene(skybox_path); };
     // If objects are added to the scene, the function must be called before drawScene() 
-    inline void updateScene(const std::string& scene_name) { m_renderer->updateScene(scene_name); };
+    inline void updateScene(size_t scene_id) { m_renderer->updateScene(scene_id); };
 
-    inline void setView(const std::string &scene_name, glm::mat4 view) { m_renderer->setView(scene_name, view); };
-    inline void setDrawDistance(const std::string &scene_name, float distance) { m_renderer->setDrawDistance(scene_name, distance); };
+    inline void setView(size_t scene_id, glm::mat4 view) { m_renderer->setView(scene_id, view); };
+    inline void setDrawDistance(size_t scene_id, float distance) { m_renderer->setDrawDistance(scene_id, distance); };
 
-    inline void setAmbient(const std::string &scene_name, glm::vec3 ambient) {m_renderer->setAmbient(scene_name, ambient); };
-    inline void setDirLight(const std::string &scene_name, glm::vec3 dir) { m_renderer->setDirLight(scene_name, dir); };
-    inline void setDirLightColor(const std::string &scene_name, glm::vec3 color) { m_renderer->setDirLightColor(scene_name, color); };
-    inline void setPointLight(const std::string &scene_name, glm::vec3 pos, uint8_t index) { m_renderer->setPointLight(scene_name, pos, index); };
-    inline void setPointLightColor(const std::string &scene_name, glm::vec3 color, uint8_t index) { m_renderer->setPointLightColor(scene_name, color, index); };
-    inline void setPointLightsCount(const std::string &scene_name, uint8_t count) { m_renderer->setPointLightsCount(scene_name, count); }
+    inline void setAmbient(size_t scene_id, glm::vec3 ambient) {m_renderer->setAmbient(scene_id, ambient); };
+    inline void setDirLight(size_t scene_id, glm::vec3 dir) { m_renderer->setDirLight(scene_id, dir); };
+    inline void setDirLightColor(size_t scene_id, glm::vec3 color) { m_renderer->setDirLightColor(scene_id, color); };
+    inline void setPointLight(size_t scene_id, glm::vec3 pos, uint8_t index) { m_renderer->setPointLight(scene_id, pos, index); };
+    inline void setPointLightColor(size_t scene_id, glm::vec3 color, uint8_t index) { m_renderer->setPointLightColor(scene_id, color, index); };
+    inline void setPointLightsCount(size_t scene_id, uint8_t count) { m_renderer->setPointLightsCount(scene_id, count); }
 
     inline bool isKeyPressed(int key) { return glfwGetKey(m_window->GetWindow(), key); };
 

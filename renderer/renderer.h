@@ -13,7 +13,7 @@ namespace tiny_engine
 {
     struct Object
     {
-        std::string scene_name;
+        size_t scene_id;
         size_t obj_id;
 
         const std::vector<Vertex> *vertices = nullptr;
@@ -38,27 +38,27 @@ public:
 
 public:
     void setWindow(GLFWwindow *window);
-    void drawScene(const std::string &scene_name);
+    void drawScene(size_t scene_id);
     // Must be called before drawScene
     // Returns object_id
-    size_t addObject(const std::string &scene_name, const std::vector<Vertex> &vertices, const std::vector<uint32_t> &indices, glm::mat4 pos, const std::string &albedo_path = "_default", const std::string &mr_path = "_default", const std::string &normal_path = "_default");
-    size_t addObject(const std::string &scene_name, const std::string &gltf_model_path, glm::mat4 pos, const std::string &albedo_path = "_default", const std::string &mr_path = "_default", const std::string &normal_path = "_default");
+    size_t addObject(size_t scene_id, const std::vector<Vertex> &vertices, const std::vector<uint32_t> &indices, glm::mat4 pos, const std::string &albedo_path = "_default", const std::string &mr_path = "_default", const std::string &normal_path = "_default");
+    size_t addObject(size_t scene_id, const std::string &gltf_model_path, glm::mat4 pos, const std::string &albedo_path = "_default", const std::string &mr_path = "_default", const std::string &normal_path = "_default");
     size_t addObject(tiny_engine::Object &obj);
     
-    void deleteObject(const std::string &scene_name, size_t obj_id); 
+    void deleteObject(size_t scene_id, size_t obj_id); 
     void deleteObject(const tiny_engine::Object &obj); 
 
-    inline void moveObject(const std::string &scene_name, const std::size_t &obj_id, glm::mat4 pos) { m_scenes[scene_name]->objects[obj_id].pc_data.model = pos; };
-    inline void moveObject(const tiny_engine::Object &obj, glm::mat4 pos) { m_scenes[obj.scene_name]->objects[obj.obj_id].pc_data.model = pos; };
+    inline void moveObject(size_t scene_id, size_t obj_id, glm::mat4 pos) { m_scenes[scene_id].objects[obj_id].pc_data.model = pos; };
+    inline void moveObject(const tiny_engine::Object &obj, glm::mat4 pos) { m_scenes[obj.scene_id].objects[obj.obj_id].pc_data.model = pos; };
 
-    inline void setView(const std::string &scene_name, glm::mat4 view) { m_scenes[scene_name]->scene_data.view = view; };
-    inline void setDrawDistance(const std::string &scene_name, float distance) { m_scenes[scene_name]->setDrawDistance(distance); };
-    inline void setAmbient(const std::string &scene_name, glm::vec3 ambient) { m_scenes[scene_name]->scene_data.ambient = ambient; };
-    inline void setDirLight(const std::string &scene_name, glm::vec3 dir) { m_scenes[scene_name]->scene_data.dirLight = dir; };
-    inline void setDirLightColor(const std::string &scene_name, glm::vec3 color) { m_scenes[scene_name]->scene_data.dirLightColor = color; };
-    inline void setPointLight(const std::string &scene_name, glm::vec3 pos, uint8_t index) { m_scenes[scene_name]->scene_data.pointLightPos[index] = glm::vec4(pos.x, pos.y, pos.z, 0.0f); };
-    inline void setPointLightColor(const std::string &scene_name, glm::vec3 color, uint8_t index) { m_scenes[scene_name]->scene_data.pointLightColors[index] = glm::vec4(color.x, color.y, color.z, 0.0f); };
-    inline void setPointLightsCount(const std::string &scene_name, int count) { m_scenes[scene_name]->scene_data.pointLightsCount = count; };
+    inline void setView(size_t scene_id, glm::mat4 view) { m_scenes[scene_id].scene_data.view = view; };
+    inline void setDrawDistance(size_t scene_id, float distance) { m_scenes[scene_id].setDrawDistance(distance); };
+    inline void setAmbient(size_t scene_id, glm::vec3 ambient) { m_scenes[scene_id].scene_data.ambient = ambient; };
+    inline void setDirLight(size_t scene_id, glm::vec3 dir) { m_scenes[scene_id].scene_data.dirLight = dir; };
+    inline void setDirLightColor(size_t scene_id, glm::vec3 color) { m_scenes[scene_id].scene_data.dirLightColor = color; };
+    inline void setPointLight(size_t scene_id, glm::vec3 pos, uint8_t index) { m_scenes[scene_id].scene_data.pointLightPos[index] = glm::vec4(pos.x, pos.y, pos.z, 0.0f); };
+    inline void setPointLightColor(size_t scene_id, glm::vec3 color, uint8_t index) { m_scenes[scene_id].scene_data.pointLightColors[index] = glm::vec4(color.x, color.y, color.z, 0.0f); };
+    inline void setPointLightsCount(size_t scene_id, int count) { m_scenes[scene_id].scene_data.pointLightsCount = count; };
 
     // Must be called before setWindow
     inline void setThreadCount(uint8_t count) { m_thread_count = count; };
@@ -67,26 +67,32 @@ public:
     inline float getFPSCount() { return fps; };
     inline float getDeltaTime() { return m_delta_time; };
 
-    inline void createScene(const std::string &scene_name, const std::string &skybox_path) { 
-        m_scenes[scene_name] = std::move(std::make_unique<_Scene>(m_allocator)); 
-        createTextureSampler(&m_scenes[scene_name]->scene_data.skyboxSampler, m_physical_device, m_device, 9);
+    // returns scene id
+    inline size_t createScene(const std::string &skybox_path) { 
+        _Scene scene(m_allocator);
+        m_scenes.push_back(std::move(scene));
+        size_t scene_id = m_scenes.size() - 1;
+
+        createTextureSampler(&m_scenes[scene_id].scene_data.skyboxSampler, m_physical_device, m_device, 9);
         if (skybox_path != "_default")
-            createTextureImage(skybox_path.c_str(), m_scenes[scene_name]->scene_data.skyboxImage, m_scenes[scene_name]->scene_data.skyboxMemory, m_allocator, m_command_pool, m_graphics_queue, m_device, 9, m_physical_device);
+            createTextureImage(skybox_path.c_str(), m_scenes[scene_id].scene_data.skyboxImage, m_scenes[scene_id].scene_data.skyboxMemory, m_allocator, m_command_pool, m_graphics_queue, m_device, 9, m_physical_device);
         else
-            createTextureImage("tiny_engine_assets/textures/skybox.hdr", m_scenes[scene_name]->scene_data.skyboxImage, m_scenes[scene_name]->scene_data.skyboxMemory, m_allocator, m_command_pool, m_graphics_queue, m_device, 9, m_physical_device);
+            createTextureImage("tiny_engine_assets/textures/skybox.hdr", m_scenes[scene_id].scene_data.skyboxImage, m_scenes[scene_id].scene_data.skyboxMemory, m_allocator, m_command_pool, m_graphics_queue, m_device, 9, m_physical_device);
     
-        createTextureImageView(&m_scenes[scene_name]->scene_data.skyboxView, m_scenes[scene_name]->scene_data.skyboxImage, m_device, 9);
+        createTextureImageView(&m_scenes[scene_id].scene_data.skyboxView, m_scenes[scene_id].scene_data.skyboxImage, m_device, 9);
+
+        return scene_id;
     };
-    inline void deleteScene(const std::string &scene_name)
+    inline void deleteScene(size_t scene_id)
     {
-        m_scenes[scene_name]->deleteScene(m_allocator, m_device);
-        m_scenes[scene_name]->isDeleted = 1;
+        m_scenes[scene_id].deleteScene(m_allocator, m_device);
+        m_scenes[scene_id].isDeleted = 1;
     };
     // If objects are added to the scene, the function must be called before drawScene()
-    inline void updateScene(const std::string &scene_name)
+    inline void updateScene(size_t scene_id)
     {
-        m_scenes[scene_name]->destroyDescriptorPool(m_device);
-        m_scenes[scene_name]->createDescriptorSetsForScene(m_swap_chain_extent, m_allocator, m_descriptor_set_layout, m_shadow_image_view, m_shadow_sampler, m_device);
+        m_scenes[scene_id].destroyDescriptorPool(m_device);
+        m_scenes[scene_id].createDescriptorSetsForScene(m_swap_chain_extent, m_allocator, m_descriptor_set_layout, m_shadow_image_view, m_shadow_sampler, m_device);
     };
 
 private:
@@ -164,7 +170,7 @@ private:
     float fps = 0;
     float m_delta_time = 0;
 
-    std::unordered_map<std::string, std::unique_ptr<_Scene>> m_scenes;
+    std::vector<_Scene> m_scenes;
 
     // vectors
     std::vector<VkImage> m_swap_chain_images;

@@ -90,8 +90,8 @@ Renderer::~Renderer()
     vkDestroySampler(m_device, m_shadow_sampler, nullptr);
     for (auto it = m_scenes.begin(); it != m_scenes.end(); ++it)
     {
-        if (!it->second->isDeleted)
-            it->second->deleteScene(m_allocator, m_device);
+        if (!it->isDeleted)
+            it->deleteScene(m_allocator, m_device);
     }
     vkDestroyDescriptorSetLayout(m_device, m_descriptor_set_layout, nullptr);
 
@@ -188,14 +188,14 @@ void Renderer::setWindow(GLFWwindow *window)
     createShadowResources(m_shadow_image, m_shadow_image_memory, m_shadow_image_view, m_shadow_layer_image_views, m_shadow_sampler, m_shadow_render_pass, m_shadow_framebuffers.data(), m_physical_device, m_device, m_allocator);
     createShadowPipeline("tiny_engine_assets/shaders/shadow_shader.vert.spv", "tiny_engine_assets/shaders/shadow_shader.frag.spv", &m_shadow_vert_shader_module, &m_shadow_frag_shader_module, &m_descriptor_set_layout, m_dynamic_states, &m_shadow_pipeline_layout, &m_shadow_pipeline, m_shadow_render_pass, m_device);
 }
-void Renderer::drawScene(const std::string &scene_name)
+void Renderer::drawScene(size_t scene_id)
 {
 
-    if(m_scenes[scene_name]->objects.empty())
+    if(m_scenes[scene_id].objects.empty())
         return;
 
-    if (!m_scenes[scene_name]->isDescriptorSetsCreated)
-        m_scenes[scene_name]->createDescriptorSetsForScene(m_swap_chain_extent, m_allocator, m_descriptor_set_layout, m_shadow_image_view, m_shadow_sampler, m_device);
+    if (!m_scenes[scene_id].isDescriptorSetsCreated)
+        m_scenes[scene_id].createDescriptorSetsForScene(m_swap_chain_extent, m_allocator, m_descriptor_set_layout, m_shadow_image_view, m_shadow_sampler, m_device);
 
     static double lastTime = glfwGetTime();
 
@@ -228,7 +228,7 @@ void Renderer::drawScene(const std::string &scene_name)
     vkResetFences(m_device, 1, &m_in_flight_fences[current_frame]);
     vkResetCommandBuffer(m_command_buffers[current_frame], 0);
 
-    auto &scene_data = m_scenes[scene_name]->scene_data;
+    auto &scene_data = m_scenes[scene_id].scene_data;
     updateCSMData(
         scene_data.cascadeViewProjMatrices,
         &scene_data.cascadeSplits,
@@ -236,10 +236,10 @@ void Renderer::drawScene(const std::string &scene_name)
         scene_data.proj,
         scene_data.dirLight,
         0.1f,
-        m_scenes[scene_name]->draw_distance
+        m_scenes[scene_id].draw_distance
     );
 
-    recordCommandBuffer(m_command_buffers[current_frame], m_threads, m_scenes[scene_name]->objects, imageIndex, m_swap_chain_extent, m_render_pass, m_swap_chain_frame_buffers, m_graphics_pipeline, m_pipeline_layout, current_frame, m_scenes[scene_name]->scene_data, m_shadow_render_pass, m_shadow_framebuffers, m_shadow_pipeline, m_shadow_pipeline_layout, m_device);
+    recordCommandBuffer(m_command_buffers[current_frame], m_threads, m_scenes[scene_id].objects, imageIndex, m_swap_chain_extent, m_render_pass, m_swap_chain_frame_buffers, m_graphics_pipeline, m_pipeline_layout, current_frame, m_scenes[scene_id].scene_data, m_shadow_render_pass, m_shadow_framebuffers, m_shadow_pipeline, m_shadow_pipeline_layout, m_device);
     
     VkSubmitInfo submitInfo = {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -288,7 +288,7 @@ void Renderer::drawScene(const std::string &scene_name)
     current_frame = (current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-size_t Renderer::addObject(const std::string &scene_name, const std::vector<Vertex> &vertices, const std::vector<uint32_t> &indices, glm::mat4 pos, const std::string &albedo_path, const std::string &mr_path, const std::string &normal_path)
+size_t Renderer::addObject(size_t scene_id, const std::vector<Vertex> &vertices, const std::vector<uint32_t> &indices, glm::mat4 pos, const std::string &albedo_path, const std::string &mr_path, const std::string &normal_path)
 {
     _Object object;
     object.vertices = vertices;
@@ -333,12 +333,12 @@ size_t Renderer::addObject(const std::string &scene_name, const std::vector<Vert
     computeBoundingSphere(object);
 
     // moves object to scene
-    m_scenes[scene_name]->objects.push_back(std::move(object));
+    m_scenes[scene_id].objects.push_back(std::move(object));
 
-    return m_scenes[scene_name]->objects.size() - 1;
+    return m_scenes[scene_id].objects.size() - 1;
 }
 
-size_t Renderer::addObject(const std::string &scene_name, const std::string &gltf_model_path, glm::mat4 pos, const std::string &albedo_path, const std::string &mr_path, const std::string &normal_path)
+size_t Renderer::addObject(size_t scene_id, const std::string &gltf_model_path, glm::mat4 pos, const std::string &albedo_path, const std::string &mr_path, const std::string &normal_path)
 {
     _Object object;
     object.pc_data.model = pos;
@@ -383,9 +383,9 @@ size_t Renderer::addObject(const std::string &scene_name, const std::string &glt
     computeBoundingSphere(object);
 
     // moves object to scene
-    m_scenes[scene_name]->objects.push_back(std::move(object));
+    m_scenes[scene_id].objects.push_back(std::move(object));
 
-    return m_scenes[scene_name]->objects.size() - 1;
+    return m_scenes[scene_id].objects.size() - 1;
 }
 
 
@@ -444,22 +444,22 @@ size_t Renderer::addObject(tiny_engine::Object &obj)
     computeBoundingSphere(object);
 
     // moves object to scene
-    m_scenes[obj.scene_name]->objects.push_back(std::move(object));
-    obj.obj_id = m_scenes[obj.scene_name]->objects.size() - 1;
+    m_scenes[obj.scene_id].objects.push_back(std::move(object));
+    obj.obj_id = m_scenes[obj.scene_id].objects.size() - 1;
     return obj.obj_id;
 }
 
-void Renderer::deleteObject(const std::string &scene_name, size_t obj_id)
+void Renderer::deleteObject(size_t scene_id, size_t obj_id)
 {
-    if (m_scenes[scene_name]->objects[obj_id].is_alive == 0)
+    if (m_scenes[scene_id].objects[obj_id].is_alive == 0)
         return;    
-    m_scenes[scene_name]->objects[obj_id].is_alive = 0;
+    m_scenes[scene_id].objects[obj_id].is_alive = 0;
 
     vkWaitForFences(m_device, m_in_flight_fences.size(), m_in_flight_fences.data(), VK_TRUE, UINT64_MAX);
-    m_scenes[scene_name]->deleteObject(m_scenes[scene_name]->objects[obj_id], m_allocator, m_device);
+    m_scenes[scene_id].deleteObject(m_scenes[scene_id].objects[obj_id], m_allocator, m_device);
 }
 
 void Renderer::deleteObject(const tiny_engine::Object &obj)
 {
-    deleteObject(obj.scene_name, obj.obj_id);
+    deleteObject(obj.scene_id, obj.obj_id);
 } 
